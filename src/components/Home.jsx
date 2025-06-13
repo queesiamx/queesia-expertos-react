@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithPopup, onAuthStateChanged } from 'firebase/auth';
 import { auth, provider } from '../firebase';
+import Footer from '../components/Footer';
 
 const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
@@ -36,13 +37,13 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-primary-soft">
-      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4 font-sans">
+    <div className="min-h-screen bg-primary-soft">
+      <div className="w-full max-w-6xl mx-auto min-h-screen flex flex-col items-center justify-center text-center px-4 font-sans">
         <h1 className="text-4xl md:text-5xl font-montserrat font-bold text-default mb-4 animate-fade-in">
           Bienvenido a la Sección de Expertos IA
         </h1>
 
-        <p className="mb-6 text-default-soft text-lg max-w-md">
+        <p className="mb-6 text-default-soft text-lg max-w-3xl px-4">
           Consulta el directorio de especialistas que puedes contactar.
         </p>
 
@@ -71,10 +72,8 @@ export default function Home() {
           </button>
         </div>
 
-        <footer className="mt-10 text-sm text-default-soft">
-          Copyright © 2025 queesia. Todos los derechos reservados.
-        </footer>
       </div>
+      <Footer />
     </div>
   );
 }
