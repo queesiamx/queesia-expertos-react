@@ -4,6 +4,8 @@ import Registro from './pages/Registro';
 import Expertos from './pages/Expertos';
 import AdminExpertos from './pages/AdminExpertos';
 import ExpertDetailPublic from './components/ExpertDetailPublic';
+import Terminos from './pages/Terminos';
+import Privacidad from './pages/Privacidad';
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -29,6 +31,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/registro" element={<Registro />} />
+        <Route path="/terminos" element={<Terminos />} />
+        <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/expertos" element={<Expertos />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
         <Route
