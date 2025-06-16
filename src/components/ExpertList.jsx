@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import ExpertCard from './ExpertCard';
-import { useNavigate } from 'react-router-dom'; // 👈 Agregamos esto
+import { useNavigate } from 'react-router-dom';
 
 function ExpertList() {
   const [expertos, setExpertos] = useState([]);
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState('');
   const [cargando, setCargando] = useState(true);
-  const navigate = useNavigate(); // 👈 Hook para redireccionar
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cargar = async () => {
@@ -34,48 +34,51 @@ function ExpertList() {
     a.localeCompare(b)
   );
 
-  const filtrados = expertos
-    .filter((e) =>
-      especialidadSeleccionada
-        ? e.especialidad.trim().toLowerCase() === especialidadSeleccionada.trim().toLowerCase()
-        : true
-    );
+  const filtrados = expertos.filter((e) =>
+    especialidadSeleccionada
+      ? e.especialidad.trim().toLowerCase() === especialidadSeleccionada.trim().toLowerCase()
+      : true
+  );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      {/* ✅ Botón para volver al inicio */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => navigate('/')}
-          className="mb-4 bg-black text-white px-4 py-2 rounded hover:bg-neutral-800 transition"
-        >
-          ← Volver al inicio
-        </button>
-      </div>
+    <div className="min-h-screen bg-primary-soft px-4 py-10">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Título */}
+        <h1 className="text-3xl font-bold text-center text-default">Expertos disponibles</h1>
 
-      <div className="flex justify-start">
-        <select
-          value={especialidadSeleccionada}
-          onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
-          className="border px-3 py-2 w-full sm:w-1/2 rounded"
-        >
-          <option value="">Todas las especialidades</option>
-          {especialidadesUnicas.map((esp) => (
-            <option key={esp} value={esp}>{esp}</option>
-          ))}
-        </select>
-      </div>
+        {/* Filtro + botón */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <select
+            value={especialidadSeleccionada}
+            onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
+            className="border border-default-soft px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-sm w-full sm:w-1/2"
+          >
+            <option value="">Todas las especialidades</option>
+            {especialidadesUnicas.map((esp) => (
+              <option key={esp} value={esp}>{esp}</option>
+            ))}
+          </select>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-        {filtrados.length === 0 ? (
-          <p className="text-center text-gray-600 col-span-full">
-            No se encontraron expertos con esa especialidad.
-          </p>
-        ) : (
-          filtrados.map((exp) => (
-            <ExpertCard key={exp.id} expert={exp} />
-          ))
-        )}
+          <button
+            onClick={() => navigate('/')}
+            className="bg-primary text-white text-sm px-4 py-2 rounded-md hover:bg-primary-strong transition"
+          >
+            ← Volver al inicio
+          </button>
+        </div>
+
+        {/* Tarjetas */}
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+          {filtrados.length === 0 ? (
+            <p className="text-center text-default-soft col-span-full">
+              No se encontraron expertos con esa especialidad.
+            </p>
+          ) : (
+            filtrados.map((exp) => (
+              <ExpertCard key={exp.id} expert={exp} />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
