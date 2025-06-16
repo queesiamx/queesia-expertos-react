@@ -18,6 +18,7 @@ export default function Registro() {
 
   const [file, setFile] = useState(null);
   const [subiendo, setSubiendo] = useState(false);
+  const [aceptoTerminos, setAceptoTerminos] = useState(false);
 
   const handleChange = (e) => {
     setForm(prev => ({
@@ -35,6 +36,11 @@ export default function Registro() {
         toast.error(`Falta el campo: ${campo}`);
         return;
       }
+    }
+
+    if (!aceptoTerminos) {
+      toast.error('Debes aceptar los términos y el aviso de privacidad.');
+      return;
     }
 
     setSubiendo(true);
@@ -87,6 +93,7 @@ export default function Registro() {
         redes: ''
       });
       setFile(null);
+      setAceptoTerminos(false);
     } catch (error) {
       console.error('Error al registrar experto:', error);
       toast.error('Error al registrar. Intenta más tarde.');
@@ -96,15 +103,23 @@ export default function Registro() {
   };
 
   return (
-    
     <>
-    
       <Toaster position="top-right" />
       <div className="container-base bg-primary-soft px-4 py-12">
+
         <form
           onSubmit={handleSubmit}
           className="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-lg space-y-5"
         >
+
+     <button
+      type="button"
+      onClick={() => window.history.back()}
+      className="mb-4 text-sm text-blue-600 hover:underline flex items-center"
+    >
+      ← Regresar
+    </button>
+
           <h1 className="text-3xl font-bold mb-6 text-center text-default">Registro de Expertos</h1>
 
           {[
@@ -141,23 +156,46 @@ export default function Registro() {
             )
           )}
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="border border-default-soft p-3 w-full rounded-lg shadow-sm bg-white"
-          />
+<label className="block font-medium text-sm text-default mb-1">
+  Foto de perfil (solo imágenes .jpg, .jpeg, .png)
+</label>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => setFile(e.target.files[0])}
+  className="border border-default-soft p-3 w-full rounded-lg shadow-sm bg-white"
+/>
+
+          <div className="flex items-start my-4">
+            <input
+              type="checkbox"
+              id="aceptoTerminos"
+              checked={aceptoTerminos}
+              onChange={(e) => setAceptoTerminos(e.target.checked)}
+              className="mt-1 mr-2"
+              required
+            />
+            <label htmlFor="aceptoTerminos" className="text-sm">
+              He leído y acepto los{' '}
+              <a href="/terminos" target="_blank" className="text-blue-600 underline">términos y condiciones</a>{' '}
+              y el{' '}
+              <a href="/privacidad" target="_blank" className="text-blue-600 underline">aviso de privacidad</a>.
+            </label>
+          </div>
 
           <button
             type="submit"
-            disabled={subiendo}
+            disabled={subiendo || !aceptoTerminos}
             className={`w-full bg-primary text-white font-semibold py-3 rounded-lg hover:bg-primary-strong transition ${
-              subiendo ? 'opacity-50 cursor-not-allowed' : ''
+              subiendo || !aceptoTerminos ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
             {subiendo ? 'Enviando...' : 'Registrar experto'}
           </button>
+          
+
         </form>
+        
       </div>
     </>
   );

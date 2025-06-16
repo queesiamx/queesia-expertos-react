@@ -4,9 +4,8 @@ import { db, auth } from '../firebase';
 import ExpertDetailAdmin from '../components/ExpertDetailAdmin';
 import { Toaster } from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom'; // ✅ Se elimina Navigate porque ya no lo usas
+import { useNavigate } from 'react-router-dom';
 
-// ✅ Correos autorizados
 const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
 export default function AdminExpertos() {
@@ -18,7 +17,6 @@ export default function AdminExpertos() {
 
   const navigate = useNavigate();
 
-  // ✅ Protección: verificar sesión y correo
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user && adminEmails.includes(user.email)) {
@@ -32,7 +30,6 @@ export default function AdminExpertos() {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Cargar expertos si es admin
   useEffect(() => {
     const cargarExpertos = async () => {
       try {
@@ -66,21 +63,18 @@ export default function AdminExpertos() {
     setSeleccionado(null);
   };
 
-  // Mostrar loader mientras se verifica
   if (!verificado) {
     return <p className="p-8">Verificando acceso...</p>;
   }
 
-  // No autorizado: no mostrar nada
   if (!autorizado) {
     return null;
   }
 
   return (
-    <div className="min-h-screen px-6 py-8 bg-gray-50">
+    <div className="min-h-screen bg-primary-soft px-6 py-10">
       <Toaster position="top-right" />
 
-      {/* ✅ Botón para cerrar sesión y redirigir */}
       <button
         onClick={async () => {
           try {
@@ -90,12 +84,14 @@ export default function AdminExpertos() {
             console.error("Error al cerrar sesión:", error);
           }
         }}
-        className="mb-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+        className="mb-6 bg-black text-white px-4 py-2 rounded hover:bg-blue-700 transition"
       >
         🔒 Cerrar sesión y volver al inicio
       </button>
 
-      <h1 className="text-3xl font-bold mb-6">Panel de Administración de Expertos</h1>
+      <h1 className="text-3xl font-bold text-default mb-6">
+        Panel de Administración de Expertos
+      </h1>
 
       {cargando ? (
         <p>Cargando expertos...</p>
@@ -109,17 +105,19 @@ export default function AdminExpertos() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {expertos.map((exp) => (
-            <div
-              key={exp.id}
-              className="p-4 bg-white rounded shadow hover:shadow-md cursor-pointer border"
-              onClick={() => setSeleccionado(exp)}
-            >
-              <h3 className="text-lg font-semibold">{exp.nombre}</h3>
-              <p className="text-sm text-gray-600">{exp.especialidad}</p>
-              <p className={`mt-2 text-xs ${exp.aprobado ? 'text-green-600' : 'text-yellow-600'}`}>
-                {exp.aprobado ? 'Aprobado' : 'Pendiente'}
-              </p>
-            </div>
+
+        <div
+          key={exp.id}
+          className="p-4 bg-white rounded shadow hover:shadow-md cursor-pointer border"
+          onClick={() => setSeleccionado(exp)}
+        >
+          <h3 className="text-lg font-semibold">{exp.nombre}</h3>
+          <p className="text-sm text-gray-600">{exp.especialidad}</p>
+          <p className={`mt-2 text-xs ${exp.aprobado ? 'text-green-600' : 'text-yellow-600'}`}>
+            {exp.aprobado ? 'Aprobado' : 'Pendiente'}
+          </p>
+        </div>
+
           ))}
         </div>
       )}
