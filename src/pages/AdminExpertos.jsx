@@ -64,7 +64,7 @@ export default function AdminExpertos() {
   };
 
   if (!verificado) {
-    return <p className="p-8">Verificando acceso...</p>;
+    return <p className="p-8 font-sans text-default">Verificando acceso...</p>;
   }
 
   if (!autorizado) {
@@ -72,7 +72,7 @@ export default function AdminExpertos() {
   }
 
   return (
-    <div className="min-h-screen bg-primary-soft px-6 py-10">
+    <div className="min-h-screen bg-primary-soft px-6 py-10 font-sans">
       <Toaster position="top-right" />
 
       <button
@@ -84,17 +84,17 @@ export default function AdminExpertos() {
             console.error("Error al cerrar sesión:", error);
           }
         }}
-        className="mb-6 bg-black text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        className="mb-6 bg-black text-white px-4 py-2 rounded hover:bg-default transition"
       >
         🔒 Cerrar sesión y volver al inicio
       </button>
 
-      <h1 className="text-3xl font-bold text-default mb-6">
+      <h1 className="text-3xl font-bold text-default mb-6 font-montserrat">
         Panel de Administración de Expertos
       </h1>
 
       {cargando ? (
-        <p>Cargando expertos...</p>
+        <p className="text-default-soft">Cargando expertos...</p>
       ) : seleccionado ? (
         <ExpertDetailAdmin
           expert={seleccionado}
@@ -105,19 +105,17 @@ export default function AdminExpertos() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {expertos.map((exp) => (
-
-        <div
-          key={exp.id}
-          className="p-4 bg-white rounded shadow hover:shadow-md cursor-pointer border"
-          onClick={() => setSeleccionado(exp)}
-        >
-          <h3 className="text-lg font-semibold">{exp.nombre}</h3>
-          <p className="text-sm text-gray-600">{exp.especialidad}</p>
-          <p className={`mt-2 text-xs ${exp.aprobado ? 'text-green-600' : 'text-yellow-600'}`}>
-            {exp.aprobado ? 'Aprobado' : 'Pendiente'}
-          </p>
-        </div>
-
+            <div
+              key={exp.id}
+              className="p-4 bg-white rounded-2xl shadow hover:shadow-md cursor-pointer border"
+              onClick={() => setSeleccionado(exp)}
+            >
+              <h3 className="text-lg font-semibold text-default">{exp.nombre}</h3>
+              <p className="text-sm text-default-soft">{exp.especialidad}</p>
+              <p className={`mt-2 text-xs ${exp.aprobado ? 'text-green-600' : 'text-yellow-600'}`}>
+                {exp.aprobado ? 'Aprobado' : 'Pendiente'}
+              </p>
+            </div>
           ))}
         </div>
       )}

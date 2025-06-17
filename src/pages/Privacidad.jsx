@@ -2,14 +2,16 @@ import React from 'react';
 
 export default function Privacidad() {
   return (
-    <div className="min-h-screen bg-white px-4 py-10 text-gray-800 font-sans">
-      <div className="max-w-4xl mx-auto p-8 rounded-2xl shadow-md bg-white">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">
-          Aviso de privacidad
+    <div className="min-h-screen bg-primary-soft px-4 py-12 text-gray-800 font-sans">
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-md">
+        <h1 className="text-3xl font-bold mb-6 text-center text-default">
+          Aviso de Privacidad
         </h1>
 
-        <article className="space-y-10">
-          <p><strong>Última actualización:</strong> 14 de mayo de 2025</p>
+        <article className="space-y-10 text-default">
+          <p className="text-sm text-default-soft">
+            <strong>Última actualización:</strong> 14 de mayo de 2025
+          </p>
 
           <section>
             <h2 className="text-2xl font-semibold mb-2">1. Responsable del tratamiento de los datos</h2>
@@ -40,7 +42,7 @@ export default function Privacidad() {
               <li>Brindar soporte técnico.</li>
               <li>Enviar notificaciones sobre tu actividad en Queesia.</li>
             </ul>
-            <p className="mt-2"><strong>No compartimos tus datos con terceros sin tu consentimiento.</strong></p>
+            <p className="mt-2 font-semibold">No compartimos tus datos con terceros sin tu consentimiento.</p>
           </section>
 
           <section>

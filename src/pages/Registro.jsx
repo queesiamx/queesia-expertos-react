@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Toaster, toast } from 'react-hot-toast';
+import emailjs from '@emailjs/browser';
+
 
 export default function Registro() {
   const [form, setForm] = useState({
@@ -79,7 +81,18 @@ export default function Registro() {
       };
 
       await addDoc(collection(db, 'experts'), nuevoExperto);
-      toast.success('¡Registro enviado con éxito!');
+
+      await emailjs.send(
+        'service_6xnal3g',         // 👉 TU SERVICE ID (de EmailJS)
+        'template_cbwns4s',        // 👉 TU TEMPLATE ID (plantilla auto-reply)
+        {
+          nombre: form.nombre,
+          email: form.email
+        },
+        '9SxO0lF9IKHaknc4Q'       // 👉 TU PUBLIC KEY (de EmailJS)
+      );
+
+      toast.success('Tu solicitud ha sido enviada. Quesia validará tu perfil y nos pondremos en contacto contigo a la brevedad.');
 
       setForm({
         nombre: '',
@@ -105,7 +118,7 @@ export default function Registro() {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="container-base bg-primary-soft px-4 py-12">
+      <div className="container-base bg-primary-soft px-4 py-12 font-sans">
 
         <form
           onSubmit={handleSubmit}
@@ -120,7 +133,7 @@ export default function Registro() {
       ← Regresar
     </button>
 
-          <h1 className="text-3xl font-bold mb-6 text-center text-default">Registro de Expertos</h1>
+          <h1 className="text-3xl font-bold mb-6 text-center text-default font-montserrat">Registro de Expertos</h1>
 
           {[
             { name: 'nombre', placeholder: 'Nombre completo', type: 'text' },
