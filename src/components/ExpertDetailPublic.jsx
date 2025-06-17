@@ -25,7 +25,7 @@ export default function ExpertDetailPublic() {
   if (!expert) return <p className="p-6">Experto no encontrado.</p>;
 
   return (
-    <div className="min-h-screen bg-primary-soft px-4 py-10">
+    <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
         <button
           onClick={() => navigate('/expertos')}
@@ -34,7 +34,9 @@ export default function ExpertDetailPublic() {
           ← Volver al listado
         </button>
 
-        <h1 className="text-2xl font-bold text-default">{expert.nombre}</h1>
+        <h1 className="text-3xl font-bold text-default font-montserrat">
+          {expert.nombre}
+        </h1>
         <p className="text-default-soft">{expert.especialidad}</p>
 
         {expert.fotoPerfilURL && (

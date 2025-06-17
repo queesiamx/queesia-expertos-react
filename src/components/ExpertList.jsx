@@ -41,17 +41,19 @@ function ExpertList() {
   );
 
   return (
-    <div className="min-h-screen bg-primary-soft px-4 py-10">
+    <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Título */}
-        <h1 className="text-3xl font-bold text-center text-default">Expertos disponibles</h1>
+        <h1 className="text-4xl font-bold text-center text-default font-montserrat">
+          Expertos disponibles
+        </h1>
 
         {/* Filtro + botón */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <select
             value={especialidadSeleccionada}
             onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
-            className="border border-default-soft px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-sm w-full sm:w-1/2"
+            className="border border-default-soft px-4 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-sm w-full sm:w-1/2"
           >
             <option value="">Todas las especialidades</option>
             {especialidadesUnicas.map((esp) => (
@@ -61,7 +63,7 @@ function ExpertList() {
 
           <button
             onClick={() => navigate('/')}
-            className="bg-primary text-white text-sm px-4 py-2 rounded-md hover:bg-primary-strong transition"
+            className="bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-strong transition"
           >
             ← Volver al inicio
           </button>
