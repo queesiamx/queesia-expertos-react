@@ -17,9 +17,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Raleway", ...defaultTheme.fontFamily.sans],
-        montserrat: ["'Montserrat'", "sans-serif"],
+        sans: ['Raleway', 'ui-sans-serif', 'system-ui'],
+        montserrat: ['Montserrat', 'ui-sans-serif'],
       },
+      
       colors: {
         default: {
           DEFAULT: "#2D2D2D",

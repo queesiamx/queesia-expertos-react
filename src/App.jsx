@@ -6,6 +6,9 @@ import AdminExpertos from './pages/AdminExpertos';
 import ExpertDetailPublic from './components/ExpertDetailPublic';
 import Terminos from './pages/Terminos';
 import Privacidad from './pages/Privacidad';
+import Login from "./pages/login";
+import ExpertDashboard from "./pages/ExpertDashboard";
+import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -28,6 +31,7 @@ function App() {
 
   return (
     <Router>
+      <Toaster />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/registro" element={<Registro />} />
@@ -43,6 +47,8 @@ function App() {
               : <Navigate to="/" replace />
           }
         />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<ExpertDashboard />} />
       </Routes>
     </Router>
   );
