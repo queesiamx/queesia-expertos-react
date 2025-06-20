@@ -22,11 +22,15 @@ function ExpertList() {
     cargar();
   }, []);
 
+  // 🛡️ Evitar trim() sobre valores no string
+  const normalize = (val) =>
+    typeof val === 'string' ? val.trim().toLowerCase() : '';
+
   const especialidadMap = new Map();
   expertos.forEach((e) => {
-    const key = e.especialidad.trim().toLowerCase();
-    if (!especialidadMap.has(key)) {
-      especialidadMap.set(key, e.especialidad.trim());
+    const key = normalize(e.especialidad);
+    if (key && !especialidadMap.has(key)) {
+      especialidadMap.set(key, e.especialidad?.trim() || '');
     }
   });
 
@@ -34,21 +38,18 @@ function ExpertList() {
     a.localeCompare(b)
   );
 
-  const filtrados = expertos.filter((e) =>
-    especialidadSeleccionada
-      ? e.especialidad.trim().toLowerCase() === especialidadSeleccionada.trim().toLowerCase()
-      : true
-  );
+  const filtrados = expertos.filter((e) => {
+    if (!especialidadSeleccionada) return true;
+    return normalize(e.especialidad) === normalize(especialidadSeleccionada);
+  });
 
   return (
     <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Título */}
         <h1 className="text-4xl font-bold text-center text-default font-montserrat">
           Expertos disponibles
         </h1>
 
-        {/* Filtro + botón */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <select
             value={especialidadSeleccionada}
@@ -69,7 +70,6 @@ function ExpertList() {
           </button>
         </div>
 
-        {/* Tarjetas */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
           {filtrados.length === 0 ? (
             <p className="text-center text-default-soft col-span-full">

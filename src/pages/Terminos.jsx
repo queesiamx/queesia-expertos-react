@@ -17,7 +17,7 @@ export default function Terminos() {
 
             <ul className="list-disc pl-6 space-y-2 mt-4 text-default">
               <li>
-                <strong>Naturaleza del servicio:</strong> queesia.com es una plataforma que conecta expertos con usuarios. No garantizamos el resultado del servicio.
+                <strong>Naturaleza del servicio:</strong> Queesia.com es una plataforma que conecta expertos con usuarios. No garantizamos el resultado del servicio.
               </li>
               <li>
                 <strong>Pagos:</strong> se realizan a través de pasarelas seguras. Queesia retiene una comisión del monto pagado.
@@ -48,16 +48,21 @@ export default function Terminos() {
                 <strong>Publicación del perfil:</strong> autorizas la publicación de tu información profesional en la plataforma.
               </li>
               <li>
-                <strong>Comisión y pagos:</strong> queesia retiene un 20% por cada venta. El pago puede dividirse en 50%-50% sujeto a validación del cliente.
+                <strong>Comisión y pagos:</strong> Queesia retiene un 20% por cada venta. El pago puede dividirse en 50%-50% sujeto a validación del cliente.
               </li>
               <li>
                 <strong>Propiedad intelectual:</strong> debes tener los derechos sobre los materiales ofrecidos.
               </li>
+
+              <li>
+                <strong>Facturación:</strong> los expertos que reciban pagos a través de Quesia deben emitir una factura fiscal válida a nombre de Quesia. La emisión de esta factura es indispensable para liberar el pago correspondiente.
+              </li>
+
               <li>
                 <strong>Responsabilidades:</strong> el incumplimiento puede llevar a suspensión de pagos o del perfil.
               </li>
               <li>
-                <strong>Protección de datos:</strong> queesia resguarda tu información conforme a la ley mexicana.
+                <strong>Protección de datos:</strong> Queesia resguarda tu información conforme a la ley mexicana.
               </li>
             </ul>
           </section>
