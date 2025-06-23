@@ -8,6 +8,8 @@ import Terminos from './pages/Terminos';
 import Privacidad from './pages/Privacidad';
 import Login from "./pages/login";
 import ExpertDashboard from "./pages/ExpertDashboard";
+import PagoExitoso from './pages/PagoExitoso';
+import PagoCancelado from './pages/PagoCancelado';
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
@@ -49,6 +51,8 @@ function App() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<ExpertDashboard />} />
+        <Route path="/pago-exitoso" element={<PagoExitoso />} />
+        <Route path="/pago-cancelado" element={<PagoCancelado />} />
       </Routes>
     </Router>
   );

@@ -14,6 +14,9 @@ import {
   Phone,
   Globe,
 } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function ExpertDetailPublic() {
   const { id } = useParams();
@@ -32,6 +35,23 @@ export default function ExpertDetailPublic() {
     };
     obtener();
   }, [id]);
+
+  const handleBuy = async (servicio) => {
+    const stripe = await stripePromise;
+
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: servicio.titulo || 'Servicio de experto',
+        description: servicio.descripcion || '',
+        amount: parseFloat(servicio.precio),
+      }),
+    });
+
+    const session = await response.json();
+    await stripe.redirectToCheckout({ sessionId: session.id });
+  };
 
   const getIconByTipo = (tipo) => {
     const lower = tipo?.toLowerCase();
@@ -122,14 +142,14 @@ export default function ExpertDetailPublic() {
                       {"'"}
                     </span>
                   </p>
+
                   {serv.descripcion && (
                     <p className="italic text-default-soft ml-6 mt-1">
                       {serv.descripcion}
                     </p>
                   )}
 
-                  <p className="flex items-center mt-2">
-                    
+                  <div className="flex flex-wrap items-center justify-between mt-3">
                     <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
                       {serv.precio
                         ? new Intl.NumberFormat('es-MX', {
@@ -138,46 +158,21 @@ export default function ExpertDetailPublic() {
                           }).format(parseFloat(serv.precio))
                         : 'Precio no especificado'}
                     </span>
-                  </p>
+
+                    {serv.precio && (
+                      <button
+                        onClick={() => handleBuy(serv)}
+                        className="mt-2 sm:mt-0 bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-medium"
+                      >
+                        Comprar
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-
-        <div className="text-sm text-default-soft space-y-1">
-          {expert.email && (
-            <p className="flex items-center">
-              <Mail className="w-4 h-4 mr-2 text-gray-500" />
-              <strong>Correo:</strong> {expert.email}
-            </p>
-          )}
-          {expert.telefono && (
-            <p className="flex items-center">
-              <Phone className="w-4 h-4 mr-2 text-gray-500" />
-              <strong>Teléfono:</strong> {expert.telefono}
-            </p>
-          )}
-          {expert.redes && (
-            <p className="flex items-center">
-              <Globe className="w-4 h-4 mr-2 text-gray-500" />
-              <strong>Redes:</strong> {expert.redes}
-            </p>
-          )}
-
-          {expert.linkedin && (
-            <p className="text-sm mt-2">
-              <a
-                href={expert.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                Ver perfil profesional
-              </a>
-            </p>
-          )}
-        </div>
       </div>
     </div>
   );
