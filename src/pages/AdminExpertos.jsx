@@ -2,9 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import ExpertDetailAdmin from '../components/ExpertDetailAdmin';
+import AdminNavbar from '../components/AdminNavbar';
 import { Toaster } from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import emailjs from '@emailjs/browser';
+
 
 const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
@@ -30,26 +33,32 @@ export default function AdminExpertos() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const cargarExpertos = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, 'experts'));
-        const lista = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setExpertos(lista);
-      } catch (e) {
-        console.error('Error al cargar expertos:', e);
-      } finally {
-        setCargando(false);
-      }
-    };
+useEffect(() => {
+  const cargarDatos = async () => {
+    try {
+      const snapshotExpertos = await getDocs(collection(db, 'experts'));
+      const listaExpertos = snapshotExpertos.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setExpertos(listaExpertos);
 
-    if (autorizado) {
-      cargarExpertos();
+      const snapshotConsultas = await getDocs(collection(db, 'consultasModeradas'));
+      const listaConsultas = snapshotConsultas.docs.map((doc) => doc.data());
+      setConsultas(listaConsultas); // ← nuevo estado que crearás abajo
+    } catch (e) {
+      console.error('Error al cargar datos:', e);
+    } finally {
+      setCargando(false);
     }
-  }, [autorizado]);
+  };
+
+  if (autorizado) {
+    cargarDatos();
+  }
+}, [autorizado]);
+
+
 
   const handleActualizar = (expertoActualizado) => {
     setExpertos((prev) =>
@@ -63,6 +72,21 @@ export default function AdminExpertos() {
     setSeleccionado(null);
   };
 
+  const [consultas, setConsultas] = useState([]);
+  const [filtro, setFiltro] = useState('todos'); // valores: 'todos', 'aprobados', 'pendientes'
+  const [busqueda, setBusqueda] = useState('');
+
+
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
   if (!verificado) {
     return <p className="p-8 font-sans text-default">Verificando acceso...</p>;
   }
@@ -72,26 +96,76 @@ export default function AdminExpertos() {
   }
 
   return (
-    <div className="min-h-screen bg-primary-soft px-6 py-10 font-sans">
-      <Toaster position="top-right" />
+    
+    <div className="min-h-screen bg-primary-soft px-6 py-10 font-sans mt-[72px]">
+      <div className="fixed inset-0 bg-primary-soft -z-10"></div>
 
-      <button
-        onClick={async () => {
-          try {
-            await auth.signOut();
-            navigate('/');
-          } catch (error) {
-            console.error("Error al cerrar sesión:", error);
-          }
-        }}
-        className="mb-6 bg-black text-white px-4 py-2 rounded hover:bg-default transition"
-      >
-        🔒 Cerrar sesión y volver al inicio
-      </button>
+      <Toaster position="top-right" />
+      <AdminNavbar onLogout={handleLogout} />
 
       <h1 className="text-3xl font-bold text-default mb-6 font-montserrat">
         Panel de Administración de Expertos
       </h1>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+  <button
+    onClick={() => setFiltro('todos')}
+    className={`px-4 py-1 rounded-full border ${
+      filtro === 'todos' ? 'bg-blue-600 text-white' : 'bg-white text-default'
+    }`}
+  >
+    Todos
+  </button>
+  <button
+    onClick={() => setFiltro('aprobados')}
+    className={`px-4 py-1 rounded-full border ${
+      filtro === 'aprobados' ? 'bg-green-600 text-white' : 'bg-white text-default'
+    }`}
+  >
+    Aprobados
+  </button>
+  <button
+    onClick={() => setFiltro('pendientes')}
+    className={`px-4 py-1 rounded-full border ${
+      filtro === 'pendientes' ? 'bg-yellow-600 text-white' : 'bg-white text-default'
+    }`}
+  >
+    Pendientes
+  </button>
+            <input
+  type="text"
+  placeholder="Buscar por nombre o especialidad..."
+  value={busqueda}
+  onChange={(e) => setBusqueda(e.target.value)}
+  className="w-full md:w-1/2 px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+/>
+</div>
+
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+  <div className="bg-white rounded-xl shadow p-4 text-center">
+    <p className="text-2xl font-bold text-primary">{expertos.length}</p>
+    <p className="text-sm text-default-soft">Expertos totales</p>
+  </div>
+  <div className="bg-white rounded-xl shadow p-4 text-center">
+    <p className="text-2xl font-bold text-green-600">
+      {expertos.filter(e => e.aprobado).length}
+    </p>
+    <p className="text-sm text-default-soft">Aprobados</p>
+  </div>
+  <div className="bg-white rounded-xl shadow p-4 text-center">
+    <p className="text-2xl font-bold text-yellow-600">
+      {expertos.filter(e => !e.aprobado).length}
+    </p>
+    <p className="text-sm text-default-soft">Pendientes</p>
+  </div>
+  <div className="bg-white rounded-xl shadow p-4 text-center">
+    <p className="text-2xl font-bold text-red-600">{consultas.length}</p>
+    <p className="text-sm text-default-soft">Consultas pendientes</p>
+  </div>
+</div>
+
 
       {cargando ? (
         <p className="text-default-soft">Cargando expertos...</p>
@@ -104,7 +178,21 @@ export default function AdminExpertos() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {expertos.map((exp) => (
+          {expertos
+            .filter((exp) => {
+              // Filtro por estado
+              if (filtro === 'aprobados') return exp.aprobado === true;
+              if (filtro === 'pendientes') return exp.aprobado !== true;
+              return true;
+            })
+            .filter((exp) => {
+              // Filtro por búsqueda
+              const texto = `${exp.nombre} ${exp.especialidad}`.toLowerCase();
+              return texto.includes(busqueda.toLowerCase());
+            })
+            .map((exp) => (
+
+
             <div
               key={exp.id}
               className="p-4 bg-white rounded-2xl shadow hover:shadow-md cursor-pointer border"

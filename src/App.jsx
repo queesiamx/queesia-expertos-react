@@ -10,6 +10,9 @@ import Login from "./pages/login";
 import ExpertDashboard from "./pages/ExpertDashboard";
 import PagoExitoso from './pages/PagoExitoso';
 import PagoCancelado from './pages/PagoCancelado';
+import AdminConsultas from './pages/AdminConsultas';
+import ConsultasRecibidas from "./pages/consultasRecibidas";
+import ResponderConsulta from './pages/ResponderConsulta';
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
@@ -53,6 +56,10 @@ function App() {
         <Route path="/dashboard" element={<ExpertDashboard />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/pago-cancelado" element={<PagoCancelado />} />
+        <Route path="/admin/expertos" element={<AdminExpertos />} />
+        <Route path="/admin/consultas" element={<AdminConsultas />} />
+        <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} /> {/* ✅ NUEVA RUTA */}
+        <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
       </Routes>
     </Router>
   );

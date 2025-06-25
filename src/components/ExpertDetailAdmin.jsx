@@ -14,24 +14,31 @@ import {
 } from 'lucide-react';
 
 function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
-  const cambiarAprobacion = async (nuevoEstado) => {
-    if (!expert.formularioCompleto) {
-      toast.error("Este experto no ha completado su formulario.");
-      return;
-    }
+ const cambiarAprobacion = async (nuevoEstado) => {
+  await enviarCorreoEstadoExperto(
+    expert.email,
+    expert.nombre,
+    nuevoEstado ? 'aprobado' : 'rechazado'
+  );
 
-    try {
-      await updateDoc(doc(db, 'experts', expert.id), {
-        aprobado: nuevoEstado,
-      });
+  if (!expert.formularioCompleto) {
+    toast.error("Este experto no ha completado su formulario.");
+    return;
+  }
 
-      toast.success(`Experto ${nuevoEstado ? 'aprobado' : 'rechazado'} correctamente.`);
-      onUpdate({ ...expert, aprobado: nuevoEstado });
-    } catch (e) {
-      console.error("Error al actualizar aprobación:", e);
-      toast.error('Error al actualizar aprobación.');
-    }
-  };
+  try {
+    await updateDoc(doc(db, 'experts', expert.id), {
+      aprobado: nuevoEstado,
+    });
+
+    toast.success(`Experto ${nuevoEstado ? 'aprobado' : 'rechazado'} correctamente.`);
+    onUpdate({ ...expert, aprobado: nuevoEstado });
+  } catch (e) {
+    console.error("Error al actualizar aprobación:", e);
+    toast.error('Error al actualizar aprobación.');
+  }
+};
+
 
   const eliminar = async () => {
     const confirmar = confirm('¿Estás seguro de que deseas eliminar este experto?');
@@ -45,6 +52,34 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
       toast.error('Error al eliminar.');
     }
   };
+
+
+    const enviarCorreoEstadoExperto = async (email, nombre, estado) => {
+    const mensaje =
+      estado === 'aprobado'
+        ? '¡Bienvenido! Ya puedes aparecer públicamente en el directorio de expertos. Gracias por formar parte de Quesia.'
+        : 'Te invitamos a corregir tus datos y volver a enviar el formulario en otro momento.';
+  
+    const templateParams = {
+      nombre,
+      estado,
+      mensaje_personalizado: mensaje,
+      to_email: email,
+    };
+  
+    try {
+      await emailjs.send(
+        'service_vdpzkm8',       // tu SERVICE_ID
+        'template_n0pj59s',       // tu TEMPLATE_ID
+        templateParams,
+        '9SxO0lF9IKHaknc4Q'          // tu PUBLIC_KEY
+      );
+      console.log('Correo enviado exitosamente');
+    } catch (error) {
+      console.error('Error al enviar el correo:', error);
+    }
+  };
+
 
   const getIconByTipo = (tipo) => {
     const lower = tipo?.toLowerCase();
