@@ -78,3 +78,8 @@ button:focus-visible {
 .form-base {
   @apply w-full bg-white p-6 rounded-xl shadow-md space-y-6;
 }
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  background-color: #fff3b0; /* tu color de fondo o el de bg-primary-soft */
+}

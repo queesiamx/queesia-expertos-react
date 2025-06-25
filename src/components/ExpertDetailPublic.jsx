@@ -1,20 +1,23 @@
 // src/components/ExpertDetailPublic.jsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  serverTimestamp
+} from 'firebase/firestore';
 import {
   BookOpen,
   GraduationCap,
   HelpCircle,
   FileText,
-  DollarSign,
-  CheckCircle,
-  Mail,
-  Phone,
-  Globe,
+  CheckCircle
 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -23,6 +26,9 @@ export default function ExpertDetailPublic() {
   const navigate = useNavigate();
   const [expert, setExpert] = useState(null);
   const [cargando, setCargando] = useState(true);
+  const [consulta, setConsulta] = useState('');
+  const [mensajeConfirmacion, setMensajeConfirmacion] = useState('');
+  const [usuario, setUsuario] = useState(null);
 
   useEffect(() => {
     const obtener = async () => {
@@ -36,21 +42,54 @@ export default function ExpertDetailPublic() {
     obtener();
   }, [id]);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUsuario(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const handleBuy = async (servicio) => {
     const stripe = await stripePromise;
-
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: servicio.titulo || 'Servicio de experto',
         description: servicio.descripcion || '',
-        amount: parseFloat(servicio.precio),
-      }),
+        amount: parseFloat(servicio.precio)
+      })
     });
-
     const session = await response.json();
     await stripe.redirectToCheckout({ sessionId: session.id });
+  };
+
+  const handleEnviarConsulta = async () => {
+    if (!consulta.trim() || !usuario) return;
+    try {
+      await addDoc(collection(db, 'consultasModeradas'), {
+        consulta,
+        estado: 'pendiente',
+        expertoId: expert.id,
+        expertoNombre: expert.nombre,
+        nombre: usuario.displayName || 'Anónimo',
+        correo: usuario.email,
+        timestamp: serverTimestamp()
+      });
+      setMensajeConfirmacion('Consulta enviada correctamente.');
+      setConsulta('');
+    } catch (error) {
+      console.error('Error al enviar consulta:', error);
+    }
+  };
+
+  const handleLoginConGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+    }
   };
 
   const getIconByTipo = (tipo) => {
@@ -130,23 +169,17 @@ export default function ExpertDetailPublic() {
             </h2>
             <div className="grid gap-4">
               {expert.servicios.map((serv, i) => (
-                <div
-                  key={i}
-                  className="bg-gray-100 border border-gray-300 rounded-lg p-4 shadow-sm"
-                >
+                <div key={i} className="bg-gray-100 border border-gray-300 rounded-lg p-4 shadow-sm">
                   <p className="flex items-center font-bold text-default mb-1">
                     {getIconByTipo(serv.tipo)}
                     <span className="font-bold text-default">
-                      {serv.tipo ? `${serv.tipo} '` : 'Servicio '}
-                      {serv.titulo || 'Sin título'}
-                      {"'"}
+                      {serv.tipo ? `${serv.tipo} "` : 'Servicio '}
+                      {serv.titulo || 'Sin título'}"
                     </span>
                   </p>
 
                   {serv.descripcion && (
-                    <p className="italic text-default-soft ml-6 mt-1">
-                      {serv.descripcion}
-                    </p>
+                    <p className="italic text-default-soft ml-6 mt-1">{serv.descripcion}</p>
                   )}
 
                   <div className="flex flex-wrap items-center justify-between mt-3">
@@ -154,7 +187,7 @@ export default function ExpertDetailPublic() {
                       {serv.precio
                         ? new Intl.NumberFormat('es-MX', {
                             style: 'currency',
-                            currency: 'MXN',
+                            currency: 'MXN'
                           }).format(parseFloat(serv.precio))
                         : 'Precio no especificado'}
                     </span>
@@ -168,6 +201,47 @@ export default function ExpertDetailPublic() {
                       </button>
                     )}
                   </div>
+
+                  {serv.tipo?.toLowerCase().includes('consulta') && (
+  <div className="bg-white p-4 mt-6 rounded-2xl shadow">
+    <h3 className="text-xl font-bold mb-2 text-gray-900">Enviar consulta al experto</h3>
+{usuario ? (
+  <>
+    <p className="text-sm text-default-soft mb-2">
+      Esta consulta será moderada por Quesia para determinar su complejidad y si requiere pago o puede resolverse gratuitamente.
+    </p>
+    <textarea
+      className="w-full border border-gray-300 rounded-lg p-2 mb-2"
+      rows="4"
+      placeholder="Escribe tu consulta aquí..."
+      value={consulta}
+      onChange={(e) => setConsulta(e.target.value)}
+    />
+    <button
+      className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+      onClick={handleEnviarConsulta}
+    >
+      Enviar consulta
+    </button>
+    {mensajeConfirmacion && (
+      <p className="mt-2 text-sm text-green-600">{mensajeConfirmacion}</p>
+    )}
+  </>
+) : (
+  <div className="text-center text-default-soft text-sm">
+    <p className="mb-2">Inicia sesión para poder enviar una consulta</p>
+    <button
+      onClick={handleLoginConGoogle}
+      className="bg-black text-white px-4 py-2 rounded"
+    >
+      Iniciar con Google
+    </button>
+  </div>
+)}
+
+  </div>
+)}
+
                 </div>
               ))}
             </div>

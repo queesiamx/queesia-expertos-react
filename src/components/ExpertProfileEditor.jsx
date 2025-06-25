@@ -16,7 +16,12 @@ export default function ExpertProfileEditor({ onClose, onSave }) {
     redes: "",
     servicios: [],
     precios: "",
+    fotoPerfilURL: "",
+    fotoPerfilPublicId: ""
   });
+
+  const [nuevaImagen, setNuevaImagen] = useState(null);
+  const [previewURL, setPreviewURL] = useState("");
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -33,6 +38,7 @@ export default function ExpertProfileEditor({ onClose, onSave }) {
             ...data,
             servicios: Array.isArray(data.servicios) ? data.servicios : [],
           });
+          setPreviewURL(data.fotoPerfilURL || "");
         }
       } catch (e) {
         toast.error("Error al cargar datos del perfil");
@@ -66,17 +72,49 @@ export default function ExpertProfileEditor({ onClose, onSave }) {
     setFormData((prev) => ({ ...prev, servicios: nuevos }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNuevaImagen(file);
+      setPreviewURL(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const user = auth.currentUser;
     if (!user) return;
 
     try {
+      if (nuevaImagen) {
+        if (formData.fotoPerfilPublicId) {
+          await fetch(import.meta.env.VITE_CLOUDINARY_DELETE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ public_id: formData.fotoPerfilPublicId })
+          });
+        }
+
+        const data = new FormData();
+        data.append("file", nuevaImagen);
+        data.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`, {
+          method: "POST",
+          body: data,
+        });
+
+        const imgData = await res.json();
+        formData.fotoPerfilURL = imgData.secure_url;
+        formData.fotoPerfilPublicId = imgData.public_id;
+      }
+
       const ref = doc(db, "experts", user.uid);
       await updateDoc(ref, {
         ...formData,
         formularioCompleto: true,
       });
+
       toast.success("Perfil actualizado correctamente");
       onSave(formData);
     } catch (e) {
@@ -88,7 +126,19 @@ export default function ExpertProfileEditor({ onClose, onSave }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">Editar perfil</h2>
+
+      {/* Avatar Preview */}
+      <div className="flex justify-center mb-4">
+        <img
+          src={previewURL || "/default-avatar.png"}
+          alt="Preview"
+          className="w-32 h-32 object-cover rounded-full"
+        />
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
+        <input type="file" accept="image/*" onChange={handleImageChange} className="block" />
+
         <input type="text" name="nombre" placeholder="Nombre" value={formData.nombre} onChange={handleChange} className="w-full border px-4 py-2 rounded" required />
         <input type="text" name="especialidad" placeholder="Especialidad" value={formData.especialidad} onChange={handleChange} className="w-full border px-4 py-2 rounded" required />
         <textarea name="experiencia" placeholder="Experiencia" value={formData.experiencia} onChange={handleChange} className="w-full border px-4 py-2 rounded" rows={3} />
@@ -98,43 +148,16 @@ export default function ExpertProfileEditor({ onClose, onSave }) {
         <input type="text" name="telefono" placeholder="Teléfono" value={formData.telefono} onChange={handleChange} className="w-full border px-4 py-2 rounded" />
         <input type="text" name="redes" placeholder="Redes sociales" value={formData.redes} onChange={handleChange} className="w-full border px-4 py-2 rounded" />
 
+        {/* Servicios */}
         <div>
           <h3 className="text-lg font-semibold">Servicios ofrecidos</h3>
           {formData.servicios.map((serv, index) => (
             <div key={index} className="flex flex-col md:flex-row gap-2 items-center mb-2">
-              <input
-                type="text"
-                value={serv.tipo}
-                placeholder="Tipo (ej. Manual, Curso, Asesoría)"
-                onChange={(e) => handleServicioChange(index, "tipo", e.target.value)}
-                className="border px-2 py-1 rounded w-full md:w-1/3"
-              />
-              <input
-                type="text"
-                placeholder="Título del servicio"
-                className="border px-2 py-1 rounded w-full md:w-1/2"
-                value={serv.titulo || ""}
-                onChange={(e) => handleServicioChange(index, "titulo", e.target.value)}
-              />
-
-
-              <input
-                type="text"
-                value={serv.descripcion}
-                placeholder="Descripción"
-                onChange={(e) => handleServicioChange(index, "descripcion", e.target.value)}
-                className="border px-2 py-1 rounded w-full md:w-1/2"
-              />
-              <input
-                type="text"
-                value={serv.precio}
-                placeholder="Precio"
-                onChange={(e) => handleServicioChange(index, "precio", e.target.value)}
-                className="border px-2 py-1 rounded w-full md:w-1/4"
-              />
-              <button type="button" onClick={() => eliminarServicio(index)} className="text-red-600 hover:underline text-sm">
-                Eliminar
-              </button>
+              <input type="text" value={serv.tipo} placeholder="Tipo (ej. Manual, Curso, Asesoría)" onChange={(e) => handleServicioChange(index, "tipo", e.target.value)} className="border px-2 py-1 rounded w-full md:w-1/3" />
+              <input type="text" placeholder="Título del servicio" className="border px-2 py-1 rounded w-full md:w-1/2" value={serv.titulo || ""} onChange={(e) => handleServicioChange(index, "titulo", e.target.value)} />
+              <input type="text" value={serv.descripcion} placeholder="Descripción" onChange={(e) => handleServicioChange(index, "descripcion", e.target.value)} className="border px-2 py-1 rounded w-full md:w-1/2" />
+              <input type="text" value={serv.precio} placeholder="Precio" onChange={(e) => handleServicioChange(index, "precio", e.target.value)} className="border px-2 py-1 rounded w-full md:w-1/4" />
+              <button type="button" onClick={() => eliminarServicio(index)} className="text-red-600 hover:underline text-sm">Eliminar</button>
             </div>
           ))}
           <button type="button" onClick={agregarServicio} className="text-blue-600 hover:underline text-sm mt-2">
@@ -142,13 +165,10 @@ export default function ExpertProfileEditor({ onClose, onSave }) {
           </button>
         </div>
 
+        {/* Acciones */}
         <div className="flex justify-end gap-4 mt-4">
-          <button type="button" onClick={onClose} className="text-gray-700 underline">
-            Cancelar
-          </button>
-          <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-            Guardar cambios
-          </button>
+          <button type="button" onClick={onClose} className="text-gray-700 underline">Cancelar</button>
+          <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Guardar cambios</button>
         </div>
       </form>
     </div>

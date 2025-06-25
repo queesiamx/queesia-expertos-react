@@ -40,6 +40,13 @@ export default function NavbarExperto() {
           Inicio
         </a>
 
+                <a
+          href="/consultas-recibidas"
+          className="text-[24px] font-normal text-[rgb(3,8,19)] hover:text-blue-600 hover:underline transition"
+        >
+          Consultas
+        </a>
+
         {/* <a
           href="/perfil"
           className="text-[24px] font-normal text-[rgb(3,8,19)] hover:text-blue-600 hover:underline transition"
