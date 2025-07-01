@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import VistaPublicaContenidos from '../components/VistaPublicaContenidos';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -106,6 +107,8 @@ export default function ExpertDetailPublic() {
   return (
     <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
+       
+<VistaPublicaContenidos expertoId={expert.id} />
         <button
           onClick={() => navigate('/expertos')}
           className="text-sm text-primary hover:underline"

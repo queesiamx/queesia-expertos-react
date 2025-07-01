@@ -75,47 +75,6 @@ export default function ExpertProfileCard({ expert }) {
           </div>
         )}
 
-        {Array.isArray(expert.servicios) && expert.servicios.length > 0 && (
-          <div>
-            <h4 className="flex items-center font-semibold text-default-soft mb-2">
-              <BookOpen className="w-4 h-4 mr-2 text-orange-500" />
-              Servicios
-            </h4>
-            <div className="grid gap-4">
-              {expert.servicios.map((serv, i) => (
-                <div
-                  key={i}
-                  className="bg-gray-100 border border-gray-300 rounded-lg p-4 shadow-sm"
-                >
-                  <p className="flex items-center font-bold text-default mb-1">
-                    {getIconByTipo(serv.tipo)}
-                    <span className="font-bold text-default">
-                      {serv.tipo ? `${serv.tipo} '` : 'Servicio '}
-                      {serv.titulo || 'Sin título'}
-                      {"'"}
-                    </span>
-                  </p>
-
-                  <p className="italic text-gray-700 ml-6 mt-1">
-                    {serv.descripcion}
-                  </p>
-                  <p className="flex items-center mt-2">
-                    
-                    <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
-                      {serv.precio
-                        ? new Intl.NumberFormat("es-MX", {
-                            style: "currency",
-                            currency: "MXN",
-                          }).format(parseFloat(serv.precio))
-                        : "Precio no especificado"}
-                    </span>
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="text-sm text-default-soft mt-4 space-y-1">
           {expert.email && (
             <p className="flex items-center">
@@ -149,6 +108,33 @@ export default function ExpertProfileCard({ expert }) {
             </p>
           )}
         </div>
+
+        {/* Servicios desde expert.servicios */}
+        {expert.servicios?.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold mb-2">📚 Servicios ofrecidos</h4>
+            <ul className="space-y-2">
+              {expert.servicios.map((servicio, i) => (
+                <li
+                  key={i}
+                  className="p-3 bg-gray-50 border rounded-md flex flex-col md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {getIconByTipo(servicio.tipo)} {servicio.tipo}: "{servicio.titulo || 'Sin título'}"
+                    </p>
+                    <p className="text-sm text-gray-700">{servicio.descripcion}</p>
+                  </div>
+                  <div className="mt-2 md:mt-0 md:ml-4 text-right">
+                    <p className="inline-block px-3 py-1 text-sm bg-blue-600 text-white rounded">
+                      {servicio.precio ? `$${parseFloat(servicio.precio).toFixed(2)}` : "Precio no especificado"}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );
