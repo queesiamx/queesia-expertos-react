@@ -7,7 +7,10 @@ import {
   getDoc,
   collection,
   addDoc,
-  serverTimestamp
+  serverTimestamp,
+  getDocs,
+  query,
+  where
 } from 'firebase/firestore';
 import {
   BookOpen,
@@ -18,8 +21,7 @@ import {
 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import VistaPublicaContenidos from '../components/VistaPublicaContenidos';
-
+import ExpertRatingSection from './ExpertRatingSection';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function ExpertDetailPublic() {
@@ -30,6 +32,7 @@ export default function ExpertDetailPublic() {
   const [consulta, setConsulta] = useState('');
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState('');
   const [usuario, setUsuario] = useState(null);
+  const [contenidos, setContenidos] = useState([]);
 
   useEffect(() => {
     const obtener = async () => {
@@ -50,15 +53,29 @@ export default function ExpertDetailPublic() {
     return () => unsubscribe();
   }, []);
 
-  const handleBuy = async (servicio) => {
+  useEffect(() => {
+    const cargarContenidos = async () => {
+      if (!expert?.id) return;
+      const q = query(
+        collection(db, "contenidosExpertos"),
+        where("expertoId", "==", expert.id)
+      );
+      const snapshot = await getDocs(q);
+      const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setContenidos(docs);
+    };
+    cargarContenidos();
+  }, [expert]);
+
+  const handleBuy = async (contenido) => {
     const stripe = await stripePromise;
     const response = await fetch('/api/create-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: servicio.titulo || 'Servicio de experto',
-        description: servicio.descripcion || '',
-        amount: parseFloat(servicio.precio)
+        name: contenido.titulo || 'Contenido de experto',
+        description: contenido.descripcion || '',
+        amount: parseFloat(contenido.precio)
       })
     });
     const session = await response.json();
@@ -107,8 +124,8 @@ export default function ExpertDetailPublic() {
   return (
     <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
-       
-<VistaPublicaContenidos expertoId={expert.id} />
+
+        {/* 1. PERFIL DEL EXPERTO */}
         <button
           onClick={() => navigate('/expertos')}
           className="text-sm text-primary hover:underline"
@@ -165,10 +182,53 @@ export default function ExpertDetailPublic() {
           </div>
         )}
 
+        {/* 2. CONTENIDOS DISPONIBLES */}
+        {contenidos.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-xl font-bold mb-4">Contenidos disponibles</h2>
+            <div className="space-y-6">
+              {contenidos.map((contenido) => (
+                <div
+                  key={contenido.id}
+                  className="border rounded-lg p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow"
+                >
+                  <div>
+                    <div className="font-bold text-lg mb-1">
+                      {contenido.tipoContenido === "curso" && "📘 Curso"}
+                      {contenido.tipoContenido === "manual" && "📕 Manual"}
+                      {contenido.tipoContenido === "consulta" && "📄 Consulta"}
+                      {` ‘${contenido.titulo}’`}
+                    </div>
+                    <div className="text-default-soft mb-2">{contenido.descripcion}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="text-2xl font-bold text-right mb-2">
+                      {contenido.precio
+                        ? `$${Number(contenido.precio).toFixed(2)}`
+                        : "Gratis"}
+                    </div>
+                    {contenido.precio ? (
+                      <button
+                        className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+                        onClick={() => handleBuy(contenido)}
+                      >
+                        Comprar
+                      </button>
+                    ) : (
+                      <span className="bg-blue-200 text-blue-700 px-4 py-2 rounded text-sm">Contenido gratuito</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 3. Servicios (Si existen, opcional) */}
         {Array.isArray(expert.servicios) && expert.servicios.length > 0 && (
           <div>
             <h2 className="flex items-center text-lg font-semibold text-default-soft mb-2">
-              <BookOpen className="w-4 h-4 mr-2 text-orange-500" /> Servicios
+              <BookOpen className="w-5 h-5 inline mr-2 text-orange-500" /> Servicios
             </h2>
             <div className="grid gap-4">
               {expert.servicios.map((serv, i) => (
@@ -180,11 +240,9 @@ export default function ExpertDetailPublic() {
                       {serv.titulo || 'Sin título'}"
                     </span>
                   </p>
-
                   {serv.descripcion && (
                     <p className="italic text-default-soft ml-6 mt-1">{serv.descripcion}</p>
                   )}
-
                   <div className="flex flex-wrap items-center justify-between mt-3">
                     <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
                       {serv.precio
@@ -194,7 +252,6 @@ export default function ExpertDetailPublic() {
                           }).format(parseFloat(serv.precio))
                         : 'Precio no especificado'}
                     </span>
-
                     {serv.precio && (
                       <button
                         onClick={() => handleBuy(serv)}
@@ -204,52 +261,57 @@ export default function ExpertDetailPublic() {
                       </button>
                     )}
                   </div>
-
                   {serv.tipo?.toLowerCase().includes('consulta') && (
-  <div className="bg-white p-4 mt-6 rounded-2xl shadow">
-    <h3 className="text-xl font-bold mb-2 text-gray-900">Enviar consulta al experto</h3>
-{usuario ? (
-  <>
-    <p className="text-sm text-default-soft mb-2">
-      Esta consulta será moderada por Quesia para determinar su complejidad y si requiere pago o puede resolverse gratuitamente.
-    </p>
-    <textarea
-      className="w-full border border-gray-300 rounded-lg p-2 mb-2"
-      rows="4"
-      placeholder="Escribe tu consulta aquí..."
-      value={consulta}
-      onChange={(e) => setConsulta(e.target.value)}
-    />
-    <button
-      className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
-      onClick={handleEnviarConsulta}
-    >
-      Enviar consulta
-    </button>
-    {mensajeConfirmacion && (
-      <p className="mt-2 text-sm text-green-600">{mensajeConfirmacion}</p>
-    )}
-  </>
-) : (
-  <div className="text-center text-default-soft text-sm">
-    <p className="mb-2">Inicia sesión para poder enviar una consulta</p>
-    <button
-      onClick={handleLoginConGoogle}
-      className="bg-black text-white px-4 py-2 rounded"
-    >
-      Iniciar con Google
-    </button>
-  </div>
-)}
-
-  </div>
-)}
-
+                    <div className="bg-white p-4 mt-6 rounded-2xl shadow">
+                      <h3 className="text-xl font-bold mb-2 text-gray-900">Enviar consulta al experto</h3>
+                      {usuario ? (
+                        <>
+                          <p className="text-sm text-default-soft mb-2">
+                            Esta consulta será moderada por Quesia para determinar su complejidad y si requiere pago o puede resolverse gratuitamente.
+                          </p>
+                          <textarea
+                            className="w-full border border-gray-300 rounded-lg p-2 mb-2"
+                            rows="4"
+                            placeholder="Escribe tu consulta aquí..."
+                            value={consulta}
+                            onChange={(e) => setConsulta(e.target.value)}
+                          />
+                          <button
+                            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+                            onClick={handleEnviarConsulta}
+                          >
+                            Enviar consulta
+                          </button>
+                          {mensajeConfirmacion && (
+                            <p className="mt-2 text-sm text-green-600">{mensajeConfirmacion}</p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-center text-default-soft text-sm">
+                          <p className="mb-2">Inicia sesión para poder enviar una consulta</p>
+                          <button
+                            onClick={handleLoginConGoogle}
+                            className="bg-black text-white px-4 py-2 rounded"
+                          >
+                            Iniciar con Google
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {/* 4. SECCIÓN DE RATING - ¡INTEGRADO AQUÍ! */}
+        <ExpertRatingSection
+          expertId={expert.id}
+          usuario={usuario}
+          handleLoginConGoogle={handleLoginConGoogle}
+        />
+
       </div>
     </div>
   );
