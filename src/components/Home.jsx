@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { signInWithPopup, onAuthStateChanged } from 'firebase/auth';
 import { auth, provider } from '../firebase';
 import Footer from '../components/Footer';
+import QuesiaNavbar from "../components/QuesiaNavbar";
 
 const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
@@ -37,6 +38,8 @@ export default function Home() {
   };
 
   return (
+        <>
+      <QuesiaNavbar />
     <div className="min-h-screen bg-primary-soft flex flex-col justify-between">
       <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center text-center px-4 py-24 font-sans">
         <h1 className="text-4xl md:text-5xl font-montserrat font-bold text-default mb-4 animate-fade-in">
@@ -75,5 +78,6 @@ export default function Home() {
 
       <Footer />
     </div>
+        </>
   );
 }

@@ -81,5 +81,5 @@ button:focus-visible {
 html, body, #root {
   margin: 0;
   padding: 0;
-  background-color: #fff3b0; /* tu color de fondo o el de bg-primary-soft */
+  background-color: #ffe75c; /* tu color de fondo o el de bg-primary-soft */
 }

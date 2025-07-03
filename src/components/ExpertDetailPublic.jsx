@@ -22,6 +22,7 @@ import {
 import { loadStripe } from '@stripe/stripe-js';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import ExpertRatingSection from './ExpertRatingSection';
+import QuesiaNavbar from "../components/QuesiaNavbar";
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function ExpertDetailPublic() {
@@ -122,7 +123,11 @@ export default function ExpertDetailPublic() {
   if (!expert) return <p className="p-6">Experto no encontrado.</p>;
 
   return (
+      <>
+        <QuesiaNavbar />          
+
     <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
+      
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
 
         {/* 1. PERFIL DEL EXPERTO */}
@@ -314,5 +319,6 @@ export default function ExpertDetailPublic() {
 
       </div>
     </div>
+      </>
   );
 }
