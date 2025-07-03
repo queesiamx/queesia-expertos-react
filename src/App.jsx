@@ -17,6 +17,7 @@ import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import Dashboard from './pages/Dashboard';
 
 const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
@@ -60,6 +61,7 @@ function App() {
         <Route path="/admin/consultas" element={<AdminConsultas />} />
         <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} /> {/* ✅ NUEVA RUTA */}
         <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );

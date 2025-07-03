@@ -4,6 +4,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import ExpertCard from './ExpertCard';
 import { useNavigate } from 'react-router-dom';
 
+
 function ExpertList() {
   const [expertos, setExpertos] = useState([]);
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState('');
@@ -44,7 +45,8 @@ function ExpertList() {
   });
 
   return (
-    <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
+
+    <div className="min-h-screen bg-primary-soft px-4 py-2 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
         <h1 className="text-4xl font-bold text-center text-default font-montserrat">
           Expertos disponibles
@@ -83,6 +85,7 @@ function ExpertList() {
         </div>
       </div>
     </div>
+
   );
 }
 
