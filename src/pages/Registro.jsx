@@ -11,6 +11,7 @@ import { getAuth } from "firebase/auth";
 import { Toaster, toast } from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
 import { useNavigate } from 'react-router-dom';
+import QuesiaNavbar from "../components/QuesiaNavbar";
 
 export default function Registro() {
   const [form, setForm] = useState({
@@ -206,6 +207,8 @@ export default function Registro() {
 
   return (
     <>
+      {typeof window !== "undefined" && <QuesiaNavbar />}
+
       <Toaster position="top-right" />
       <div className="container-base bg-primary-soft px-4 py-12 font-sans">
         <form

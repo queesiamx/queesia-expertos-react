@@ -26,8 +26,9 @@ export default function QuesiaNavbar() {
             <a href="https://queesia.com/contacto" className="text-black hover:text-blue-600 transition-colors duration-200">Contacto</a>
           </nav>
           {/* Descomenta si tienes MobileMenu o LoginButton */}
-             <MobileMenu client:load />
-           <LoginButton client:load />
+{typeof window !== "undefined" && <LoginButton />}
+{typeof window !== "undefined" && <MobileMenu />}
+
       </div>
     </header>
   );
