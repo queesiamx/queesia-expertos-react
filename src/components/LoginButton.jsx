@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db, auth, storage, googleProvider } from '../../lib/firebaseConfig'; // ✅ correcta
 import { signInWithPopup } from "firebase/auth";
 import { menuControl } from "../hooks/useMenuControl";
+
 // ❌ No uses Link en Astro: import { Link } from "react-router-dom";
 
 export default function LoginButton() {
