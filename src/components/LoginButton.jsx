@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { db, auth, storage, googleProvider } from '../../lib/firebaseConfig'; // ✅ correcta
+import { db, auth, storage, googleProvider } from '../../lib/firebaseConfig';
 import { signInWithPopup } from "firebase/auth";
 import { menuControl } from "../hooks/useMenuControl";
-
-// ❌ No uses Link en Astro: import { Link } from "react-router-dom";
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
@@ -15,7 +13,6 @@ export default function LoginButton() {
       setUser(JSON.parse(userData));
     }
 
-    // Escucha si otro menú se abre (hamburguesa, etc.)
     const unsubscribe = menuControl.subscribe((menu) => {
       if (menu !== "avatar") setOpenMenu(false);
     });
@@ -53,7 +50,7 @@ export default function LoginButton() {
     const newState = !openMenu;
     setOpenMenu(newState);
     if (newState) {
-      menuControl.openMenu("avatar"); // 👈 Notifica que este menú se abre
+      menuControl.openMenu("avatar");
     }
   };
 
@@ -72,15 +69,12 @@ export default function LoginButton() {
             <div className="px-4 py-2 text-sm text-gray-800">
               {user.name.split(" ")[0]}
             </div>
-
-            {/* Enlace interno correcto para Astro */}
             <a
               href="/mis-consultas"
               className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
             >
               Mis consultas
             </a>
-
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100"
@@ -93,17 +87,19 @@ export default function LoginButton() {
     );
   }
 
-  return (
-    <button
-      onClick={handleLogin}
-      className="flex items-center gap-2 bg-black text-white text-sm font-medium px-3 py-1.5 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
-    >
-      <img
-        src="https://www.svgrepo.com/show/475656/google-color.svg"
-        alt="Google"
-        className="w-4 h-4"
-      />
-      <span className="hidden md:inline">Iniciar sesión</span>
-    </button>
-  );
+return (
+  <button
+    onClick={handleLogin}
+    className="flex items-center justify-center gap-2 bg-black text-white text-sm font-medium px-3 py-2 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
+  >
+    <img
+      src="https://www.svgrepo.com/show/475656/google-color.svg"
+      alt="Google"
+      className="w-5 h-5 md:w-4 md:h-4"
+      onError={(e) => (e.target.style.display = "none")}
+    />
+    <span className="hidden md:inline">Iniciar sesión</span>
+  </button>
+);
+
 }
