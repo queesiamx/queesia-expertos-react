@@ -33,12 +33,14 @@ const ExpertDashboard = () => {
   // ========= Cargar contenidos =========
   const cargarContenidos = async () => {
     if (!expert?.id) return;
+    console.log("ID experto actual:", expert.id);
     const q = query(
       collection(db, "contenidosExpertos"),
       where("expertoId", "==", expert.id)
     );
     const snapshot = await getDocs(q);
     const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    console.log("Contenidos encontrados:", docs);
     setContenidos(docs);
   };
 

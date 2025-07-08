@@ -1,26 +1,25 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+// src/firebase.js
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyBqOk-lc5Ar-qc6fmbkJ19gYwDNsnoMmOk",
+  authDomain: "queesia-e0de5.firebaseapp.com",
+  projectId: "queesia-e0de5",
+  storageBucket: "queesia-e0de5.appspot.com",
+  messagingSenderId: "81907629864",
+  appId: "1:81907629864:web:5a6a078e4de031cf3e1a1d",
+  measurementId: "G-MPCKFKN50L"
 };
 
-console.log("🔥 Firebase config:", firebaseConfig);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-const app = initializeApp(firebaseConfig);
+// ✅ EXPORTACIONES CORRECTAS
+const db = getFirestore(app);
+const auth = getAuth(app);
 const storage = getStorage(app);
+const googleProvider = new GoogleAuthProvider();
 
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const provider = new GoogleAuthProvider();
-
-// ✅ Lo que te faltaba
-export { app, storage };
+export { app, db, auth, storage, googleProvider };
