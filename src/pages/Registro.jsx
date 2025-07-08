@@ -277,7 +277,7 @@ export default function Registro() {
           )}
 
           <label className="block font-medium text-sm text-default mb-1">
-            Foto de perfil (solo imágenes .jpg, .jpeg, .png)
+            Foto de perfil (sólo imágenes .jpg, .jpeg, .png)
           </label>
           <input
             type="file"

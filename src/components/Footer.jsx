@@ -8,7 +8,7 @@ export default function Footer() {
           © {new Date().getFullYear()} Quesia. Todos los derechos reservados.
         </p>
 
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-4 items-center justify-center">
           <a
             href="https://www.instagram.com/quees_ia"
             target="_blank"
@@ -38,7 +38,7 @@ export default function Footer() {
           </a>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4 justify-center md:justify-end text-center md:text-right">
           <a
             href="/terminos"
             className="text-white hover:text-primary-soft transition"

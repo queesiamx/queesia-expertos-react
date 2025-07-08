@@ -62,11 +62,17 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
   formData.append('upload_preset', cloudinaryPreset);
   formData.append('folder', 'expertos-queesia');
 
+
   try {
-    const res = await fetch(cloudinaryUrl, {
+    const urlSubida = file.type === 'application/pdf'
+      ? cloudinaryUrl.replace('/image/upload', '/raw/upload')
+      : cloudinaryUrl;
+
+    const res = await fetch(urlSubida, {
       method: 'POST',
       body: formData,
     });
+
 
     if (!res.ok) {
       if (res.status >= 500) {
@@ -78,23 +84,28 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       }
     }
 
-    const data = await res.json();
-    if (!data.secure_url) {
-      throw new Error(data.error?.message || 'No se obtuvo URL de Cloudinary');
-    }
+const data = await res.json();
+if (!data.secure_url) {
+  throw new Error(data.error?.message || 'No se obtuvo URL de Cloudinary');
+}
 
-    await addDoc(collection(db, 'contenidosExpertos'), {
+  // Reemplaza '/image/upload/' por '/raw/upload/' si es PDF
+const secureUrl = data.secure_url;
+
+
+  await addDoc(collection(db, 'contenidosExpertos'), {
     contenidoId: uuidv4(),
     titulo: titulo.trim(),
     descripcion: descripcion.trim(),
     tipoContenido,
     precio: precio ? parseFloat(precio) : null,
-    archivoUrl: data.secure_url,
-    public_id: data.public_id, // <--- AGREGADO
+    archivoUrl: secureUrl,  // ✅ URL corregida
+    public_id: data.public_id,
     expertoId,
     fechaSubida: Timestamp.now(),
     usuariosAutorizados: [],
   });
+
 
 
     toast.success('Contenido subido correctamente');
