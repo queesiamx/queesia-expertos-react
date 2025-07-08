@@ -1,54 +1,58 @@
-// src/components/VisorArchivo.jsx
+import { useEffect, useState } from "react";
+
 export default function VisorArchivo({ archivoUrl }) {
-  if (!archivoUrl) {
-    return <p className="text-red-600">Archivo no disponible</p>;
+  const [valido, setValido] = useState(true);
+
+  useEffect(() => {
+    if (!archivoUrl) {
+      setValido(false);
+      return;
+    }
+
+    // Verificar si la URL responde correctamente con HEAD
+    fetch(archivoUrl, { method: "HEAD" })
+      .then((res) => setValido(res.ok))
+      .catch(() => setValido(false));
+  }, [archivoUrl]);
+
+  // Mostrar error si no hay URL o si es inválida
+  if (!archivoUrl || !valido) {
+    return (
+      <div className="w-full h-40 flex items-center justify-center bg-red-100 text-red-600 rounded">
+        El archivo PDF no está disponible
+      </div>
+    );
   }
 
-  // Detecta tipo de archivo por extensión
-  const tipo = archivoUrl.split('.').pop().toLowerCase();
+  // Verificación adicional de formato básico de URL
+  const esUrlValida = archivoUrl.startsWith("http") && archivoUrl.includes(".");
+  if (!esUrlValida) {
+    return (
+      <div className="w-full h-40 flex items-center justify-center bg-yellow-100 text-yellow-700 rounded">
+        URL inválida o inaccesible
+      </div>
+    );
+  }
 
-  // 🔄 Corrige la URL para PDFs si es de Cloudinary
+  // Asegura que la extensión sea PDF (aunque opcional si viene desde Cloudinary sin extensión)
+  const terminaEnPdf = archivoUrl.toLowerCase().includes(".pdf");
+
+  // Corregir Cloudinary malformado (si usa /image/upload/ en lugar de /raw/upload/)
   let urlFinal = archivoUrl;
-  if (tipo === 'pdf' && archivoUrl.includes('cloudinary.com') && archivoUrl.includes('/image/upload/')) {
-    urlFinal = archivoUrl.replace('/image/upload/', '/raw/upload/');
-  }
-
-  if (tipo === 'pdf') {
-    return (
-      <div className="w-full h-[600px] mt-4">
-        <iframe
-          src={urlFinal}
-          title="Visualizador de PDF"
-          className="w-full h-full border rounded shadow"
-        />
-      </div>
-    );
-  }
-
-  if (['jpg', 'jpeg', 'png'].includes(tipo)) {
-    return (
-      <div className="mt-4">
-        <img src={archivoUrl} alt="Vista previa" className="max-w-full max-h-[600px] rounded shadow" />
-      </div>
-    );
-  }
-
-  if (tipo === 'mp4') {
-    return (
-      <div className="mt-4">
-        <video controls className="max-w-full max-h-[600px] rounded shadow">
-          <source src={archivoUrl} type="video/mp4" />
-          Tu navegador no admite el video.
-        </video>
-      </div>
-    );
+  if (
+    archivoUrl.includes("cloudinary.com") &&
+    archivoUrl.includes("/image/upload/")
+  ) {
+    urlFinal = archivoUrl.replace("/image/upload/", "/raw/upload/");
   }
 
   return (
-    <div className="mt-4">
-      <a href={archivoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-        Ver archivo
-      </a>
+    <div className="w-full h-64 mt-4 overflow-hidden border rounded shadow">
+      <iframe
+        src={urlFinal}
+        title="Visualizador PDF"
+        className="w-full h-full object-contain"
+      />
     </div>
   );
 }

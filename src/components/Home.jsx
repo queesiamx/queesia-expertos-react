@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithPopup, onAuthStateChanged } from 'firebase/auth';
-import { auth, provider } from '../firebase';
+import { auth, googleProvider } from '../firebase';
 import Footer from '../components/Footer';
 import QuesiaNavbar from "../components/QuesiaNavbar";
 
@@ -30,7 +30,7 @@ export default function Home() {
   // Función de login
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, googleProvider);
       console.log('Usuario autenticado:', result.user);
     } catch (error) {
       console.error('Error en login:', error);

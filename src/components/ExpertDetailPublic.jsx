@@ -1,7 +1,7 @@
-// src/components/ExpertDetailPublic.jsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { db, auth } from '../firebase';
+import { useAuth } from '../hooks/useAuth';
 import {
   doc,
   getDoc,
@@ -23,7 +23,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import ExpertRatingSection from './ExpertRatingSection';
 import QuesiaNavbar from "../components/QuesiaNavbar";
-import VisorArchivo from './VisorArchivo';
+
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function ExpertDetailPublic() {
@@ -33,8 +33,9 @@ export default function ExpertDetailPublic() {
   const [cargando, setCargando] = useState(true);
   const [consulta, setConsulta] = useState('');
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState('');
-  const [usuario, setUsuario] = useState(null);
+  const { user: usuario } = useAuth();
   const [contenidos, setContenidos] = useState([]);
+  const [verTemario, setVerTemario] = useState(null);
 
   useEffect(() => {
     const obtener = async () => {
@@ -47,13 +48,6 @@ export default function ExpertDetailPublic() {
     };
     obtener();
   }, [id]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUsuario(user);
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     const cargarContenidos = async () => {
@@ -194,8 +188,7 @@ export default function ExpertDetailPublic() {
                     key={contenido.id}
                     className="border rounded-lg p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow"
                   >
-                    <div>
-                      <VisorArchivo archivoUrl={contenido.archivoUrl} />
+                    <div className="flex-1">
                       <div className="font-bold text-lg mb-1">
                         {contenido.tipoContenido === "curso" && "📘 Curso"}
                         {contenido.tipoContenido === "manual" && "📕 Manual"}
@@ -203,18 +196,34 @@ export default function ExpertDetailPublic() {
                         {` ‘${contenido.titulo}’`}
                       </div>
                       <div className="text-default-soft mb-2">{contenido.descripcion}</div>
+
                       {contenido.archivoUrl && (
-                        <a
-                          href={contenido.archivoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 underline"
+                        <button
+                          onClick={() =>
+                            setVerTemario(
+                              verTemario === contenido.id ? null : contenido.id
+                            )
+                          }
+                          className="text-sm text-blue-600 underline hover:text-blue-800 transition"
                         >
-                          Ver temario
-                        </a>
+                          {verTemario === contenido.id ? "Ocultar temario" : "Ver temario"}
+                        </button>
+                      )}
+
+                      {contenido.archivoUrl && verTemario === contenido.id && (
+                        <div className="mt-4">
+                          <iframe
+                            src={contenido.archivoUrl}
+                            title="Archivo PDF"
+                            width="100%"
+                            height="500px"
+                            className="rounded border"
+                          ></iframe>
+                        </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+
+                    <div className="flex flex-col items-end gap-2 mt-4 sm:mt-0 sm:ml-6">
                       <div className="text-2xl font-bold text-right mb-2">
                         {contenido.precio
                           ? `$${Number(contenido.precio).toFixed(2)}`
@@ -228,89 +237,11 @@ export default function ExpertDetailPublic() {
                           Comprar
                         </button>
                       ) : (
-                        <span className="bg-blue-200 text-blue-700 px-4 py-2 rounded text-sm">Contenido gratuito</span>
+                        <span className="bg-blue-200 text-blue-700 px-4 py-2 rounded text-sm">
+                          Contenido gratuito
+                        </span>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {Array.isArray(expert.servicios) && expert.servicios.length > 0 && (
-            <div>
-              <h2 className="flex items-center text-lg font-semibold text-default-soft mb-2">
-                <BookOpen className="w-5 h-5 inline mr-2 text-orange-500" /> Servicios
-              </h2>
-              <div className="grid gap-4">
-                {expert.servicios.map((serv, i) => (
-                  <div key={i} className="bg-gray-100 border border-gray-300 rounded-lg p-4 shadow-sm">
-                    <p className="flex items-center font-bold text-default mb-1">
-                      {getIconByTipo(serv.tipo)}
-                      <span className="font-bold text-default">
-                        {serv.tipo ? `${serv.tipo} "` : 'Servicio '}
-                        {serv.titulo || 'Sin título'}"
-                      </span>
-                    </p>
-                    {serv.descripcion && (
-                      <p className="italic text-default-soft ml-6 mt-1">{serv.descripcion}</p>
-                    )}
-                    <div className="flex flex-wrap items-center justify-between mt-3">
-                      <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
-                        {serv.precio
-                          ? new Intl.NumberFormat('es-MX', {
-                              style: 'currency',
-                              currency: 'MXN'
-                            }).format(parseFloat(serv.precio))
-                          : 'Precio no especificado'}
-                      </span>
-                      {serv.precio && (
-                        <button
-                          onClick={() => handleBuy(serv)}
-                          className="mt-2 sm:mt-0 bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-medium"
-                        >
-                          Comprar
-                        </button>
-                      )}
-                    </div>
-                    {serv.tipo?.toLowerCase().includes('consulta') && (
-                      <div className="bg-white p-4 mt-6 rounded-2xl shadow">
-                        <h3 className="text-xl font-bold mb-2 text-gray-900">Enviar consulta al experto</h3>
-                        {usuario ? (
-                          <>
-                            <p className="text-sm text-default-soft mb-2">
-                              Esta consulta será moderada por Quesia para determinar su complejidad y si requiere pago o puede resolverse gratuitamente.
-                            </p>
-                            <textarea
-                              className="w-full border border-gray-300 rounded-lg p-2 mb-2"
-                              rows="4"
-                              placeholder="Escribe tu consulta aquí..."
-                              value={consulta}
-                              onChange={(e) => setConsulta(e.target.value)}
-                            />
-                            <button
-                              className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
-                              onClick={handleEnviarConsulta}
-                            >
-                              Enviar consulta
-                            </button>
-                            {mensajeConfirmacion && (
-                              <p className="mt-2 text-sm text-green-600">{mensajeConfirmacion}</p>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-center text-default-soft text-sm">
-                            <p className="mb-2">Inicia sesión para poder enviar una consulta</p>
-                            <button
-                              onClick={handleLoginConGoogle}
-                              className="bg-black text-white px-4 py-2 rounded"
-                            >
-                              Iniciar con Google
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

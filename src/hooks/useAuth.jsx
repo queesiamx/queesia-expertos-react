@@ -1,7 +1,7 @@
 // src/hooks/useAuth.js
 import { useEffect, useState, useContext, createContext } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../lib/firebaseConfig'; // Asegúrate que este sea el archivo correcto
+import { auth } from "../firebase";
 
 const AuthContext = createContext();
 
