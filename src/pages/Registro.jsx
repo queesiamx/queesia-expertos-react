@@ -31,7 +31,6 @@ export default function Registro() {
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ 1. Prellenar email si ya hay sesión activa
   useEffect(() => {
     if (auth.currentUser) {
       setForm(prev => ({ ...prev, email: auth.currentUser.email || '' }));
@@ -131,7 +130,10 @@ export default function Registro() {
       const docRef = doc(db, 'experts', uid);
 
       const existing = await getDoc(docRef);
-      if (existing.exists() && existing.data().aprobado === true) {
+      const aprobado = existing.exists() && existing.data().aprobado === true;
+      const tieneFoto = existing.exists() && existing.data().fotoPerfilURL;
+
+      if (aprobado && tieneFoto) {
         toast.error("Tu perfil ya fue aprobado. No puedes modificarlo.");
         setSubiendo(false);
         return;
@@ -140,10 +142,19 @@ export default function Registro() {
       let fotoPerfilURL = '';
 
       if (file) {
+        if (
+          !file ||
+          file.size === 0 ||
+          !['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)
+        ) {
+          toast.error("Formato de imagen inválido. Usa .jpg, .jpeg o .png");
+          setSubiendo(false);
+          return;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('upload_preset', 'expertos');
-        formData.append('folder', 'expertos-queesia');
+        formData.append('upload_preset', 'queesia_preset');
 
         const res = await fetch('https://api.cloudinary.com/v1_1/dzr9rj9cu/image/upload', {
           method: 'POST',
@@ -151,7 +162,7 @@ export default function Registro() {
         });
 
         const data = await res.json();
-        if (!data.secure_url) throw new Error('Error al subir imagen');
+        if (!data.secure_url) throw new Error(data.error?.message || 'Error al subir imagen');
         fotoPerfilURL = data.secure_url;
       }
 
@@ -165,13 +176,14 @@ export default function Registro() {
           .split(',')
           .map(e => e.trim())
           .filter(Boolean),
-        fotoPerfilURL,
+        fotoPerfilURL: fotoPerfilURL || existing.data()?.fotoPerfilURL || '',
         aprobado: false,
         formularioCompleto: true,
         creadoEn: serverTimestamp(),
       };
 
       await setDoc(docRef, nuevoExperto);
+
       await emailjs.send(
         'service_6xnal3g',
         'template_cbwns4s',
@@ -182,7 +194,7 @@ export default function Registro() {
         '9SxO0lF9IKHaknc4Q'
       );
 
-      toast.success('Perfil enviado para validación.');
+      toast.success('Perfil enviado para validación, revisa tu correo.');
 
       setForm({
         nombre: '',
@@ -208,7 +220,6 @@ export default function Registro() {
   return (
     <>
       {typeof window !== "undefined" && <QuesiaNavbar />}
-
       <Toaster position="top-right" />
       <div className="container-base bg-primary-soft px-4 py-12 font-sans">
         <form
