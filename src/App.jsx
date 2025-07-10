@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Registro from './pages/Registro';
 import Expertos from './pages/Expertos';
 import AdminExpertos from './pages/AdminExpertos';
+import RutaAdminPrivada from './components/RutaAdminPrivada';
 import ExpertDetailPublic from './components/ExpertDetailPublic';
 import Terminos from './pages/Terminos';
 import Privacidad from './pages/Privacidad';
@@ -13,13 +14,12 @@ import PagoCancelado from './pages/PagoCancelado';
 import AdminConsultas from './pages/AdminConsultas';
 import ConsultasRecibidas from "./pages/consultasRecibidas";
 import ResponderConsulta from './pages/ResponderConsulta';
+import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
+
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import Dashboard from './pages/Dashboard';
-
-const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -39,29 +39,45 @@ function App() {
     <Router>
       <Toaster />
       <Routes>
+        {/* Rutas públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/expertos" element={<Expertos />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
-        <Route
-          path="/admin-expertos"
-          element={
-            usuario && adminEmails.includes(usuario.email)
-              ? <AdminExpertos />
-              : <Navigate to="/" replace />
-          }
-        />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<ExpertDashboard />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/pago-cancelado" element={<PagoCancelado />} />
-        <Route path="/admin/expertos" element={<AdminExpertos />} />
-        <Route path="/admin/consultas" element={<AdminConsultas />} />
-        <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} /> {/* ✅ NUEVA RUTA */}
+        <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} />
         <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Rutas protegidas para administradores */}
+        <Route
+          path="/admin-expertos"
+          element={
+            <RutaAdminPrivada usuario={usuario}>
+              <AdminExpertos />
+            </RutaAdminPrivada>
+          }
+        />
+        <Route
+          path="/admin/expertos"
+          element={
+            <RutaAdminPrivada usuario={usuario}>
+              <AdminExpertos />
+            </RutaAdminPrivada>
+          }
+        />
+        <Route
+          path="/admin/consultas"
+          element={
+            <RutaAdminPrivada usuario={usuario}>
+              <AdminConsultas />
+            </RutaAdminPrivada>
+          }
+        />
       </Routes>
     </Router>
   );

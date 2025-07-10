@@ -5,9 +5,8 @@ import App from './App.jsx';
 import { AuthProvider } from './hooks/useAuth'; // ✅ Ruta correcta
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>
+  <AuthProvider>
+    <App />
+  </AuthProvider>
 );
+

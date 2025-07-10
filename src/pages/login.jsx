@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -10,38 +10,55 @@ import Footer from "../components/Footer";
 const Login = () => {
   const navigate = useNavigate();
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
+  useEffect(() => {
+    const iniciarSesion = async () => {
+      const provider = new GoogleAuthProvider();
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const expertRef = doc(db, "experts", user.uid);
-      const expertSnap = await getDoc(expertRef);
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
 
-      if (expertSnap.exists()) {
-        const data = expertSnap.data();
-        if (data.aprobado === true && data.nombre && data.especialidad) {
-          toast.success("Bienvenido, acceso aprobado.");
-          navigate("/dashboard");
+        // Correos autorizados como administrador
+        const correosAdmin = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
+        if (correosAdmin.includes(user.email)) {
+          toast.success("Bienvenido administrador 🧀");
+          navigate("/admin-expertos");
+          return;
+        }
+
+        // Verifica si ya existe en la colección de expertos
+        const expertRef = doc(db, "experts", user.uid);
+        const expertSnap = await getDoc(expertRef);
+
+        if (expertSnap.exists()) {
+          const data = expertSnap.data();
+          if (data.aprobado === true && data.nombre && data.especialidad) {
+            toast.success("Bienvenido, acceso aprobado.");
+            navigate("/dashboard");
+          } else {
+            toast("Tu cuenta fue registrada. Completa tu perfil para continuar.");
+            navigate("/registro");
+          }
         } else {
-          toast("Tu cuenta fue registrada. Completa tu perfil para continuar.");
+          await setDoc(expertRef, {
+            email: user.email,
+            aprobado: false,
+            creadoEn: serverTimestamp(),
+          });
+          toast("Sesión iniciada. Completa tu perfil para continuar.");
           navigate("/registro");
         }
-      } else {
-        await setDoc(expertRef, {
-          email: user.email,
-          aprobado: false,
-          creadoEn: serverTimestamp(),
-        });
-        toast("Sesión iniciada. Completa tu perfil para continuar.");
-        navigate("/registro");
+      } catch (error) {
+        console.error("Error con Google Login", error);
+        if (error.code !== "auth/popup-closed-by-user") {
+          toast.error("No se pudo iniciar sesión con Google.");
+        }
+        navigate("/");
       }
-    } catch (error) {
-      console.error("Error con Google Login", error);
-      toast.error("No se pudo iniciar sesión con Google.");
-    }
-  };
+    };
+
+    iniciarSesion();
+  }, [navigate]);
 
   return (
     <>
@@ -52,14 +69,8 @@ const Login = () => {
             Soy experto 🧐
           </h2>
           <p className="text-gray-600 mb-6">
-            Conéctate con tu cuenta de Google para continuar.
+            Conectando con tu cuenta de Google... ⏳
           </p>
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full bg-black hover:bg-neutral-900 text-white font-medium py-3 rounded-lg transition"
-          >
-            Iniciar sesión 🧀
-          </button>
         </div>
       </main>
       <Footer />
