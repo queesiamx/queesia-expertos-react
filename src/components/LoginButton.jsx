@@ -1,11 +1,16 @@
+// src/components/LoginButton.jsx
+
 import React, { useEffect, useState } from "react";
-import { db, auth, storage, googleProvider } from '../../lib/firebaseConfig';
+import { db, auth, googleProvider } from '../../lib/firebaseConfig';
 import { signInWithPopup } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { menuControl } from "../hooks/useMenuControl";
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
   const [openMenu, setOpenMenu] = useState(false);
+
+  const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -25,17 +30,39 @@ export default function LoginButton() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      localStorage.setItem("authToken", await user.getIdToken());
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          uid: user.uid,
-          name: user.displayName,
-          email: user.email,
-          photo: user.photoURL,
-        })
-      );
-      window.location.reload();
+      const token = await user.getIdToken();
+
+      // Guarda sesión local
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("user", JSON.stringify({
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL,
+      }));
+
+      // Flujo 1: Admin
+      if (adminEmails.includes(user.email)) {
+        window.location.href = "/admin-expertos";
+        return;
+      }
+
+      // Flujo 2: Verificar si es experto registrado
+      const expertRef = doc(db, "experts", user.uid);
+      const expertSnap = await getDoc(expertRef);
+
+      if (expertSnap.exists()) {
+        const data = expertSnap.data();
+        if (data.aprobado === true && data.nombre && data.especialidad) {
+          window.location.href = "/dashboard";
+        } else {
+          window.location.href = "/registro";
+        }
+      } else {
+        // Flujo 3: Usuario nuevo
+        window.location.href = "/registro";
+      }
+
     } catch (error) {
       console.error("Error al iniciar sesión:", error.message);
     }
@@ -66,8 +93,8 @@ export default function LoginButton() {
         />
         {openMenu && (
           <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50">
-            <div className="px-4 py-2 text-sm text-gray-800">
-              {user.name.split(" ")[0]}
+            <div className="px-4 py-2 text-sm text-gray-800 truncate">
+              {user.name?.split(" ")[0]}
             </div>
             <a
               href="/mis-consultas"
@@ -87,19 +114,18 @@ export default function LoginButton() {
     );
   }
 
-return (
-  <button
-    onClick={handleLogin}
-    className="flex items-center justify-center gap-2 bg-black text-white text-sm font-medium px-3 py-2 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
-  >
-    <img
-      src="https://www.svgrepo.com/show/475656/google-color.svg"
-      alt="Google"
-      className="w-5 h-5 md:w-4 md:h-4"
-      onError={(e) => (e.target.style.display = "none")}
-    />
-    <span className="hidden md:inline">Iniciar sesión</span>
-  </button>
-);
-
+  return (
+    <button
+      onClick={handleLogin}
+      className="flex items-center justify-center gap-2 bg-black text-white text-sm font-medium px-3 py-2 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
+    >
+      <img
+        src="https://www.svgrepo.com/show/475656/google-color.svg"
+        alt="Google"
+        className="w-5 h-5 md:w-4 md:h-4"
+        onError={(e) => (e.target.style.display = "none")}
+      />
+      <span className="hidden md:inline">Iniciar sesión</span>
+    </button>
+  );
 }
