@@ -14,6 +14,7 @@ import {
   where,
   getDocs,
   deleteDoc,
+  arrayUnion
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
@@ -29,29 +30,27 @@ const ExpertDashboard = () => {
   const [editMode, setEditMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [contenidos, setContenidos] = useState([]);
+  const [modalFechaVisible, setModalFechaVisible] = useState(false);
+  const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
+  const [nuevaFecha, setNuevaFecha] = useState("");
 
-  // ========= Cargar contenidos =========
   const cargarContenidos = async () => {
     if (!expert?.id) return;
-    console.log("ID experto actual:", expert.id);
     const q = query(
       collection(db, "contenidosExpertos"),
       where("expertoId", "==", expert.id)
     );
     const snapshot = await getDocs(q);
     const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    console.log("Contenidos encontrados:", docs);
     setContenidos(docs);
   };
 
-  // ========= Eliminar contenido (Cloudinary y Firestore) =========
   const handleDeleteContenido = async (contenidoId, publicId) => {
     if (!window.confirm("¿Seguro que quieres eliminar este contenido? Esta acción no se puede deshacer.")) {
       return;
     }
     try {
       if (publicId) {
-        // 1. Eliminar en Cloudinary
         const res = await fetch('/api/delete-cloudinary', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,13 +61,35 @@ const ExpertDashboard = () => {
           throw new Error(data.error || "No se pudo eliminar de Cloudinary");
         }
       }
-      // 2. Eliminar en Firestore
       await deleteDoc(doc(db, "contenidosExpertos", contenidoId));
       toast.success("Contenido eliminado correctamente.");
       cargarContenidos();
     } catch (error) {
       console.error(error);
       toast.error("Ocurrió un error al eliminar el contenido.");
+    }
+  };
+
+  const handleAgregarFecha = (contenido) => {
+    setContenidoSeleccionado(contenido);
+    setModalFechaVisible(true);
+  };
+
+  const guardarFecha = async () => {
+    if (!nuevaFecha || !contenidoSeleccionado) return;
+    try {
+      const ref = doc(db, "contenidosExpertos", contenidoSeleccionado.id);
+      await updateDoc(ref, {
+        fechasDisponibles: arrayUnion(nuevaFecha)
+      });
+      toast.success("Fecha agregada exitosamente");
+      setNuevaFecha("");
+      setModalFechaVisible(false);
+      setContenidoSeleccionado(null);
+      cargarContenidos();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al guardar la fecha");
     }
   };
 
@@ -103,17 +124,6 @@ const ExpertDashboard = () => {
   useEffect(() => {
     if (expert?.id) cargarContenidos();
   }, [expert]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast.success("Sesión cerrada correctamente.");
-      navigate("/");
-    } catch (error) {
-      toast.error("Error al cerrar sesión.");
-      console.error(error);
-    }
-  };
 
   const handleSave = async (datosActualizados) => {
     try {
@@ -162,7 +172,6 @@ const ExpertDashboard = () => {
               📤 Cargar contenidos
             </button>
 
-            {/* Contenidos como Servicios */}
             <h2 className="text-xl font-semibold mt-8 mb-4">📚 Servicios</h2>
             {contenidos.length === 0 ? (
               <p className="text-gray-600">No has subido contenidos aún.</p>
@@ -180,13 +189,22 @@ const ExpertDashboard = () => {
                         {contenido.tipoContenido === "consulta" && "📄 Consulta"}
                         {` "${contenido.titulo}"`}
                       </h3>
-                      <button
-                        onClick={() => handleDeleteContenido(contenido.id, contenido.public_id)}
-                        className="text-red-500 hover:text-red-700 ml-4"
-                        title="Eliminar contenido"
-                      >
-                        🗑️
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleAgregarFecha(contenido)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Agregar fecha disponible"
+                        >
+                          📅
+                        </button>
+                        <button
+                          onClick={() => handleDeleteContenido(contenido.id, contenido.public_id)}
+                          className="text-red-500 hover:text-red-700"
+                          title="Eliminar contenido"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                     <p className="text-gray-700 text-sm mt-1">
                       {contenido.descripcion}
@@ -210,6 +228,11 @@ const ExpertDashboard = () => {
                         Ver archivo
                       </a>
                     </div>
+                    {contenido.fechasDisponibles?.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-700">
+                        <strong>Fechas disponibles:</strong> {contenido.fechasDisponibles.join(", ")}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -218,7 +241,6 @@ const ExpertDashboard = () => {
         )}
       </div>
 
-      {/* Modal para subir contenido */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
         <h2 className="text-2xl font-semibold mb-4">📁 Subir nuevo contenido</h2>
         <UploadContenido
@@ -226,6 +248,22 @@ const ExpertDashboard = () => {
           onCloseModal={() => setShowModal(false)}
           onUploadSuccess={cargarContenidos}
         />
+      </Modal>
+
+      <Modal isOpen={modalFechaVisible} onClose={() => setModalFechaVisible(false)}>
+        <h2 className="text-xl font-semibold mb-4">📅 Agregar nueva fecha</h2>
+        <input
+          type="date"
+          className="border px-4 py-2 rounded w-full mb-4"
+          value={nuevaFecha}
+          onChange={(e) => setNuevaFecha(e.target.value)}
+        />
+        <button
+          onClick={guardarFecha}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Guardar fecha
+        </button>
       </Modal>
     </>
   );

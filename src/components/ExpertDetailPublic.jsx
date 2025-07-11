@@ -1,5 +1,6 @@
+// src/components/ExpertDetailPublic.jsx
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { db, auth } from '../firebase';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -9,20 +10,23 @@ import {
   addDoc,
   serverTimestamp,
   getDocs,
+  updateDoc,
+  arrayUnion,
   query,
-  where
+  where,
 } from 'firebase/firestore';
 import {
   BookOpen,
   GraduationCap,
   HelpCircle,
-  FileText,
-  CheckCircle
+  FileText
 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import ExpertRatingSection from './ExpertRatingSection';
 import QuesiaNavbar from "../components/QuesiaNavbar";
+import toast from 'react-hot-toast';
+import { Dialog, Transition } from '@headlessui/react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -36,6 +40,9 @@ export default function ExpertDetailPublic() {
   const { user: usuario } = useAuth();
   const [contenidos, setContenidos] = useState([]);
   const [verTemario, setVerTemario] = useState(null);
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState('');
 
   useEffect(() => {
     const obtener = async () => {
@@ -52,16 +59,64 @@ export default function ExpertDetailPublic() {
   useEffect(() => {
     const cargarContenidos = async () => {
       if (!expert?.id) return;
-      const q = query(
-        collection(db, "contenidosExpertos"),
-        where("expertoId", "==", expert.id)
-      );
+      const q = query(collection(db, 'contenidosExpertos'), where('expertoId', '==', expert.id));
       const snapshot = await getDocs(q);
       const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setContenidos(docs);
     };
     cargarContenidos();
   }, [expert]);
+
+  const handleLoginConGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+    }
+  };
+
+  const yaRegistrado = (usuariosRegistrados) => {
+    return usuariosRegistrados?.some((u) => u.correo === usuario?.email);
+  };
+
+  const handleAbrirModal = (contenido) => {
+    setContenidoSeleccionado(contenido);
+    setModalAbierto(true);
+  };
+
+  const handleRegistroGratuito = async () => {
+    if (!usuario || !contenidoSeleccionado) return;
+
+    if (yaRegistrado(contenidoSeleccionado.usuariosRegistrados)) {
+      toast("Ya estás registrado en este curso");
+      return;
+    }
+
+    if (contenidoSeleccionado.usuariosRegistrados?.length >= contenidoSeleccionado.cupoMaximo) {
+      toast.error("Este curso ya está lleno");
+      return;
+    }
+
+    try {
+      const ref = doc(db, 'contenidosExpertos', contenidoSeleccionado.id);
+      await updateDoc(ref, {
+        usuariosRegistrados: arrayUnion({
+          nombre: usuario.displayName || "Anónimo",
+          correo: usuario.email,
+          pagado: false,
+          estatus: "confirmado",
+          fechaRegistro: new Date().toISOString(),
+          fechaAgendada: fechaSeleccionada
+        })
+      });
+      toast.success("Registro exitoso al curso");
+      setModalAbierto(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo registrar al curso");
+    }
+  };
 
   const handleBuy = async (contenido) => {
     const stripe = await stripePromise;
@@ -97,15 +152,6 @@ export default function ExpertDetailPublic() {
     }
   };
 
-  const handleLoginConGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Error al iniciar sesión:', error);
-    }
-  };
-
   const getIconByTipo = (tipo) => {
     const lower = tipo?.toLowerCase();
     if (lower.includes('curso')) return <GraduationCap className="w-5 h-5 inline mr-1 text-blue-500" />;
@@ -123,10 +169,7 @@ export default function ExpertDetailPublic() {
 
       <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
         <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
-          <button
-            onClick={() => navigate('/expertos')}
-            className="text-sm text-primary hover:underline"
-          >
+          <button onClick={() => navigate('/expertos')} className="text-sm text-primary hover:underline">
             ← Volver al listado
           </button>
 
@@ -138,108 +181,57 @@ export default function ExpertDetailPublic() {
                 className="w-32 h-32 rounded-full object-cover mx-auto border"
               />
             )}
-            <h1 className="text-2xl font-bold text-default font-montserrat">
-              {expert.nombre}
-            </h1>
+            <h1 className="text-2xl font-bold text-default font-montserrat">{expert.nombre}</h1>
             <p className="text-primary font-semibold">{expert.especialidad}</p>
           </div>
-
-          {expert.experiencia && (
-            <div>
-              <h2 className="flex items-center text-lg font-semibold text-default-soft mb-1">
-                <FileText className="w-4 h-4 mr-2 text-gray-500" /> Experiencia
-              </h2>
-              <p className="text-default-soft whitespace-pre-line">{expert.experiencia}</p>
-            </div>
-          )}
-
-          {Array.isArray(expert.educacion) && expert.educacion.length > 0 && (
-            <div>
-              <h2 className="flex items-center text-lg font-semibold text-default-soft mb-1">
-                <GraduationCap className="w-4 h-4 mr-2 text-indigo-500" /> Educación
-              </h2>
-              <ul className="list-disc list-inside text-default-soft">
-                {expert.educacion.map((e, i) => (
-                  <li key={i}>{e}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {Array.isArray(expert.certificaciones) && expert.certificaciones.length > 0 && (
-            <div>
-              <h2 className="flex items-center text-lg font-semibold text-default-soft mb-1">
-                <CheckCircle className="w-4 h-4 mr-2 text-emerald-500" /> Certificaciones
-              </h2>
-              <ul className="list-disc list-inside text-default-soft">
-                {expert.certificaciones.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           {contenidos.length > 0 && (
             <div className="mb-10">
               <h2 className="text-xl font-bold mb-4">Contenidos disponibles</h2>
               <div className="space-y-6">
                 {contenidos.map((contenido) => (
-                  <div
-                    key={contenido.id}
-                    className="border rounded-lg p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white shadow"
-                  >
-                    <div className="flex-1">
-                      <div className="font-bold text-lg mb-1">
-                        {contenido.tipoContenido === "curso" && "📘 Curso"}
-                        {contenido.tipoContenido === "manual" && "📕 Manual"}
-                        {contenido.tipoContenido === "consulta" && "📄 Consulta"}
-                        {` ‘${contenido.titulo}’`}
-                      </div>
-                      <div className="text-default-soft mb-2">{contenido.descripcion}</div>
+                  <div key={contenido.id} className="border rounded-lg p-6 bg-white shadow">
+                    <div className="font-bold text-lg mb-1">
+                      {getIconByTipo(contenido.tipoContenido)} ‘{contenido.titulo}’
+                    </div>
+                    <div className="text-default-soft mb-2">{contenido.descripcion}</div>
 
-                      {contenido.archivoUrl && (
+                    {contenido.archivoUrl && (
+                      <button
+                        onClick={() => setVerTemario(verTemario === contenido.id ? null : contenido.id)}
+                        className="text-sm text-blue-600 underline hover:text-blue-800"
+                      >
+                        {verTemario === contenido.id ? 'Ocultar temario' : 'Ver temario'}
+                      </button>
+                    )}
+
+                    {contenido.archivoUrl && verTemario === contenido.id && (
+                      <div className="mt-4">
+                        <iframe src={contenido.archivoUrl} title="Archivo PDF" width="100%" height="500px" className="rounded border"></iframe>
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="text-2xl font-bold">
+                        {contenido.precio ? `$${Number(contenido.precio).toFixed(2)}` : 'Gratis'}
+                      </div>
+
+                      {contenido.tipoContenido === 'curso' && !contenido.precio && (
                         <button
-                          onClick={() =>
-                            setVerTemario(
-                              verTemario === contenido.id ? null : contenido.id
-                            )
-                          }
-                          className="text-sm text-blue-600 underline hover:text-blue-800 transition"
+                          onClick={() => handleAbrirModal(contenido)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                         >
-                          {verTemario === contenido.id ? "Ocultar temario" : "Ver temario"}
+                          Registrarme
                         </button>
                       )}
 
-                      {contenido.archivoUrl && verTemario === contenido.id && (
-                        <div className="mt-4">
-                          <iframe
-                            src={contenido.archivoUrl}
-                            title="Archivo PDF"
-                            width="100%"
-                            height="500px"
-                            className="rounded border"
-                          ></iframe>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col items-end gap-2 mt-4 sm:mt-0 sm:ml-6">
-                      <div className="text-2xl font-bold text-right mb-2">
-                        {contenido.precio
-                          ? `$${Number(contenido.precio).toFixed(2)}`
-                          : "Gratis"}
-                      </div>
-                      {contenido.precio ? (
+                      {contenido.tipoContenido === 'curso' && contenido.precio && (
                         <button
-                          className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
                           onClick={() => handleBuy(contenido)}
+                          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                         >
                           Comprar
                         </button>
-                      ) : (
-                        <span className="bg-blue-200 text-blue-700 px-4 py-2 rounded text-sm">
-                          Contenido gratuito
-                        </span>
                       )}
                     </div>
                   </div>
@@ -255,6 +247,62 @@ export default function ExpertDetailPublic() {
           />
         </div>
       </div>
+
+      <Transition appear show={modalAbierto} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setModalAbierto(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
+                  Selecciona una fecha disponible
+                </Dialog.Title>
+                <div className="mt-2">
+                  <select
+                    className="w-full border border-gray-300 rounded px-3 py-2 mt-2"
+                    value={fechaSeleccionada}
+                    onChange={(e) => setFechaSeleccionada(e.target.value)}
+                  >
+                    <option value="">-- Selecciona una fecha --</option>
+                    {contenidoSeleccionado?.fechasDisponibles?.map((f, idx) => (
+                      <option key={idx} value={f}>{new Date(f).toLocaleString()}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                    onClick={() => setModalAbierto(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    onClick={handleRegistroGratuito}
+                    disabled={!fechaSeleccionada}
+                  >
+                    Confirmar registro
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </>
   );
 }

@@ -13,20 +13,25 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
   const [precio, setPrecio] = useState('');
   const [subiendo, setSubiendo] = useState(false);
 
+  // Campos adicionales para cursos
+  const [modalidad, setModalidad] = useState('en línea');
+  const [plataforma, setPlataforma] = useState('');
+  const [duracionHoras, setDuracionHoras] = useState('');
+  const [cupoMaximo, setCupoMaximo] = useState('');
+  const [requierePago, setRequierePago] = useState(false);
+  const [instruccionesAcceso, setInstruccionesAcceso] = useState('');
+  const [fechasDisponibles, setFechasDisponibles] = useState([]);
+  const [nuevaFecha, setNuevaFecha] = useState('');
+
   const db = getFirestore(app);
-  const cloudinaryUrl = import.meta.env.VITE_CLOUDINARY_URL; // sin /image/upload
+  const cloudinaryUrl = import.meta.env.VITE_CLOUDINARY_URL;
   const cloudinaryPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
     if (!f) return;
 
-    const tiposPermitidos = [
-      "application/pdf",
-      "image/png",
-      "image/jpeg",
-      "video/mp4"
-    ];
+    const tiposPermitidos = ["application/pdf", "image/png", "image/jpeg", "video/mp4"];
     if (!tiposPermitidos.includes(f.type)) {
       toast.error('Solo se permite PDF, JPG/PNG o video MP4.');
       setFile(null);
@@ -38,6 +43,13 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       return;
     }
     setFile(f);
+  };
+
+  const agregarFecha = () => {
+    if (nuevaFecha) {
+      setFechasDisponibles([...fechasDisponibles, nuevaFecha]);
+      setNuevaFecha('');
+    }
   };
 
   const handleUpload = async (e) => {
@@ -59,26 +71,19 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
     formData.append('file', file);
     formData.append('upload_preset', cloudinaryPreset);
     formData.append('folder', 'expertos-queesia');
-    formData.append('resource_type', 'raw'); // ✅ ESTA LÍNEA ES CRUCIAL
+    formData.append('resource_type', 'raw');
 
     try {
-      const endpoint = cloudinaryUrl;
-
-      const res = await fetch(endpoint, {
+      const res = await fetch(cloudinaryUrl, {
         method: 'POST',
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error(`Falla al subir archivo. Código: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`Falla al subir archivo. Código: ${res.status}`);
       const data = await res.json();
-      if (!data.secure_url) {
-        throw new Error(data.error?.message || 'No se obtuvo URL segura');
-      }
+      if (!data.secure_url) throw new Error(data.error?.message || 'No se obtuvo URL segura');
 
-      await addDoc(collection(db, 'contenidosExpertos'), {
+      const contenidoData = {
         contenidoId: uuidv4(),
         titulo: titulo.trim(),
         descripcion: descripcion.trim(),
@@ -89,7 +94,21 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
         expertoId,
         fechaSubida: Timestamp.now(),
         usuariosAutorizados: [],
-      });
+      };
+
+      if (tipoContenido === 'curso') {
+        contenidoData.modalidad = modalidad;
+        contenidoData.plataforma = plataforma;
+        contenidoData.duracionHoras = parseInt(duracionHoras);
+        contenidoData.cupoMaximo = parseInt(cupoMaximo);
+        contenidoData.requierePago = requierePago;
+        contenidoData.instruccionesAcceso = instruccionesAcceso;
+        contenidoData.fechasDisponibles = fechasDisponibles;
+        contenidoData.usuariosRegistrados = [];
+        contenidoData.estatus = 'activo';
+      }
+
+      await addDoc(collection(db, 'contenidosExpertos'), contenidoData);
 
       toast.success('Contenido subido correctamente');
       setFile(null);
@@ -113,66 +132,67 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       <h2 className="text-xl font-semibold mb-4">Subir contenido</h2>
 
       <label className="block mb-2">Título</label>
-      <input
-        type="text"
-        className="w-full border p-2 mb-4"
-        value={titulo}
-        onChange={(e) => setTitulo(e.target.value)}
-        required
-        disabled={subiendo}
-      />
+      <input type="text" className="w-full border p-2 mb-4" value={titulo} onChange={(e) => setTitulo(e.target.value)} required disabled={subiendo} />
 
       <label className="block mb-2">Descripción</label>
-      <textarea
-        className="w-full border p-2 mb-4"
-        value={descripcion}
-        onChange={(e) => setDescripcion(e.target.value)}
-        required
-        disabled={subiendo}
-      />
+      <textarea className="w-full border p-2 mb-4" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required disabled={subiendo} />
 
       <label className="block mb-2">Tipo de contenido</label>
-      <select
-        className="w-full border p-2 mb-4"
-        value={tipoContenido}
-        onChange={(e) => setTipoContenido(e.target.value)}
-        required
-        disabled={subiendo}
-      >
+      <select className="w-full border p-2 mb-4" value={tipoContenido} onChange={(e) => setTipoContenido(e.target.value)} required disabled={subiendo}>
         <option value="">Selecciona una opción</option>
         <option value="curso">Curso</option>
         <option value="manual">Manual</option>
         <option value="consulta">Consulta</option>
       </select>
 
-      <label className="block mb-2">Precio (opcional)</label>
-      <input
-        type="number"
-        className="w-full border p-2 mb-4"
-        value={precio}
-        onChange={(e) => setPrecio(e.target.value)}
-        placeholder="Dejar vacío si es gratuito"
-        disabled={subiendo}
-      />
+      {tipoContenido === 'curso' && (
+        <>
+          <label className="block mb-2">Modalidad</label>
+          <select className="w-full border p-2 mb-4" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
+            <option value="en línea">En línea</option>
+            <option value="presencial">Presencial</option>
+          </select>
+
+          <label className="block mb-2">Plataforma</label>
+          <input className="w-full border p-2 mb-4" value={plataforma} onChange={(e) => setPlataforma(e.target.value)} />
+
+          <label className="block mb-2">Duración (horas)</label>
+          <input type="number" className="w-full border p-2 mb-4" value={duracionHoras} onChange={(e) => setDuracionHoras(e.target.value)} />
+
+          <label className="block mb-2">Cupo máximo</label>
+          <input type="number" className="w-full border p-2 mb-4" value={cupoMaximo} onChange={(e) => setCupoMaximo(e.target.value)} />
+
+          <label className="block mb-2">Requiere pago</label>
+          <input type="checkbox" className="mb-4" checked={requierePago} onChange={(e) => setRequierePago(e.target.checked)} />
+
+          {requierePago && (
+            <>
+              <label className="block mb-2">Precio (MXN)</label>
+              <input type="number" className="w-full border p-2 mb-4" value={precio} onChange={(e) => setPrecio(e.target.value)} />
+            </>
+          )}
+
+          <label className="block mb-2">Instrucciones de acceso</label>
+          <textarea className="w-full border p-2 mb-4" value={instruccionesAcceso} onChange={(e) => setInstruccionesAcceso(e.target.value)} />
+
+          <label className="block mb-2">Fechas disponibles</label>
+          <div className="flex mb-2 gap-2">
+            <input type="datetime-local" className="border p-2 w-full" value={nuevaFecha} onChange={(e) => setNuevaFecha(e.target.value)} />
+            <button type="button" className="bg-gray-300 px-3 rounded" onClick={agregarFecha}>Agregar</button>
+          </div>
+          <ul className="text-sm text-gray-600 mb-4">
+            {fechasDisponibles.map((f, i) => (
+              <li key={i}>✅ {f}</li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <label className="block mb-2">Archivo</label>
-      <input
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png,.mp4"
-        className="mb-4"
-        onChange={handleFileChange}
-        required
-        disabled={subiendo}
-      />
-      <p className="text-xs text-gray-500 mb-4">
-        Tamaño máximo: 20MB. Tipos permitidos: PDF, JPG, PNG, MP4.
-      </p>
+      <input type="file" accept=".pdf,.jpg,.jpeg,.png,.mp4" className="mb-4" onChange={handleFileChange} required disabled={subiendo} />
+      <p className="text-xs text-gray-500 mb-4">Tamaño máximo: 20MB. Tipos permitidos: PDF, JPG, PNG, MP4.</p>
 
-      <button
-        type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        disabled={subiendo}
-      >
+      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" disabled={subiendo}>
         {subiendo ? (
           <span>
             <svg className="animate-spin h-5 w-5 inline mr-2" viewBox="0 0 24 24">
