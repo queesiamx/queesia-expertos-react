@@ -18,7 +18,7 @@ const Login = () => {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Correos autorizados como administrador
+        // ✅ Admin
         const correosAdmin = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
         if (correosAdmin.includes(user.email)) {
           toast.success("Bienvenido administrador 🧀");
@@ -26,34 +26,46 @@ const Login = () => {
           return;
         }
 
-        // Verifica si ya existe en la colección de expertos
+        // ✅ Verificar si es experto
         const expertRef = doc(db, "experts", user.uid);
         const expertSnap = await getDoc(expertRef);
 
         if (expertSnap.exists()) {
           const data = expertSnap.data();
           if (data.aprobado === true && data.nombre && data.especialidad) {
-            toast.success("Bienvenido, acceso aprobado.");
+            toast.success("Bienvenido experto");
             navigate("/dashboard");
+            return;
           } else {
             toast("Tu cuenta fue registrada. Completa tu perfil para continuar.");
             navigate("/registro");
+            return;
           }
-        } else {
-          await setDoc(expertRef, {
-            email: user.email,
-            aprobado: false,
-            creadoEn: serverTimestamp(),
-          });
-          toast("Sesión iniciada. Completa tu perfil para continuar.");
-          navigate("/registro");
         }
+
+        // ✅ Verificar si es usuario regular
+        const userRef = doc(db, "usuarios", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          toast.success("Bienvenido 🎉");
+          navigate("/");
+          return;
+        }
+
+        // 🆕 Registrar como nuevo usuario regular
+        await setDoc(userRef, {
+          email: user.email,
+          creadoEn: serverTimestamp(),
+        });
+        toast.success("Registro exitoso como usuario.");
+        navigate("/");
+
       } catch (error) {
         console.error("Error con Google Login", error);
         if (error.code !== "auth/popup-closed-by-user") {
           toast.error("No se pudo iniciar sesión con Google.");
         }
-        navigate("/");
       }
     };
 
