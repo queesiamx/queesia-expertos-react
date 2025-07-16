@@ -18,7 +18,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Raleway', 'ui-sans-serif', 'system-ui'],
-        montserrat: ['Montserrat', 'ui-sans-serif'],
+        montserrat: ['Montserrat', 'ui-sans-serif', 'system-ui'],
       },
       
       colors: {
