@@ -27,10 +27,22 @@ import ExpertRatingSection from './ExpertRatingSection';
 import QuesiaNavbar from "../components/QuesiaNavbar";
 import toast from 'react-hot-toast';
 import { Dialog, Transition } from '@headlessui/react';
+import Footer from "./Footer";
+
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function ExpertDetailPublic() {
+
+    // Función para asignar color al borde según tipo
+  const getBorderColorByTipo = (tipo) => {
+    const lower = tipo?.toLowerCase();
+    if (lower.includes('curso')) return 'border-blue-400';
+    if (lower.includes('asesor')) return 'border-green-400';
+    if (lower.includes('manual')) return 'border-orange-400';
+    return 'border-gray-300';
+  };
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [expert, setExpert] = useState(null);
@@ -168,41 +180,80 @@ export default function ExpertDetailPublic() {
   if (!expert) return <p className="p-6">Experto no encontrado.</p>;
 
   return (
-    <>
-      <QuesiaNavbar />
+  <>
+    <QuesiaNavbar />
 
-      <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
-        <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
-          <button onClick={() => navigate('/expertos')} className="text-sm text-primary hover:underline">
-            ← Volver al listado
-          </button>
+    <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-md space-y-6">
+        <button onClick={() => navigate('/expertos')} className="text-sm text-primary hover:underline">
+          ← Volver al listado
+        </button>
 
-          <div className="text-center space-y-2">
-            {expert.fotoPerfilURL && (
-              <img
-                src={expert.fotoPerfilURL}
-                alt="Foto del experto"
-                className="w-32 h-32 rounded-full object-cover mx-auto border"
-              />
-            )}
-            <h1 className="text-2xl font-bold text-default font-montserrat">{expert.nombre}</h1>
-            <p className="text-primary font-semibold">{expert.especialidad}</p>
-          </div>
+        <div className="text-center space-y-2">
+          {expert.fotoPerfilURL && (
+            <img
+              src={expert.fotoPerfilURL}
+              alt="Foto del experto"
+              className="w-32 h-32 rounded-full object-cover mx-auto border"
+            />
+          )}
+          <h1 className="text-2xl font-bold text-default font-montserrat">{expert.nombre}</h1>
+          <p className="text-primary font-semibold">{expert.especialidad}</p>
 
-          {contenidos.length > 0 && (
-            <div className="mb-10">
-              <h2 className="text-xl font-bold mb-4">Contenidos disponibles</h2>
-              <div className="space-y-6">
-                {contenidos.map((contenido) => (
-  <div key={contenido.id} className="border rounded-lg p-6 bg-white shadow">
-    <div className="font-bold text-lg mb-1">
-      {getIconByTipo(contenido.tipoContenido)} ‘{contenido.titulo}’
+          <div className="text-left space-y-4 mt-6 border-t pt-4">
+            {expert.experiencia && (
+              <div>
+                <p className="font-bold">📁 Experiencia</p>
+                <p className="text-default">{expert.experiencia}</p>
+              </div>
+            )}
+
+            {expert.educacion?.length > 0 && (
+              <div>
+                <p className="font-bold">🎓 Educación</p>
+                <ul className="list-disc list-inside text-default">
+                  {expert.educacion.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {expert.certificaciones?.length > 0 && (
+              <div>
+                <p className="font-bold">📜 Certificaciones</p>
+                <ul className="list-disc list-inside text-default">
+                  {expert.certificaciones.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+
+  
+      </div>
     </div>
-    <div className="text-default-soft mb-2">{contenido.descripcion}</div>
+
+    {contenidos.length > 0 && (
+          <div className="max-w-3xl mx-auto mt-10 px-4 space-y-6">
+            <h2 className="text-xl font-bold mb-4">Contenidos disponibles</h2>
+            {contenidos.map((contenido) => (
+  <div
+    key={contenido.id}
+    className={`rounded-xl p-6 bg-white shadow-md space-y-4 border-l-8 ${getBorderColorByTipo(contenido.tipoContenido)}`}
+  >
+    <div className="flex items-center gap-2 font-bold text-lg text-gray-800">
+      {getIconByTipo(contenido.tipoContenido)}
+      <span>{contenido.titulo}</span>
+    </div>
+
+    <p className="text-gray-700">{contenido.descripcion}</p>
 
     {contenido.tipoContenido === 'consulta' && (
-      <div className="mt-3">
-        <label htmlFor={`consulta-${contenido.id}`} className="block font-semibold text-sm mb-1">
+      <div className="mt-2 space-y-2">
+        <label htmlFor={`consulta-${contenido.id}`} className="block font-semibold text-sm">
           Escribe tu consulta:
         </label>
         <textarea
@@ -214,13 +265,13 @@ export default function ExpertDetailPublic() {
           onChange={(e) => setConsulta(e.target.value)}
         />
         <button
-          className="mt-2 bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700"
           onClick={() => handleEnviarConsulta(contenido)}
         >
           Enviar
         </button>
         {mensajeConfirmacion && (
-          <p className="text-green-600 text-sm mt-1">{mensajeConfirmacion}</p>
+          <p className="text-green-600 text-sm">{mensajeConfirmacion}</p>
         )}
       </div>
     )}
@@ -236,36 +287,41 @@ export default function ExpertDetailPublic() {
 
     {contenido.archivoUrl && verTemario === contenido.id && (
       <div className="mt-4">
-        <iframe src={contenido.archivoUrl} title="Archivo PDF" width="100%" height="500px" className="rounded border"></iframe>
+        <iframe
+          src={contenido.archivoUrl}
+          title="Archivo PDF"
+          width="100%"
+          height="500px"
+          className="rounded border"
+        ></iframe>
       </div>
     )}
 
-    <div className="mt-4 flex items-center justify-between">
-      <div className="text-2xl font-bold">
+    <div className="flex items-center justify-between pt-4">
+      <div className="text-xl font-semibold text-gray-800">
         {contenido.tipoContenido === 'consulta' ? (
-          <span className="text-yellow-700 font-medium text-sm">
+          <span className="text-yellow-700 text-sm font-medium">
             Sujeto a aplicación de costos
           </span>
         ) : contenido.precio ? (
-          <span className="text-black font-semibold">${Number(contenido.precio).toFixed(2)}</span>
+          <span>${Number(contenido.precio).toFixed(2)}</span>
         ) : (
-          <span className="text-gray-500">Contenido gratuito</span>
+          <span className="text-gray-500 text-sm">Contenido gratuito</span>
         )}
       </div>
 
       {contenido.tipoContenido === 'curso' && !contenido.precio && (
         <button
           onClick={() => handleAbrirModal(contenido)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
         >
           Registrarme
         </button>
       )}
-
       {contenido.tipoContenido === 'curso' && contenido.precio && (
         <button
           onClick={() => handleBuy(contenido)}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
         >
           Comprar
         </button>
@@ -274,74 +330,74 @@ export default function ExpertDetailPublic() {
   </div>
 ))}
 
-              </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          <ExpertRatingSection
-            expertId={expert.id}
-            usuario={usuario}
-            handleLoginConGoogle={handleLoginConGoogle}
-          />
-        </div>
-      </div>
+        <ExpertRatingSection
+          expertId={expert.id}
+          usuario={usuario}
+          handleLoginConGoogle={handleLoginConGoogle}
+        />
 
-      <Transition appear show={modalAbierto} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => setModalAbierto(false)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
-          </Transition.Child>
+    <Transition appear show={modalAbierto} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={() => setModalAbierto(false)}>
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-25" />
+        </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
-                  Selecciona una fecha disponible
-                </Dialog.Title>
-                <div className="mt-2">
-                  <select
-                    className="w-full border border-gray-300 rounded px-3 py-2 mt-2"
-                    value={fechaSeleccionada}
-                    onChange={(e) => setFechaSeleccionada(e.target.value)}
-                  >
-                    <option value="">-- Selecciona una fecha --</option>
-                    {contenidoSeleccionado?.fechasDisponibles?.map((f, idx) => (
-                      <option key={idx} value={f}>{new Date(f).toLocaleString()}</option>
-                    ))}
-                  </select>
-                </div>
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Title className="text-lg font-medium leading-6 text-gray-900">
+                Selecciona una fecha disponible
+              </Dialog.Title>
+              <div className="mt-2">
+                <select
+                  className="w-full border border-gray-300 rounded px-3 py-2 mt-2"
+                  value={fechaSeleccionada}
+                  onChange={(e) => setFechaSeleccionada(e.target.value)}
+                >
+                  <option value="">-- Selecciona una fecha --</option>
+                  {contenidoSeleccionado?.fechasDisponibles?.map((f, idx) => (
+                    <option key={idx} value={f}>
+                      {new Date(f).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <div className="mt-4 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-                    onClick={() => setModalAbierto(false)}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    onClick={handleRegistroGratuito}
-                    disabled={!fechaSeleccionada}
-                  >
-                    Confirmar registro
-                  </button>
-                </div>
-              </Dialog.Panel>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
-    </>
-  );
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                  onClick={() => setModalAbierto(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  onClick={handleRegistroGratuito}
+                  disabled={!fechaSeleccionada}
+                >
+                  Confirmar registro
+                </button>
+              </div>
+            </Dialog.Panel>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+        <Footer />
+  </>
+
+);
 }
-

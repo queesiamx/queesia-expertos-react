@@ -101,6 +101,7 @@ export default function ExpertRatingSection({ expertId, usuario, handleLoginConG
   };
 
   return (
+    <div className="bg-white rounded-xl shadow-md p-6 max-w-3xl mx-auto mt-10">
     <section className="bg-white rounded-xl shadow-md p-6 mb-6">
       <h2 className="text-lg font-bold flex items-center gap-2 mb-2">
         <Star className="w-6 h-6 text-yellow-400" /> Califica a este experto
@@ -195,9 +196,11 @@ export default function ExpertRatingSection({ expertId, usuario, handleLoginConG
               </div>
               <div className="text-gray-700">{r.comment}</div>
             </div>
-          ))}
+          ))} {/* <-- cierre del ratings.map */}
         </div>
-      )}
+      )} {/* <-- cierre del condicional !loading && ratings.length > 0 */}
     </section>
+  </div>
   );
 }
+

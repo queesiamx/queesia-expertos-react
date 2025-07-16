@@ -23,7 +23,7 @@ export default function Home() {
         <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center text-center px-4 py-24 font-sans">
           
           {/* Título principal */}
-          <h1 className="text-5xl md:text-6xl font-bold text-center mb-4 animate-fade-in">
+          <h1 className="text-5xl md:text-6xl font-bold italic text-center mb-4 animate-fade-in">
             ¿Quiénes son <span className="text-blue-500 italic">los expertos</span>?
           </h1>
 
