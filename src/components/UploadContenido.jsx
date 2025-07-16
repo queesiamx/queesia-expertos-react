@@ -105,7 +105,7 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       contenidoId: uuidv4(),
       titulo: tipoContenido === 'consulta' ? 'Consulta al experto' : titulo.trim(),
       descripcion: tipoContenido === 'consulta'
-        ? 'Las consultas formuladas se validan primero de lado de los administradores, ya que puede estar sujeto a costos.'
+        ? 'Antes de enviar tu consulta al experto, el equipo de Queesia la revisará, ya que algunas preguntas podrían requerir una respuesta profesional con costo.'
         : descripcion.trim(),
       tipoContenido,
       precio: precio ? parseFloat(precio) : null,
@@ -169,7 +169,7 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
           <input type="text" className="w-full border p-2 mb-4 bg-gray-100" value="Consulta al experto" disabled />
 
           <label className="block mb-2">Descripción</label>
-          <textarea className="w-full border p-2 mb-4 bg-gray-100" value="Las consultas formuladas se validan primero de lado de los administradores, ya que puede estar sujeto a costos." disabled />
+          <textarea className="w-full border p-2 mb-4 bg-gray-100" value="Antes de enviar tu consulta al experto, el equipo de Queesia la revisará, ya que algunas preguntas podrían requerir una respuesta profesional con costo." disabled />
         </>
       ) : tipoContenido !== '' ? (
         <>
