@@ -172,11 +172,14 @@ try {
         {!expert ? (
           <p className="text-gray-600">Cargando información...</p>
         ) : editMode ? (
-          <ExpertProfileEditor
-            expert={expert}
-            onSave={handleSave}
-            onCancel={() => setEditMode(false)}
-          />
+      <ExpertProfileEditor
+        expert={expert}
+        contenidos={contenidos} // 👈 pasar los contenidos actuales
+        onSave={handleSave}
+        onCancel={() => setEditMode(false)}
+        onUpdateContenido={cargarContenidos} // para recargar cuando se edite un contenido
+      />
+
         ) : (
           <>
             <ExpertProfileCard expert={expert} />

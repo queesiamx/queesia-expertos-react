@@ -11,13 +11,32 @@ function ExpertList() {
   const [cargando, setCargando] = useState(true);
   const navigate = useNavigate();
 
+  // 🔄 Carga expertos y sus servicios desde Firestore
   useEffect(() => {
     const cargar = async () => {
-      const snapshot = await getDocs(collection(db, 'experts'));
-      const docs = snapshot.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter((e) => e.aprobado === true);
-      setExpertos(docs);
+      // Cargar expertos aprobados
+      const expertosSnap = await getDocs(collection(db, 'experts'));
+      const expertosAprobados = expertosSnap.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(e => e.aprobado === true);
+
+      // Cargar servicios desde contenidosExpertos
+      const serviciosSnap = await getDocs(collection(db, 'contenidosExpertos'));
+      const serviciosPorExperto = {};
+      serviciosSnap.docs.forEach(doc => {
+        const data = doc.data();
+        const uid = data.expertoId;
+        if (!serviciosPorExperto[uid]) serviciosPorExperto[uid] = [];
+        serviciosPorExperto[uid].push(data);
+      });
+
+      // Combinar expertos con sus servicios
+      const expertosConServicios = expertosAprobados.map(e => ({
+        ...e,
+        servicios: serviciosPorExperto[e.id] || [],
+      }));
+
+      setExpertos(expertosConServicios);
       setCargando(false);
     };
     cargar();
@@ -26,6 +45,7 @@ function ExpertList() {
   const normalize = (val) =>
     typeof val === 'string' ? val.trim().toLowerCase() : '';
 
+  // 🔍 Generar especialidades únicas
   const especialidadMap = new Map();
   expertos.forEach((e) => {
     const key = normalize(e.especialidad);
@@ -38,7 +58,7 @@ function ExpertList() {
     a.localeCompare(b)
   );
 
-  // 🔍 Filtro combinado por especialidad y tipo de servicio
+  // 🎯 Filtrado por especialidad y tipo de servicio
   const filtrados = expertos.filter((e) => {
     const coincideEspecialidad =
       !especialidadSeleccionada ||
@@ -48,7 +68,7 @@ function ExpertList() {
       !servicioSeleccionado ||
       (Array.isArray(e.servicios) &&
         e.servicios.some((s) =>
-          normalize(s.tipo).includes(normalize(servicioSeleccionado))
+          normalize(s.tipoContenido) === normalize(servicioSeleccionado)
         ));
 
     return coincideEspecialidad && coincideServicio;
@@ -61,7 +81,7 @@ function ExpertList() {
           Expertos disponibles
         </h1>
 
-        {/* Filtros */}
+        {/* 🎛 Filtros */}
         <div className="flex flex-col sm:flex-row flex-wrap justify-between items-center gap-4">
           <select
             value={especialidadSeleccionada}
@@ -93,9 +113,13 @@ function ExpertList() {
           </button>
         </div>
 
-        {/* Resultados */}
+        {/* 📦 Resultados */}
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-          {filtrados.length === 0 ? (
+          {cargando ? (
+            <p className="text-center text-default-soft col-span-full">
+              Cargando expertos...
+            </p>
+          ) : filtrados.length === 0 ? (
             <p className="text-center text-default-soft col-span-full">
               No se encontraron expertos con esos filtros.
             </p>
