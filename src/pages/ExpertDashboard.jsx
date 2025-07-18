@@ -23,6 +23,7 @@ import ExpertProfileCard from "../components/ExpertProfileCard";
 import ExpertProfileEditor from "../components/ExpertProfileEditor";
 import UploadContenido from "../components/UploadContenido";
 import Modal from "../components/Modal";
+import ConsultaModal from "../components/ConsultaModal";
 
 const ExpertDashboard = () => {
   const navigate = useNavigate();
@@ -33,6 +34,8 @@ const ExpertDashboard = () => {
   const [modalFechaVisible, setModalFechaVisible] = useState(false);
   const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
   const [nuevaFecha, setNuevaFecha] = useState("");
+  const [consultaModalVisible, setConsultaModalVisible] = useState(false);
+  const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
 
   const cargarContenidos = async () => {
     if (!expert?.id) return;
@@ -45,53 +48,48 @@ const ExpertDashboard = () => {
     setContenidos(docs);
   };
 
- const handleDeleteContenido = async (contenidoId, publicId) => {
-  if (!window.confirm("¿Seguro que quieres eliminar este contenido? Esta acción no se puede deshacer.")) return;
+  const handleDeleteContenido = async (contenidoId, publicId) => {
+    if (!window.confirm("¿Seguro que quieres eliminar este contenido? Esta acción no se puede deshacer.")) return;
 
-  try {
-    console.log("🧾 Eliminando contenido:", contenidoId, "🔗 publicId:", publicId);
+    try {
+      console.log("🧾 Eliminando contenido:", contenidoId, "🔗 publicId:", publicId);
 
-    // ⚠️ Solo intentar eliminar en Cloudinary si hay publicId válido
-    if (publicId && typeof publicId === "string") {
-      const res = await fetch("/api/delete-cloudinary", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ public_id: publicId }),
-      });
+      if (publicId && typeof publicId === "string") {
+        const res = await fetch("/api/delete-cloudinary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ public_id: publicId }),
+        });
 
-      // ⚠️ Cloudinary a veces no regresa JSON válido, así que parseamos manualmente
-const text = await res.text();
-let data;
-try {
-  data = JSON.parse(text);
-} catch (e) {
-  console.error("❌ Respuesta no válida de Cloudinary:", e, text);
-  toast.error("Error inesperado del servidor al eliminar archivo.");
-  return;
-}
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          console.error("❌ Respuesta no válida de Cloudinary:", e, text);
+          toast.error("Error inesperado del servidor al eliminar archivo.");
+          return;
+        }
 
-
-      if (data.error) {
-        console.warn("⚠️ Error desde Cloudinary:", data.error);
-        toast.error("Error al eliminar archivo en Cloudinary: " + data.error);
-        return;
+        if (data.error) {
+          console.warn("⚠️ Error desde Cloudinary:", data.error);
+          toast.error("Error al eliminar archivo en Cloudinary: " + data.error);
+          return;
+        }
+      } else {
+        console.warn("⚠️ No hay public_id, se omite eliminación en Cloudinary.");
       }
-    } else {
-      console.warn("⚠️ No hay public_id, se omite eliminación en Cloudinary.");
+
+      await deleteDoc(doc(db, "contenidosExpertos", contenidoId));
+      toast.success("Contenido eliminado correctamente.");
+      cargarContenidos();
+    } catch (error) {
+      console.error("❌ Error total en la eliminación:", error);
+      toast.error("Ocurrió un error al eliminar el contenido.");
     }
-
-    // ✅ Eliminamos el documento de Firestore aunque no haya archivo en Cloudinary
-    await deleteDoc(doc(db, "contenidosExpertos", contenidoId));
-    toast.success("Contenido eliminado correctamente.");
-    cargarContenidos(); // 🔄 Recargar la lista si tienes esta función
-  } catch (error) {
-    console.error("❌ Error total en la eliminación:", error);
-    toast.error("Ocurrió un error al eliminar el contenido.");
-  }
-};
-
+  };
 
   const handleAgregarFecha = (contenido) => {
     setContenidoSeleccionado(contenido);
@@ -172,14 +170,13 @@ try {
         {!expert ? (
           <p className="text-gray-600">Cargando información...</p>
         ) : editMode ? (
-      <ExpertProfileEditor
-        expert={expert}
-        contenidos={contenidos} // 👈 pasar los contenidos actuales
-        onSave={handleSave}
-        onCancel={() => setEditMode(false)}
-        onUpdateContenido={cargarContenidos} // para recargar cuando se edite un contenido
-      />
-
+          <ExpertProfileEditor
+            expert={expert}
+            contenidos={contenidos}
+            onSave={handleSave}
+            onCancel={() => setEditMode(false)}
+            onUpdateContenido={cargarContenidos}
+          />
         ) : (
           <>
             <ExpertProfileCard expert={expert} />
@@ -213,19 +210,18 @@ try {
                         {contenido.tipoContenido === "curso" && "📘 Curso"}
                         {contenido.tipoContenido === "manual" && "📕 Manual"}
                         {contenido.tipoContenido === "consulta" && "📄 Consulta"}
-                        {` "${contenido.titulo}"`}
+                        {` \"${contenido.titulo}\"`}
                       </h3>
                       <div className="flex items-center gap-2">
-                {contenido.tipoContenido === "curso" && (
-                  <button
-                    onClick={() => handleAgregarFecha(contenido)}
-                    className="text-green-600 hover:text-green-800"
-                    title="Agregar fecha disponible"
-                  >
-                    📅
-                  </button>
-                )}
-
+                        {contenido.tipoContenido === "curso" && (
+                          <button
+                            onClick={() => handleAgregarFecha(contenido)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Agregar fecha disponible"
+                          >
+                            📅
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDeleteContenido(contenido.id, contenido.public_id)}
                           className="text-red-500 hover:text-red-700"
@@ -239,17 +235,16 @@ try {
                       {contenido.descripcion}
                     </p>
                     {contenido.tipoContenido === 'consulta' ? (
-  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm">
-    Sujeto a aplicación de costos
-  </span>
-) : contenido.precio ? (
-  <span className="bg-blue-600 text-white px-3 py-1 rounded">
-    ${Number(contenido.precio).toFixed(2)}
-  </span>
-) : (
-  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded">Contenido gratuito</span>
-)}
-
+                      <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm">
+                        Sujeto a aplicación de costos
+                      </span>
+                    ) : contenido.precio ? (
+                      <span className="bg-blue-600 text-white px-3 py-1 rounded">
+                        ${Number(contenido.precio).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded">Contenido gratuito</span>
+                    )}
                     <div className="mt-2">
                       <a
                         href={contenido.archivoUrl}
@@ -297,6 +292,13 @@ try {
           Guardar fecha
         </button>
       </Modal>
+
+      {consultaModalVisible && consultaSeleccionada && (
+        <ConsultaModal
+          consulta={consultaSeleccionada}
+          onClose={() => setConsultaModalVisible(false)}
+        />
+      )}
     </>
   );
 };

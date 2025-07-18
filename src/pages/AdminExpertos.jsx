@@ -18,6 +18,11 @@ export default function AdminExpertos() {
   const [autorizado, setAutorizado] = useState(false);
   const [verificado, setVerificado] = useState(false);
   const [consultas, setConsultas] = useState([]);
+  const [consultasContadores, setConsultasContadores] = useState({
+    pendientes: 0,
+    resueltasGratis: 0,
+    conCobro: 0,
+  });
   const [filtro, setFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
 
@@ -45,12 +50,8 @@ export default function AdminExpertos() {
           ...doc.data(),
         }));
         setExpertos(listaExpertos);
-
-        const snapshotConsultas = await getDocs(collection(db, 'consultasModeradas'));
-        const listaConsultas = snapshotConsultas.docs.map((doc) => doc.data());
-        setConsultas(listaConsultas);
       } catch (e) {
-        console.error('Error al cargar datos:', e);
+        console.error('Error al cargar expertos:', e);
       } finally {
         setCargando(false);
       }
@@ -58,6 +59,34 @@ export default function AdminExpertos() {
 
     if (autorizado) {
       cargarDatos();
+    }
+  }, [autorizado]);
+
+  // NUEVO: contar estados de consultas
+  useEffect(() => {
+    const contarConsultas = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'consultasModeradas'));
+        const todas = snapshot.docs.map(doc => doc.data());
+
+        const pendientes = todas.filter(c => c.estado === 'pendiente').length;
+        const gratis = todas.filter(c => c.estado === 'resueltaGratis').length;
+        const conPago = todas.filter(c => c.estado === 'requierePago' || c.estado === 'conCobro').length;
+
+        setConsultasContadores({
+          pendientes,
+          resueltasGratis: gratis,
+          conCobro: conPago,
+        });
+
+        setConsultas(todas); // también se guarda por si se usa en otra parte
+      } catch (error) {
+        console.error('Error al contar consultas:', error);
+      }
+    };
+
+    if (autorizado) {
+      contarConsultas();
     }
   }, [autorizado]);
 
@@ -94,10 +123,12 @@ export default function AdminExpertos() {
     );
   }
 
+  const totalServicios = expertos.reduce((acc, exp) => acc + (Array.isArray(exp.servicios) ? exp.servicios.length : 0), 0);
+  const totalCursos = expertos.reduce((acc, exp) => acc + (Array.isArray(exp.servicios) ? exp.servicios.filter(s => s.tipo === 'curso').length : 0), 0);
+
   return (
     <div className="min-h-screen bg-primary-soft px-6 py-10 font-sans mt-[72px]">
       <div className="fixed inset-0 bg-primary-soft -z-10"></div>
-
       <Toaster position="top-right" />
       <AdminNavbar onLogout={handleLogout} />
 
@@ -105,60 +136,84 @@ export default function AdminExpertos() {
         Panel de Administración de Expertos
       </h1>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => setFiltro('todos')}
-          className={`px-4 py-1 rounded-full border ${
-            filtro === 'todos' ? 'bg-blue-600 text-white' : 'bg-white text-default'
-          }`}
-        >
-          Todos
-        </button>
-        <button
-          onClick={() => setFiltro('aprobados')}
-          className={`px-4 py-1 rounded-full border ${
-            filtro === 'aprobados' ? 'bg-green-600 text-white' : 'bg-white text-default'
-          }`}
-        >
-          Aprobados
-        </button>
-        <button
-          onClick={() => setFiltro('pendientes')}
-          className={`px-4 py-1 rounded-full border ${
-            filtro === 'pendientes' ? 'bg-yellow-600 text-white' : 'bg-white text-default'
-          }`}
-        >
-          Pendientes
-        </button>
+      <div className="flex flex-wrap gap-3 mb-6">
         <input
           type="text"
           placeholder="Buscar por nombre o especialidad..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+          className="w-full sm:w-72 md:w-80 px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
         />
-      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-primary">{expertos.length}</p>
-          <p className="text-sm text-default-soft">Expertos totales</p>
-        </div>
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-green-600">
+        <button
+          onClick={() => setFiltro('todos')}
+          className={`relative px-4 py-2 rounded-full border text-sm font-medium ${
+            filtro === 'todos' ? 'bg-blue-600 text-white' : 'bg-white text-default'
+          }`}
+        >
+          Expertos
+          <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {expertos.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setFiltro('aprobados')}
+          className={`relative px-4 py-2 rounded-full border text-sm font-medium ${
+            filtro === 'aprobados' ? 'bg-green-600 text-white' : 'bg-white text-default'
+          }`}
+        >
+          Aprobados
+          <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {expertos.filter(e => e.aprobado).length}
-          </p>
-          <p className="text-sm text-default-soft">Aprobados</p>
-        </div>
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-yellow-600">
+          </span>
+        </button>
+
+        <button
+          onClick={() => setFiltro('pendientes')}
+          className={`relative px-4 py-2 rounded-full border text-sm font-medium ${
+            filtro === 'pendientes' ? 'bg-yellow-500 text-white' : 'bg-white text-default'
+          }`}
+        >
+          Pendientes
+          <span className="absolute -top-2 -right-2 bg-yellow-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {expertos.filter(e => !e.aprobado).length}
-          </p>
-          <p className="text-sm text-default-soft">Pendientes</p>
+          </span>
+        </button>
+
+        <div className="relative px-4 py-2 rounded-full border bg-white text-default text-sm font-medium">
+          Consultas pendientes
+          <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {consultasContadores.pendientes}
+          </span>
         </div>
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-red-600">{consultas.length}</p>
-          <p className="text-sm text-default-soft">Consultas pendientes</p>
+
+        <div className="relative px-4 py-2 rounded-full border bg-white text-default text-sm font-medium">
+          Resueltas gratis
+          <span className="absolute -top-2 -right-2 bg-green-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {consultasContadores.resueltasGratis}
+          </span>
+        </div>
+
+        <div className="relative px-4 py-2 rounded-full border bg-white text-default text-sm font-medium">
+          Con cobro
+          <span className="absolute -top-2 -right-2 bg-blue-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {consultasContadores.conCobro}
+          </span>
+        </div>
+
+        <div className="relative px-4 py-2 rounded-full border bg-white text-default text-sm font-medium">
+          Servicios ofrecidos
+          <span className="absolute -top-2 -right-2 bg-purple-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {totalServicios}
+          </span>
+        </div>
+
+        <div className="relative px-4 py-2 rounded-full border bg-white text-default text-sm font-medium">
+          Cursos ofrecidos
+          <span className="absolute -top-2 -right-2 bg-orange-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {totalCursos}
+          </span>
         </div>
       </div>
 

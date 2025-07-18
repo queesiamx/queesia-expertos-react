@@ -41,29 +41,33 @@ export default function ResponderConsulta() {
   }, [id, navigate]);
 
   const guardarRespuesta = async () => {
-    if (!respuesta.trim()) {
-      toast.error('La respuesta no puede estar vacía.');
-      return;
-    }
+  if (!respuesta.trim()) {
+    toast.error('La respuesta no puede estar vacía.');
+    return;
+  }
 
-    if (estado === 'requierePago' && !pagado) {
-      toast.error('Esta consulta requiere pago. No puedes enviar respuesta hasta que el usuario haya pagado.');
-      return;
-    }
+  if (estado === 'requierePago' && !pagado) {
+    toast.error('Esta consulta requiere pago. No puedes enviar respuesta hasta que el usuario haya pagado.');
+    return;
+  }
 
-    try {
-      const ref = doc(db, 'consultasModeradas', id);
-      await updateDoc(ref, {
-        respuesta,
-        estado
-      });
-      toast.success('Consulta actualizada correctamente.');
-      navigate('/consultas-recibidas');
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al guardar la respuesta.');
-    }
-  };
+  // 🟢 Establece automáticamente el estado correcto
+  const estadoFinal = pagado ? 'conCobro' : 'resueltaGratis';
+
+  try {
+    const ref = doc(db, 'consultasModeradas', id);
+    await updateDoc(ref, {
+      respuesta,
+      estado: estadoFinal
+    });
+    toast.success('Consulta actualizada correctamente.');
+    navigate('/consultas-recibidas');
+  } catch (error) {
+    console.error(error);
+    toast.error('Error al guardar la respuesta.');
+  }
+};
+
 
   return (
     <>
@@ -96,15 +100,16 @@ export default function ResponderConsulta() {
 
             <div className="mt-4">
               <span className="block text-gray-700 font-semibold mb-1">Estado de la consulta:</span>
-              <select
+                <select
                 value={estado}
-                onChange={(e) => setEstado(e.target.value)}
-                className="border rounded-md p-2 w-full"
+                disabled // 👈 Deshabilitado
+                className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
               >
                 <option value="respondida">Respondida</option>
                 <option value="resueltaGratis">Resuelta gratis</option>
                 <option value="requierePago">Requiere pago</option>
               </select>
+
             </div>
 
             <div className="flex justify-end gap-4 mt-6">
