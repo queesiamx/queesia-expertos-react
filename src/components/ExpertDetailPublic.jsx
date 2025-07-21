@@ -47,14 +47,16 @@ export default function ExpertDetailPublic() {
   const navigate = useNavigate();
   const [expert, setExpert] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [consulta, setConsulta] = useState('');
-  const [mensajeConfirmacion, setMensajeConfirmacion] = useState('');
+  const [consultas, setConsultas] = useState({});
+  const [mensajesConfirmacion, setMensajesConfirmacion] = useState({});
   const { user: usuario } = useAuth();
   const [contenidos, setContenidos] = useState([]);
   const [verTemario, setVerTemario] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
   const [fechaSeleccionada, setFechaSeleccionada] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
 
   useEffect(() => {
     const obtener = async () => {
@@ -146,10 +148,12 @@ export default function ExpertDetailPublic() {
   };
 
   const handleEnviarConsulta = async (contenido) => {
-  if (!consulta.trim() || !usuario) return;
+  const consultaActual = consultas[contenido.id];
+  if (!consultaActual?.trim() || !usuario) return;
+
   try {
     await addDoc(collection(db, 'consultasModeradas'), {
-      consulta,
+      consulta: consultaActual,
       estado: 'pendiente',
       contenidoId: contenido.id,
       expertoId: expert.id,
@@ -158,14 +162,32 @@ export default function ExpertDetailPublic() {
       correo: usuario.email,
       timestamp: serverTimestamp()
     });
-    setMensajeConfirmacion('Consulta enviada correctamente.');
-    setConsulta('');
+
+setMensajesConfirmacion((prev) => ({
+  ...prev,
+  [contenido.id]: "Consulta enviada correctamente",
+}));
+
+setModalVisible(true); // ✅ Mostrar modal
+
+setTimeout(() => {
+  setMensajesConfirmacion((prev) => ({
+    ...prev,
+    [contenido.id]: ''
+  }));
+  setModalVisible(false); // ✅ Ocultar modal luego de 3s
+}, 3000);
+
+    setConsultas((prev) => ({ ...prev, [contenido.id]: '' }));
     toast.success("Consulta enviada correctamente.");
   } catch (error) {
     console.error('Error al enviar consulta:', error);
-    toast.error("Ocurrió un error al enviar la consulta.");
+    toast.error("Tu consulta ha sido enviada correctamente. Un administrador revisará tu mensaje y te notificaremos pronto.");
   }
 };
+
+
+
 
 
   const getIconByTipo = (tipo) => {
@@ -252,29 +274,53 @@ export default function ExpertDetailPublic() {
     <p className="text-gray-700">{contenido.descripcion}</p>
 
     {contenido.tipoContenido === 'consulta' && (
-      <div className="mt-2 space-y-2">
+  <div className="mt-2 space-y-2">
+    {!usuario ? (
+      <div className="text-sm text-gray-600">
+        Debes iniciar sesión para enviar una consulta.
+        <button
+          onClick={handleLoginConGoogle}
+          className="ml-2 text-blue-600 underline"
+        >
+          Iniciar sesión con Google
+        </button>
+      </div>
+    ) : (
+      <>
         <label htmlFor={`consulta-${contenido.id}`} className="block font-semibold text-sm">
           Escribe tu consulta:
         </label>
         <textarea
-          id={`consulta-${contenido.id}`}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-          placeholder="Ej. ¿Cómo podría aplicar esto en mi organización?"
-          rows={3}
-          value={consulta}
-          onChange={(e) => setConsulta(e.target.value)}
-        />
-        <button
-          className="bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700"
-          onClick={() => handleEnviarConsulta(contenido)}
-        >
-          Enviar
-        </button>
-        {mensajeConfirmacion && (
-          <p className="text-green-600 text-sm">{mensajeConfirmacion}</p>
-        )}
-      </div>
+  id={`consulta-${contenido.id}`}
+  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+  placeholder="Ej. ¿Cómo podría aplicar esto en mi organización?"
+  rows={3}
+  value={consultas[contenido.id] || ''}
+  onChange={(e) => {
+  setConsultas({ ...consultas, [contenido.id]: e.target.value });
+  setMensajesConfirmacion((prev) => ({ ...prev, [contenido.id]: '' }));
+}}
+
+/>
+
+    <button
+      onClick={() => handleEnviarConsulta(contenido)}
+      className="bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-800 text-sm"
+    >
+      Enviar
+    </button>
+
+{mensajesConfirmacion[contenido.id] && (
+  <div className="bg-green-100 text-green-700 border border-green-300 p-2 rounded text-sm mt-1">
+    {mensajesConfirmacion[contenido.id]}
+  </div>
+)}
+
+      </>
     )}
+  </div>
+)}
+
 
     {contenido.archivoUrl && (
       <button

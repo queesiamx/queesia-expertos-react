@@ -9,6 +9,20 @@ export default function ConsultaModal({ consulta, onClose }) {
   const [tipoRespuesta, setTipoRespuesta] = useState("gratis");
   const [monto, setMonto] = useState("");
 
+  const marcarComoResuelta = async () => {
+  try {
+    await updateDoc(doc(db, "consultasModeradas", consulta.id), {
+      estado: "resuelta",
+    });
+    toast.success("Consulta marcada como resuelta");
+    onClose(); // Cierra el modal
+  } catch (error) {
+    console.error("Error al marcar como resuelta", error);
+    toast.error("Error al actualizar el estado");
+  }
+};
+ 
+
   const enviarRespuesta = async () => {
     if (!respuesta.trim()) return toast.error("Escribe una respuesta.");
 
@@ -74,10 +88,24 @@ export default function ConsultaModal({ consulta, onClose }) {
           />
         )}
 
+                          // Dentro del return (...)
+          {consulta.estado !== "resuelta" && (
+            <div className="mt-4">
+              <button
+                onClick={marcarComoResuelta}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              >
+                Marcar como resuelta (sin respuesta)
+              </button>
+            </div>
+          )}
+
+
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
           <button onClick={enviarRespuesta} className="px-4 py-2 bg-blue-600 text-white rounded">Enviar</button>
         </div>
+
       </div>
     </div>
   );

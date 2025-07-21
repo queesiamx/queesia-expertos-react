@@ -209,7 +209,26 @@ const ExpertDashboard = () => {
                       <h3 className="text-lg font-semibold">
                         {contenido.tipoContenido === "curso" && "📘 Curso"}
                         {contenido.tipoContenido === "manual" && "📕 Manual"}
-                        {contenido.tipoContenido === "consulta" && "📄 Consulta"}
+                        
+                        {contenido.tipoContenido === "consulta" && (
+                        <div className="flex flex-col gap-2">
+                          <span className="text-sm text-gray-600">
+                            Esta es una consulta enviada por un usuario. Si ya fue pagada o es gratuita depende del acuerdo.
+                          </span>
+                          <div className="flex gap-2 flex-wrap">
+                            <button
+                              onClick={() => {
+                                setConsultaSeleccionada(contenido);
+                                setConsultaModalVisible(true);
+                              }}
+                              className="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                            >
+                              Ver detalles
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                         {` \"${contenido.titulo}\"`}
                       </h3>
                       <div className="flex items-center gap-2">
