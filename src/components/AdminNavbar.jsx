@@ -26,6 +26,14 @@ export default function AdminNavbar({ onLogout }) {
         >
           Consultas
         </NavLink>
+        <NavLink
+          to="/admin/solicitudes"
+          className={({ isActive }) =>
+            `${linkStyle} ${isActive ? activeStyle : ''}`
+          }
+        >
+          Solicitudes
+        </NavLink>
         <button
           onClick={onLogout}
           className="ml-4 px-4 py-2 bg-black text-white rounded hover:bg-default transition flex items-center gap-2"

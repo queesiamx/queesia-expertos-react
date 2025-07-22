@@ -1,142 +1,159 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import toast from 'react-hot-toast';
-import NavbarExperto from '../components/NavbarExperto';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import toast from "react-hot-toast";
+import NavbarExperto from "../components/NavbarExperto";
 
 export default function ResponderConsulta() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [consulta, setConsulta] = useState(null);
-  const [respuesta, setRespuesta] = useState('');
-  const [estado, setEstado] = useState('respondida');
-  const [pagado, setPagado] = useState(false);
-  const [cargando, setCargando] = useState(true);
+  const [respuesta, setRespuesta] = useState("");
+  const [tipoRespuesta, setTipoRespuesta] = useState("gratis"); // 'gratis' o 'pago'
+  const [precio, setPrecio] = useState("");
+  const [justificacion, setJustificacion] = useState("");
 
   useEffect(() => {
     const cargarConsulta = async () => {
       try {
-        const ref = doc(db, 'consultasModeradas', id);
+        const ref = doc(db, "consultasModeradas", id);
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          const data = snap.data();
-          setConsulta(data);
-          setRespuesta(data.respuesta || '');
-          setEstado(data.estado || 'respondida');
-          setPagado(data.pagado || false); // ✅ Cargamos el campo pagado
+          setConsulta({ id: snap.id, ...snap.data() });
         } else {
-          toast.error('Consulta no encontrada.');
-          navigate('/consultas-recibidas');
+          toast.error("Consulta no encontrada.");
+          navigate("/dashboard");
         }
       } catch (error) {
         console.error(error);
-        toast.error('Error al cargar la consulta.');
-      } finally {
-        setCargando(false);
+        toast.error("Error al cargar la consulta.");
       }
     };
 
     cargarConsulta();
   }, [id, navigate]);
 
-  const guardarRespuesta = async () => {
-  if (!respuesta.trim()) {
-    toast.error('La respuesta no puede estar vacía.');
-    return;
+  const manejarEnvio = async () => {
+    if (!respuesta.trim()) {
+      toast.error("Debes escribir una respuesta.");
+      return;
+    }
+
+    if (tipoRespuesta === "pago") {
+      if (!precio || isNaN(precio)) {
+        toast.error("Ingresa un precio válido.");
+        return;
+      }
+      if (!justificacion.trim()) {
+        toast.error("Agrega una justificación para la respuesta de pago.");
+        return;
+      }
+    }
+
+    try {
+      const ref = doc(db, "consultasModeradas", id);
+      await updateDoc(ref, {
+        respuesta: respuesta.trim(),
+        tipoRespuesta,
+        precio: tipoRespuesta === "pago" ? Number(precio) : 0,
+        estado: "porValidar", // Estado temporal
+        fechaRespuesta: new Date().toISOString(),
+        ...(tipoRespuesta === "pago" && {
+          solicitudCambio: {
+            estado: "pendiente",
+            justificacion: justificacion.trim(),
+            nuevoTipo: "dePago",
+            fecha: new Date().toISOString()
+          }
+        })
+      });
+
+      toast.success("Respuesta enviada para validación.");
+      navigate("/consultas-recibidas");
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo guardar la respuesta.");
+    }
+  };
+
+  if (!consulta) {
+    return (
+      <>
+        <NavbarExperto />
+        <div className="p-6">Cargando consulta...</div>
+      </>
+    );
   }
-
-  if (estado === 'requierePago' && !pagado) {
-    toast.error('Esta consulta requiere pago. No puedes enviar respuesta hasta que el usuario haya pagado.');
-    return;
-  }
-
-  // 🟢 Establece automáticamente el estado correcto
-  const estadoFinal = pagado ? 'conCobro' : 'resueltaGratis';
-
-  try {
-    const ref = doc(db, 'consultasModeradas', id);
-    await updateDoc(ref, {
-      respuesta,
-      estado: estadoFinal
-    });
-    toast.success('Consulta actualizada correctamente.');
-    navigate('/consultas-recibidas');
-  } catch (error) {
-    console.error(error);
-    toast.error('Error al guardar la respuesta.');
-  }
-};
-
 
   return (
     <>
       <NavbarExperto />
       <div className="p-6 max-w-3xl mx-auto font-sans">
         <h1 className="text-2xl font-bold mb-4">Responder Consulta</h1>
+        <div className="bg-white shadow rounded p-4 space-y-4">
+          <p><strong>De:</strong> {consulta.nombre} ({consulta.correo})</p>
+          <p><strong>Consulta:</strong> {consulta.consulta}</p>
 
-        {cargando ? (
-          <p>Cargando...</p>
-        ) : consulta ? (
-          <div className="space-y-4 bg-white p-6 rounded-xl shadow border">
-            <p><strong>Consulta:</strong> {consulta.consulta}</p>
-            <p><strong>Remitente:</strong> {consulta.nombre} ({consulta.correo})</p>
+          <textarea
+            className="w-full border px-4 py-2 rounded"
+            rows="5"
+            placeholder="Escribe tu respuesta aquí..."
+            value={respuesta}
+            onChange={(e) => setRespuesta(e.target.value)}
+          />
 
-            {estado === 'requierePago' && !pagado && (
-              <p className="text-red-600 font-semibold">
-                Esta consulta requiere pago. No puedes enviar una respuesta hasta que el usuario haya pagado.
-              </p>
+          <div className="space-y-2">
+            <label className="font-medium block">¿La respuesta es gratuita o de pago?</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  value="gratis"
+                  checked={tipoRespuesta === "gratis"}
+                  onChange={() => setTipoRespuesta("gratis")}
+                />
+                Gratuita
+              </label>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  value="pago"
+                  checked={tipoRespuesta === "pago"}
+                  onChange={() => setTipoRespuesta("pago")}
+                />
+                De pago
+              </label>
+            </div>
+
+            {tipoRespuesta === "pago" && (
+              <>
+                <input
+                  type="number"
+                  className="w-full border px-4 py-2 rounded"
+                  placeholder="Precio en MXN"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                />
+                <textarea
+                  className="w-full border px-4 py-2 rounded mt-2"
+                  rows="3"
+                  placeholder="Justificación del cobro"
+                  value={justificacion}
+                  onChange={(e) => setJustificacion(e.target.value)}
+                />
+              </>
             )}
-
-            <label className="block mt-4">
-              <span className="text-gray-700 font-semibold">Tu respuesta:</span>
-              <textarea
-                className="mt-1 block w-full border rounded-md p-2"
-                rows={5}
-                value={respuesta}
-                onChange={(e) => setRespuesta(e.target.value)}
-              />
-            </label>
-
-            <div className="mt-4">
-              <span className="block text-gray-700 font-semibold mb-1">Estado de la consulta:</span>
-                <select
-                value={estado}
-                disabled // 👈 Deshabilitado
-                className="border rounded-md p-2 w-full bg-gray-100 cursor-not-allowed"
-              >
-                <option value="respondida">Respondida</option>
-                <option value="resueltaGratis">Resuelta gratis</option>
-                <option value="requierePago">Requiere pago</option>
-              </select>
-
-            </div>
-
-            <div className="flex justify-end gap-4 mt-6">
-              <button
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded"
-                onClick={() => navigate('/consultas-recibidas')}
-              >
-                Cancelar
-              </button>
-              
-                <button
-                className={`px-4 py-2 rounded text-white ${
-                    estado === 'requierePago' && !pagado
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-                disabled={estado === 'requierePago' && !pagado}
-                onClick={guardarRespuesta}
-                >
-                Enviar respuesta
-                </button>
-
-            </div>
           </div>
-        ) : (
-          <p>No se pudo cargar la consulta.</p>
-        )}
+
+          <button
+            onClick={manejarEnvio}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Enviar respuesta para validación
+          </button>
+        </div>
       </div>
     </>
   );

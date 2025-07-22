@@ -14,6 +14,7 @@ import PagoCancelado from './pages/PagoCancelado';
 import AdminConsultas from './pages/AdminConsultas';
 import ConsultasRecibidas from "./pages/consultasRecibidas";
 import ResponderConsulta from './pages/ResponderConsulta';
+import AdminSolicitudes from './pages/AdminSolicitudes';
 import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
 
@@ -78,6 +79,15 @@ function App() {
             </RutaAdminPrivada>
           }
         />
+        <Route
+          path="/admin/solicitudes"
+          element={
+            <RutaAdminPrivada usuario={usuario}>
+              <AdminSolicitudes />
+            </RutaAdminPrivada>
+          }
+        />
+
       </Routes>
     </Router>
   );

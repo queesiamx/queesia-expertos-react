@@ -1,6 +1,7 @@
 // src/pages/ConsultasRecibidas.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
@@ -12,6 +13,8 @@ export default function ConsultasRecibidas() {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState('todas');
+  const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
+  const [consultaModalVisible, setConsultaModalVisible] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,9 +63,48 @@ export default function ConsultasRecibidas() {
     return false;
   });
 
+  const handleSolicitudCambioTipo = async (consultaId, nuevoTipo) => {
+  const justificacion = prompt("¿Por qué consideras que debe cambiar el tipo de consulta?");
+  if (!justificacion) return;
+
+  try {
+    const consultaRef = doc(db, 'consultasModeradas', consultaId);
+    await updateDoc(consultaRef, {
+      solicitudCambio: {
+        nuevoTipo,
+        justificacion,
+        estado: 'pendiente',
+        fecha: new Date(),
+      }
+    });
+    toast.success('Solicitud enviada correctamente.');
+  } catch (error) {
+    console.error("Error al solicitar cambio de tipo:", error);
+    toast.error("Ocurrió un error al enviar la solicitud.");
+  }
+};
+
   return (
     <>
       <NavbarExperto />
+
+      {consultaModalVisible && consultaSeleccionada && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
+            <h2 className="text-xl font-bold mb-4">Detalles de la consulta</h2>
+            <p><strong>Consulta:</strong> {consultaSeleccionada.consulta}</p>
+            <p><strong>De:</strong> {consultaSeleccionada.nombre} ({consultaSeleccionada.correo})</p>
+            <p><strong>Estado:</strong> {consultaSeleccionada.estado}</p>
+            <button
+              onClick={() => setConsultaModalVisible(false)}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="p-6 max-w-4xl mx-auto font-sans">
         <h1 className="text-3xl font-bold mb-6">Consultas Recibidas</h1>
 
@@ -91,6 +133,25 @@ export default function ConsultasRecibidas() {
           <div className="space-y-4">
             {consultasFiltradas.map((c) => (
               <div key={c.id} className="bg-white p-4 rounded-xl shadow border">
+                {filtroEstado === 'pendiente' && (
+                  <div className="flex flex-col gap-2 mb-2">
+                    <span className="text-sm text-gray-600">
+                      Esta es una consulta enviada por un usuario. Si ya fue pagada o es gratuita depende del acuerdo.
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          setConsultaSeleccionada(c);
+                          setConsultaModalVisible(true);
+                        }}
+                        className="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600"
+                      >
+                        Ver detalles
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-sm text-gray-800">
                   <strong>Consulta:</strong> {c.consulta}
                 </p>
@@ -119,6 +180,27 @@ export default function ConsultasRecibidas() {
                 >
                   Responder
                 </button>
+                {filtroEstado === 'pendiente' && (
+  <>
+    {(c.estado === 'resueltaGratis' && !c.respuesta) && (
+      <button
+        className="mt-2 bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500"
+        onClick={() => handleSolicitudCambioTipo(c.id, 'respondida')}
+      >
+        Solicitar cambio a "Consulta de Pago"
+      </button>
+    )}
+    {(c.estado === 'respondida' && !c.respuesta) && (
+      <button
+        className="mt-2 bg-green-400 text-black px-3 py-1 rounded hover:bg-green-500"
+        onClick={() => handleSolicitudCambioTipo(c.id, 'resueltaGratis')}
+      >
+        Solicitar cambio a "Consulta Gratuita"
+      </button>
+    )}
+  </>
+)}
+
               </div>
             ))}
           </div>
