@@ -1,4 +1,3 @@
-// src/components/AdminNavbar.jsx
 import { NavLink } from 'react-router-dom';
 
 export default function AdminNavbar({ onLogout }) {
@@ -33,6 +32,14 @@ export default function AdminNavbar({ onLogout }) {
           }
         >
           Solicitudes
+        </NavLink>
+        <NavLink
+          to="/admin/por-validar"
+          className={({ isActive }) =>
+            `${linkStyle} ${isActive ? activeStyle : ''}`
+          }
+        >
+          Validar consultas
         </NavLink>
         <button
           onClick={onLogout}

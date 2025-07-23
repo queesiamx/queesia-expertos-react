@@ -1,6 +1,12 @@
 // src/pages/AdminConsultas.jsx
 import { useEffect, useState } from 'react';
-import { collection, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import AdminNavbar from '../components/AdminNavbar';
 import toast, { Toaster } from 'react-hot-toast';
@@ -8,22 +14,31 @@ import { unparse } from 'papaparse';
 
 export default function AdminConsultas() {
   const [consultas, setConsultas] = useState([]);
+  const [expertos, setExpertos] = useState([]);
+  const [asignaciones, setAsignaciones] = useState({}); // consultaId -> expertoId
 
   useEffect(() => {
-    const cargarConsultas = async () => {
+    const cargarDatos = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'consultasModeradas'));
-        const docs = snapshot.docs.map(doc => ({
+        const snapshotConsultas = await getDocs(collection(db, 'consultasModeradas'));
+        const docsConsultas = snapshotConsultas.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
-        setConsultas(docs);
+        setConsultas(docsConsultas);
+
+        const snapshotExpertos = await getDocs(collection(db, 'experts'));
+        const expertosAprobados = snapshotExpertos.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(e => e.aprobado === true);
+        setExpertos(expertosAprobados);
       } catch (error) {
-        toast.error('Error al cargar las consultas');
+        toast.error('Error al cargar los datos');
         console.error(error);
       }
     };
-    cargarConsultas();
+
+    cargarDatos();
   }, []);
 
   const pendientes = consultas.filter(c => c.estado === 'pendiente');
@@ -50,6 +65,32 @@ export default function AdminConsultas() {
     }
   };
 
+  const aprobarYAsignar = async (consultaId) => {
+    const expertoId = asignaciones[consultaId];
+    const experto = expertos.find(e => e.id === expertoId);
+    if (!experto) return toast.error('Selecciona un experto válido');
+
+    try {
+      const ref = doc(db, 'consultasModeradas', consultaId);
+      const updateData = {
+        estado: 'aprobadoParaExperto',
+        aprobado: true,
+        expertoId: experto.id,
+        expertoNombre: experto.nombre || 'Sin nombre',
+      };
+      await updateDoc(ref, updateData);
+      setConsultas(prev =>
+        prev.map(c =>
+          c.id === consultaId ? { ...c, ...updateData } : c
+        )
+      );
+      toast.success('Consulta aprobada y asignada al experto');
+    } catch (error) {
+      toast.error('Error al asignar experto');
+      console.error(error);
+    }
+  };
+
   const eliminarConsulta = async (id) => {
     try {
       await deleteDoc(doc(db, 'consultasModeradas', id));
@@ -58,6 +99,40 @@ export default function AdminConsultas() {
     } catch (error) {
       toast.error('Error al eliminar la consulta');
       console.error(error);
+    }
+  };
+
+  const formatearEstado = (estado) => {
+    switch (estado) {
+      case 'pendiente':
+        return 'Pendiente';
+      case 'resueltaGratis':
+        return 'Resuelta sin costo';
+      case 'requierePago':
+      case 'conCobro':
+        return 'Requiere pago';
+      case 'aprobadoParaExperto':
+        return 'Asignada a experto';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'Sin fecha';
+    try {
+      const date = fecha.seconds
+        ? new Date(fecha.seconds * 1000)
+        : new Date(fecha);
+      return date.toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Fecha inválida';
     }
   };
 
@@ -86,62 +161,56 @@ export default function AdminConsultas() {
     document.body.removeChild(link);
   };
 
-  const formatearEstado = (estado) => {
-    switch (estado) {
-      case 'pendiente':
-        return 'Pendiente';
-      case 'resueltaGratis':
-        return 'Resuelta sin costo';
-      case 'requierePago':
-      case 'conCobro':
-        return 'Requiere pago';
-      default:
-        return 'Desconocido';
-    }
-  };
-
-  const formatearFecha = (fecha) => {
-    if (!fecha) return 'Sin fecha';
-    try {
-      const date = fecha.seconds
-        ? new Date(fecha.seconds * 1000)
-        : new Date(fecha);
-      return date.toLocaleDateString('es-MX', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return 'Fecha inválida';
-    }
-  };
-
   const renderConsultaCard = (c) => (
     <div key={c.id} className="bg-white p-4 rounded-xl shadow border mt-3">
-      <p className="text-default-soft mb-2 text-sm">
+      <p className="text-sm mb-1">
         <strong>Consulta:</strong> {c.consulta}
       </p>
-      <p className="text-default-soft text-sm">
+      <p className="text-sm">
         <strong>De:</strong> {c.nombre || 'Anónimo'} ({c.correo || 'sin correo'})
       </p>
-      <p className="text-default-soft text-sm">
-        <strong>Para:</strong> {c.expertoNombre || 'Sin nombre'}
-      </p>
-      <p className="text-sm mt-1">
+      <p className="text-sm mb-2">
         <strong>Estado:</strong>{' '}
         <span className={`font-semibold ${
           c.estado === 'pendiente'
             ? 'text-yellow-600'
             : c.estado === 'resueltaGratis'
             ? 'text-green-600'
+            : c.estado === 'aprobadoParaExperto'
+            ? 'text-blue-600'
             : 'text-orange-600'
         }`}>
           {formatearEstado(c.estado)}
         </span>
       </p>
-      <div className="flex gap-2 mt-3">
+
+      {c.estado === 'pendiente' && (
+        <div className="mt-3 space-y-2">
+          <label className="block text-sm font-medium">Asignar a experto:</label>
+          <select
+            value={asignaciones[c.id] || ''}
+            onChange={(e) =>
+              setAsignaciones(prev => ({ ...prev, [c.id]: e.target.value }))
+            }
+            className="w-full p-2 border rounded"
+          >
+            <option value="">Selecciona un experto</option>
+            {expertos.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.nombre}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => aprobarYAsignar(c.id)}
+            className="bg-blue-700 text-white px-3 py-1 rounded text-sm"
+          >
+            Aprobar y asignar
+          </button>
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-4">
         <button
           onClick={() => actualizarEstado(c.id, 'requierePago')}
           className="bg-orange-500 text-white px-3 py-1 rounded text-sm"

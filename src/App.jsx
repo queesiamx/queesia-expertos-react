@@ -4,6 +4,8 @@ import Registro from './pages/Registro';
 import Expertos from './pages/Expertos';
 import AdminExpertos from './pages/AdminExpertos';
 import RutaAdminPrivada from './components/RutaAdminPrivada';
+import RutaExpertoPrivada from "./components/RutaExpertoPrivada";
+import RutaUsuarioPrivada from "./components/RutaUsuarioPrivada";
 import ExpertDetailPublic from './components/ExpertDetailPublic';
 import Terminos from './pages/Terminos';
 import Privacidad from './pages/Privacidad';
@@ -15,6 +17,9 @@ import AdminConsultas from './pages/AdminConsultas';
 import ConsultasRecibidas from "./pages/consultasRecibidas";
 import ResponderConsulta from './pages/ResponderConsulta';
 import AdminSolicitudes from './pages/AdminSolicitudes';
+import ConsultasAprobadas from "./pages/ConsultasAprobadas";
+import AdminPorValidar from './pages/AdminPorValidar';
+import MisConsultas from "./pages/MisConsultas";
 import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
 
@@ -87,6 +92,33 @@ function App() {
             </RutaAdminPrivada>
           }
         />
+        <Route
+          path="/consultas-aprobadas"
+          element={
+            <RutaExpertoPrivada usuario={usuario}>
+              <ConsultasAprobadas />
+            </RutaExpertoPrivada>
+          }
+        />
+
+        <Route
+          path="/mis-consultas"
+          element={
+            <RutaUsuarioPrivada>
+              <MisConsultas />
+            </RutaUsuarioPrivada>
+          }
+        />
+        <Route
+          path="/admin/por-validar"
+          element={
+            <RutaAdminPrivada usuario={usuario}>
+              <AdminPorValidar />
+            </RutaAdminPrivada>
+          }
+        />
+
+      
 
       </Routes>
     </Router>
