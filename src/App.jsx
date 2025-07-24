@@ -19,6 +19,7 @@ import ResponderConsulta from './pages/ResponderConsulta';
 import AdminSolicitudes from './pages/AdminSolicitudes';
 import ConsultasAprobadas from "./pages/ConsultasAprobadas";
 import AdminPorValidar from './pages/AdminPorValidar';
+import ExpertHistorialR from './pages/ExpertHistorialR';
 import MisConsultas from "./pages/MisConsultas";
 import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
@@ -117,8 +118,15 @@ function App() {
             </RutaAdminPrivada>
           }
         />
+        <Route
+          path="/historial-respuestas"
+          element={
+            <RutaExpertoPrivada usuario={usuario}>
+              <ExpertHistorialR />
+            </RutaExpertoPrivada>
+          }
+        />
 
-      
 
       </Routes>
     </Router>

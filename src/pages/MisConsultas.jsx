@@ -35,6 +35,35 @@ export default function MisConsultas() {
     return () => unsubscribe();
   }, []);
 
+  const manejarPago = async (consultaId) => {
+    if (!usuario?.email) {
+      toast.error("No se encontró tu correo electrónico.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/crearPago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          consultaId,
+          email: usuario.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error("No se pudo generar el enlace de pago.");
+      }
+    } catch (error) {
+      console.error("Error al generar el pago:", error);
+      toast.error("Error al procesar el pago.");
+    }
+  };
+
   return (
     <>
       <NavbarUsuario />
@@ -46,10 +75,11 @@ export default function MisConsultas() {
           <div className="space-y-4">
             {consultas.map((consulta) => {
               const estado = consulta.estado || "pendiente";
-              const esTenue = estado === "pendiente" || estado === "porValidar";
+              const esTenue =
+                estado === "pendiente" || estado === "porValidar";
               const yaPagado = estado === "pagado";
-              const aprobadoGratis = estado === "aprobadoGratis";
-              const aprobadoPago = estado === "aprobadoPago";
+              const aprobadoGratis = estado === "resueltaGratis";
+              const aprobadoPago = estado === "requierePago";
 
               return (
                 <div
@@ -61,13 +91,28 @@ export default function MisConsultas() {
                   }`}
                 >
                   <h2 className="font-semibold">{consulta.titulo}</h2>
-                  <p className="text-sm text-gray-600 mb-2">{consulta.contenido}</p>
-                  <p className="text-sm italic mb-2">
-                    Estado:{" "}
-                    <span className="font-medium text-blue-700">{estado}</span>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {consulta.contenido}
                   </p>
 
-                  {/* Mostrar respuesta solo si está aprobado o pagado */}
+                  <p className="text-sm italic mb-2">
+                    Estado:{" "}
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs font-semibold
+                        ${
+                          estado === "resueltaGratis" || estado === "pagado"
+                            ? "bg-green-200 text-green-800"
+                            : estado === "requierePago"
+                            ? "bg-yellow-200 text-yellow-800"
+                            : estado === "rechazada"
+                            ? "bg-red-200 text-red-800"
+                            : "bg-gray-200 text-gray-600"
+                        }`}
+                    >
+                      {estado}
+                    </span>
+                  </p>
+
                   {(aprobadoGratis || yaPagado) && consulta.respuesta && (
                     <div className="bg-green-100 p-3 rounded mt-2">
                       <strong>Respuesta:</strong>
@@ -75,16 +120,16 @@ export default function MisConsultas() {
                     </div>
                   )}
 
-                  {/* Mostrar botón de pago si está aprobada como de pago */}
                   {aprobadoPago && (
                     <div className="mt-3">
                       <p className="mb-2">
                         Esta consulta requiere un pago de{" "}
-                        <strong>${consulta.precio}</strong> para ver la respuesta.
+                        <strong>${consulta.precio}</strong> para ver la
+                        respuesta.
                       </p>
                       <button
                         className="bg-blue-600 text-white px-4 py-2 rounded"
-                        onClick={() => toast("Simular flujo de pago")}
+                        onClick={() => manejarPago(consulta.id)}
                       >
                         Pagar ahora
                       </button>

@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import AdminNavbar from '../components/AdminNavbar';
+import emailjs from '@emailjs/browser';
 import toast, { Toaster } from 'react-hot-toast';
 
 export default function AdminPorValidar() {
@@ -31,13 +32,59 @@ export default function AdminPorValidar() {
     cargarConsultas();
   }, []);
 
-  const actualizarEstado = async (id, nuevoEstado) => {
+  const enviarEmailNotificacion = async (nombre, email, estado, mensaje) => {
     try {
+      await emailjs.send(
+        'service_r6eekqh', // ✅ Tu Service ID
+        'template_val_respuesta', // ✅ Tu Template ID
+        {
+          nombre,
+          estado,
+          mensaje_personalizado: mensaje,
+          to_email: email,
+        },
+        'oKchOXmL2N3kpBC5q' // ✅ Tu Public Key
+      );
+      toast.success('Notificación enviada al experto');
+    } catch (error) {
+      console.error('Error al enviar notificación:', error);
+      toast.error('Error al enviar notificación');
+    }
+  };
+
+  const actualizarEstado = async (id, nuevoEstado) => {
+    const mensajeConfirmacion = {
+      resueltaGratis: '¿Estás seguro de aprobar esta respuesta como gratuita?',
+      requierePago: '¿Estás seguro de marcar esta respuesta como de pago?',
+      rechazada: '¿Estás seguro de rechazar y devolver esta respuesta al experto?'
+    };
+
+    const mensajeEmail = {
+      resueltaGratis: 'Gracias por tu respuesta a la consulta enviada. Ha sido aprobada como gratuita y será visible para el usuario en breve.',
+      requierePago: 'Tu respuesta fue recibida correctamente. Hemos marcado esta consulta como servicio de pago. Te informaremos cuando el usuario realice la compra.',
+      rechazada: 'Tu respuesta fue rechazada por el equipo de validación. Puedes editarla y enviarla nuevamente si lo consideras necesario.'
+    };
+
+    const confirmar = window.confirm(mensajeConfirmacion[nuevoEstado]);
+    if (!confirmar) return;
+
+    try {
+      const consulta = consultas.find(c => c.id === id);
+
       const ref = doc(db, 'consultasModeradas', id);
       await updateDoc(ref, {
         estado: nuevoEstado,
         aprobada: nuevoEstado !== 'rechazada'
       });
+
+      // Enviar notificación al experto
+      await enviarEmailNotificacion(
+        consulta.expertoNombre || 'Experto',
+        consulta.expertoCorreo,
+        nuevoEstado,
+        mensajeEmail[nuevoEstado]
+      );
+
       setConsultas(prev => prev.filter(c => c.id !== id));
       toast.success(`Consulta marcada como: ${nuevoEstado}`);
     } catch (error) {
