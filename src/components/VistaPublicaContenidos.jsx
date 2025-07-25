@@ -1,16 +1,26 @@
 import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { app } from '../firebase';
+import BotonPagarContenido from '../components/BotonPagarContenido';
 
 export default function VistaPublicaContenidos({ expertoId }) {
   const [contenidos, setContenidos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uid, setUid] = useState('');
+
+  useEffect(() => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      setUid(user.uid);
+    }
+  }, []);
 
   useEffect(() => {
     const cargar = async () => {
       const db = getFirestore(app);
-
       try {
         const q = query(
           collection(db, 'contenidosExpertos'),
@@ -46,62 +56,74 @@ export default function VistaPublicaContenidos({ expertoId }) {
         <p className="text-gray-500">Este experto aún no ha subido contenidos.</p>
       ) : (
         <ul className="space-y-6">
-          {contenidos.map((c) => (
-            <li key={c.contenidoId} className="border rounded p-4 shadow-sm bg-white">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-bold">{c.titulo}</h3>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  {obtenerEtiquetaTipo(c.archivoUrl)}
-                </span>
-              </div>
+          {contenidos.map((c) => {
+            const autorizado = c.usuariosAutorizados?.includes(uid);
 
-              <p className="text-sm text-gray-600 mb-1">
-                Fecha de subida:{' '}
-                <span className="font-medium">
-                  {new Date(c.fechaSubida.seconds * 1000).toLocaleDateString()}
-                </span>
-              </p>
-
-              <p className="text-sm text-gray-700 mb-3">{c.descripcion}</p>
-
-              {c.archivoUrl && (
-                <div className="mt-2">
-                  {c.archivoUrl.endsWith('.pdf') ? (
-                    <iframe
-                      src={c.archivoUrl}
-                      width="100%"
-                      height="400"
-                      className="border rounded mb-2"
-                      title={`visor-${c.titulo}`}
-                    />
-                  ) : c.archivoUrl.match(/\.(jpg|jpeg|png)$/i) ? (
-                    <img
-                      src={c.archivoUrl}
-                      alt={`imagen-${c.titulo}`}
-                      className="max-w-full h-auto rounded border mb-2"
-                    />
-                  ) : c.archivoUrl.endsWith('.mp4') ? (
-                    <video controls className="w-full rounded mb-2">
-                      <source src={c.archivoUrl} type="video/mp4" />
-                      Tu navegador no soporta este video.
-                    </video>
-                  ) : (
-                    <p className="text-sm text-red-500 mb-2">Formato no soportado.</p>
-                  )}
-
-                  <a
-                    href={c.archivoUrl}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block mt-1 text-sm text-blue-600 hover:underline"
-                  >
-                    Descargar archivo
-                  </a>
+            return (
+              <li key={c.contenidoId} className="border rounded p-4 shadow-sm bg-white">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold">{c.titulo}</h3>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {obtenerEtiquetaTipo(c.archivoUrl)}
+                  </span>
                 </div>
-              )}
-            </li>
-          ))}
+
+                <p className="text-sm text-gray-600 mb-1">
+                  Fecha de subida:{' '}
+                  <span className="font-medium">
+                    {new Date(c.fechaSubida.seconds * 1000).toLocaleDateString()}
+                  </span>
+                </p>
+
+                <p className="text-sm text-gray-700 mb-3">{c.descripcion}</p>
+
+                {autorizado ? (
+                  <div className="mt-2">
+                    {c.archivoUrl.endsWith('.pdf') ? (
+                      <iframe
+                        src={c.archivoUrl}
+                        width="100%"
+                        height="400"
+                        className="border rounded mb-2"
+                        title={`visor-${c.titulo}`}
+                      />
+                    ) : c.archivoUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                      <img
+                        src={c.archivoUrl}
+                        alt={`imagen-${c.titulo}`}
+                        className="max-w-full h-auto rounded border mb-2"
+                      />
+                    ) : c.archivoUrl.endsWith('.mp4') ? (
+                      <video controls className="w-full rounded mb-2">
+                        <source src={c.archivoUrl} type="video/mp4" />
+                        Tu navegador no soporta este video.
+                      </video>
+                    ) : (
+                      <p className="text-sm text-red-500 mb-2">Formato no soportado.</p>
+                    )}
+
+                    <a
+                      href={c.archivoUrl}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-1 text-sm text-blue-600 hover:underline"
+                    >
+                      Descargar archivo
+                    </a>
+                  </div>
+                ) : (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500 mb-2">Este contenido requiere pago.</p>
+                    <BotonPagarContenido
+                      contenidoId={c.contenidoId}
+                      nombreContenido={c.titulo}
+                    />
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
