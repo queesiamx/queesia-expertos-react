@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
-  const { contenidoId, userUid, email, nombreContenido } = req.body;
+  const { contenidoId, uid, email, nombreContenido } = req.body;
 
   if (!contenidoId || !userUid || !email) {
     return res.status(400).json({ error: 'Faltan datos requeridos' });

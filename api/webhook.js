@@ -46,6 +46,7 @@ export default async function handler(req, res) {
     const contenidoId = session.metadata?.contenidoId;
     const uid = session.metadata?.uid;
     const email = session.metadata?.email || session.customer_email;
+    const nombreContenido = session.metadata?.nombreContenido || 'Contenido exclusivo';
 
     if (!email || (!consultaId && !contenidoId)) {
       console.warn('⚠️ Faltan datos en metadata o correo del cliente');
@@ -118,11 +119,46 @@ export default async function handler(req, res) {
         const ref = doc(db, 'contenidosExpertos', contenidoId);
         await updateDoc(ref, {
           usuariosAutorizados: arrayUnion(uid),
+          ultimaCompra: new Date().toISOString(),
         });
 
-        console.log(
-          `✅ Usuario ${uid} autorizado para acceder al contenido ${contenidoId}`
+        // 📧 Correo al usuario que compró contenido
+        await emailjs.send(
+          process.env.EMAILJS_SERVICE_ID,
+          process.env.EMAILJS_TEMPLATE_ID_GENERAL,
+          {
+            mensaje: `
+              <h2>✅ ¡Gracias por tu compra!</h2>
+              <p>Hemos confirmado tu acceso al contenido <strong>"${nombreContenido}"</strong>.</p>
+              <p>Ya puedes consultarlo accediendo a tu panel de usuario.</p>
+              <p><a href="https://expertos.queesia.com/contenido?id=${contenidoId}" style="color: #0d6efd;">Haz clic aquí para ver el contenido</a></p>
+            `,
+            reply_to: email,
+          },
+          {
+            publicKey: process.env.EMAILJS_PUBLIC_KEY,
+            privateKey: process.env.EMAILJS_PRIVATE_KEY,
+          }
         );
+
+        // 📧 Correo al admin (opcional)
+        await emailjs.send(
+          process.env.EMAILJS_SERVICE_ID,
+          process.env.EMAILJS_TEMPLATE_ID_GENERAL,
+          {
+            mensaje: `
+              <h2>🛒 Nuevo contenido adquirido</h2>
+              <p>El usuario <strong>${email}</strong> ha comprado acceso al contenido <strong>"${nombreContenido}"</strong>.</p>
+            `,
+            reply_to: process.env.ADMIN_EMAIL,
+          },
+          {
+            publicKey: process.env.EMAILJS_PUBLIC_KEY,
+            privateKey: process.env.EMAILJS_PRIVATE_KEY,
+          }
+        );
+
+        console.log(`✅ Usuario ${uid} autorizado para acceder al contenido ${contenidoId}`);
       }
 
       return res.status(200).send('Todo correcto');

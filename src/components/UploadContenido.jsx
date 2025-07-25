@@ -21,6 +21,8 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
   const [instruccionesAcceso, setInstruccionesAcceso] = useState('');
   const [fechasDisponibles, setFechasDisponibles] = useState([]);
   const [nuevaFecha, setNuevaFecha] = useState('');
+  const [urlAccesoPrivado, setUrlAccesoPrivado] = useState('');
+
 
   const db = getFirestore(app);
   const cloudinaryUrl = import.meta.env.VITE_CLOUDINARY_URL;
@@ -122,6 +124,7 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       contenidoData.duracionHoras = parseInt(duracionHoras);
       contenidoData.cupoMaximo = parseInt(cupoMaximo);
       contenidoData.requierePago = requierePago;
+      contenidoData.urlAccesoPrivado = urlAccesoPrivado.trim();
       contenidoData.instruccionesAcceso = instruccionesAcceso;
       contenidoData.fechasDisponibles = fechasDisponibles;
       contenidoData.usuariosRegistrados = [];
@@ -207,6 +210,16 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
               <input type="number" className="w-full border p-2 mb-4" value={precio} onChange={(e) => setPrecio(e.target.value)} />
             </>
           )}
+
+          <label className="block mb-2">Enlace de acceso privado (opcional)</label>
+          <input
+            type="url"
+            className="w-full border p-2 mb-4"
+            value={urlAccesoPrivado}
+            onChange={(e) => setUrlAccesoPrivado(e.target.value)}
+            placeholder="https://enlace-a-tu-contenido.com"
+          />
+
 
           <label className="block mb-2">Instrucciones de acceso</label>
           <textarea className="w-full border p-2 mb-4" value={instruccionesAcceso} onChange={(e) => setInstruccionesAcceso(e.target.value)} />

@@ -21,6 +21,8 @@ import ConsultasAprobadas from "./pages/ConsultasAprobadas";
 import AdminPorValidar from './pages/AdminPorValidar';
 import ExpertHistorialR from './pages/ExpertHistorialR';
 import MisConsultas from "./pages/MisConsultas";
+import MisContenidos from './pages/MisContenidos';
+import VistaDetalleContenido from './pages/VistaDetalleContenido';
 import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
 
@@ -59,6 +61,8 @@ function App() {
         <Route path="/pago-cancelado" element={<PagoCancelado />} />
         <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} />
         <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
+        <Route path="/mis-contenidos" element={<MisContenidos />} />
+        <Route path="/mis-contenidos/:id" element={<VistaDetalleContenido />} />
 
         {/* Rutas protegidas para administradores */}
         <Route

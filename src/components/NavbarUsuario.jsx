@@ -40,6 +40,8 @@ export default function NavbarUsuario() {
             >
               Mis consultas
             </Link>
+            <Link to="/MisContenidos" className="hover:text-blue-400">Mis contenidos</Link>
+
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"

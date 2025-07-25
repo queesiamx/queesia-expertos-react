@@ -27,7 +27,8 @@ export default function VistaPublicaContenidos({ expertoId }) {
           where('expertoId', '==', expertoId)
         );
         const snap = await getDocs(q);
-        const datos = snap.docs.map(doc => doc.data());
+        const datos = snap.docs.map(doc => ({ ...doc.data(), contenidoId: doc.id }));
+
         setContenidos(datos);
       } catch (err) {
         console.error('Error al cargar contenidos públicos:', err);

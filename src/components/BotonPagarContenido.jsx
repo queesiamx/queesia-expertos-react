@@ -22,7 +22,7 @@ export default function BotonPagarContenido({ contenidoId, nombreContenido }) {
     }
 
     try {
-      const res = await fetch('/api/crear-sesion-pago', {
+      const res = await fetch('/api/crearPagoContenido', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
