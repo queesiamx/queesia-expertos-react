@@ -1,14 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
+import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import Footer from '../components/Footer';
 import QuesiaNavbar from "../components/QuesiaNavbar";
 
 export default function Home() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [visitas, setVisitas] = useState(null);
 
+  // 🔄 Contador de visitas + lectura
+  useEffect(() => {
+    const contarYLeerVisita = async () => {
+      try {
+        const docRef = doc(db, 'visitCounts', 'expertosHome');
+        await updateDoc(docRef, {
+          count: increment(1),
+        });
+
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          setVisitas(snap.data().count);
+        }
+      } catch (error) {
+        console.error('Error al contar visita:', error);
+      }
+    };
+
+    contarYLeerVisita();
+  }, []);
+
+  // 👤 Detectar usuario
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -62,6 +86,11 @@ export default function Home() {
             className="mt-6 w-64 h-auto animate-fade-in"
           />
         </div>
+
+        {/* 👁️ Contador visible */}
+        <p className="text-center text-sm text-gray-500 mb-2">
+          Visitas: {visitas ?? '...'}
+        </p>
 
         <Footer />
       </div>

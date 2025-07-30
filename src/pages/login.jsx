@@ -1,13 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import QuesiaNavbar from "../components/QuesiaNavbar";
 import Footer from "../components/Footer";
+import RedirectByRole from "../components/RedirectByRole";
 
 const Login = () => {
+  const [loginExitoso, setLoginExitoso] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,23 +25,47 @@ const Login = () => {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // ✅ Admin
+        const userRef = doc(db, "users", user.uid);
         const correosAdmin = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
-        if (correosAdmin.includes(user.email)) {
-          toast.success("Bienvenido administrador 🧀");
-          navigate("/admin-expertos");
+
+        // 🔒 Si ya existe en /users, no hacemos nada más
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          toast.success("Bienvenido de nuevo 🎉");
+          setLoginExitoso(true);
           return;
         }
 
-        // ✅ Verificar si es experto
+        // ✅ Si es administrador
+        if (correosAdmin.includes(user.email)) {
+          await setDoc(userRef, {
+            nombre: user.displayName || "",
+            correo: user.email,
+            rol: "admin",
+            createdAt: serverTimestamp(),
+          });
+          toast.success("Bienvenido administrador 🧀");
+          setLoginExitoso(true);
+          return;
+        }
+
+        // ✅ Si es experto ya aprobado (verifica en collection /experts)
         const expertRef = doc(db, "experts", user.uid);
         const expertSnap = await getDoc(expertRef);
 
         if (expertSnap.exists()) {
           const data = expertSnap.data();
+
+          // Si está aprobado y tiene datos suficientes
           if (data.aprobado === true && data.nombre && data.especialidad) {
-            toast.success("Bienvenido experto");
-            navigate("/dashboard");
+            await setDoc(userRef, {
+              nombre: data.nombre || "",
+              correo: user.email,
+              rol: "experto",
+              createdAt: serverTimestamp(),
+            });
+            toast.success("Bienvenido experto 😎");
+            setLoginExitoso(true);
             return;
           } else {
             toast("Tu cuenta fue registrada. Completa tu perfil para continuar.");
@@ -43,23 +74,16 @@ const Login = () => {
           }
         }
 
-        // ✅ Verificar si es usuario regular
-        const userRef = doc(db, "usuarios", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-          toast.success("Bienvenido 🎉");
-          navigate("/");
-          return;
-        }
-
-        // 🆕 Registrar como nuevo usuario regular
+        // ✅ Si no es admin ni experto → lo registramos como usuario común
         await setDoc(userRef, {
-          email: user.email,
-          creadoEn: serverTimestamp(),
+          nombre: user.displayName || "",
+          correo: user.email,
+          rol: "usuario",
+          createdAt: serverTimestamp(),
         });
-        toast.success("Registro exitoso como usuario.");
-        navigate("/");
+
+        toast.success("Registro exitoso como usuario 🎉");
+        setLoginExitoso(true);
 
       } catch (error) {
         console.error("Error con Google Login", error);
@@ -84,6 +108,7 @@ const Login = () => {
             Conectando con tu cuenta de Google... ⏳
           </p>
         </div>
+        {loginExitoso && <RedirectByRole />}
       </main>
       <Footer />
     </>

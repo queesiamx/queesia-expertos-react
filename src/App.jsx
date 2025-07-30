@@ -1,11 +1,10 @@
+// src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Registro from './pages/Registro';
+import { ROLES } from './constants/roles';
 import Expertos from './pages/Expertos';
 import AdminExpertos from './pages/AdminExpertos';
-import RutaAdminPrivada from './components/RutaAdminPrivada';
-import RutaExpertoPrivada from "./components/RutaExpertoPrivada";
-import RutaUsuarioPrivada from "./components/RutaUsuarioPrivada";
 import ExpertDetailPublic from './components/ExpertDetailPublic';
 import Terminos from './pages/Terminos';
 import Privacidad from './pages/Privacidad';
@@ -20,30 +19,16 @@ import AdminSolicitudes from './pages/AdminSolicitudes';
 import ConsultasAprobadas from "./pages/ConsultasAprobadas";
 import AdminPorValidar from './pages/AdminPorValidar';
 import ExpertHistorialR from './pages/ExpertHistorialR';
+import ProtectedRoute from "./auth/ProtectedRoute";
+import LoginSolo from "./pages/LoginSolo";
+import LoginUsuarios from "./pages/LoginUsuarios";
 import MisConsultas from "./pages/MisConsultas";
 import MisContenidos from './pages/MisContenidos';
 import VistaDetalleContenido from './pages/VistaDetalleContenido';
 import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
 
-import { useEffect, useState } from 'react';
-import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-
 function App() {
-  const [usuario, setUsuario] = useState(null);
-  const [cargando, setCargando] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUsuario(user);
-      setCargando(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (cargando) return <p className="text-center p-6">Cargando...</p>;
-
   return (
     <Router>
       <Toaster />
@@ -56,82 +41,84 @@ function App() {
         <Route path="/expertos" element={<Expertos />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<ExpertDashboard />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/pago-cancelado" element={<PagoCancelado />} />
         <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} />
         <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
         <Route path="/mis-contenidos" element={<MisContenidos />} />
         <Route path="/mis-contenidos/:id" element={<VistaDetalleContenido />} />
+        <Route path="/login" element={<LoginSolo />} />
+        <Route path="/login-usuario" element={<LoginUsuarios />} />
 
-        {/* Rutas protegidas para administradores */}
+        {/* Rutas protegidas para expertos */}
         <Route
-          path="/admin-expertos"
+          path="/dashboard"
           element={
-            <RutaAdminPrivada usuario={usuario}>
-              <AdminExpertos />
-            </RutaAdminPrivada>
-          }
-        />
-        <Route
-          path="/admin/expertos"
-          element={
-            <RutaAdminPrivada usuario={usuario}>
-              <AdminExpertos />
-            </RutaAdminPrivada>
-          }
-        />
-        <Route
-          path="/admin/consultas"
-          element={
-            <RutaAdminPrivada usuario={usuario}>
-              <AdminConsultas />
-            </RutaAdminPrivada>
-          }
-        />
-        <Route
-          path="/admin/solicitudes"
-          element={
-            <RutaAdminPrivada usuario={usuario}>
-              <AdminSolicitudes />
-            </RutaAdminPrivada>
+            <ProtectedRoute roleRequired={ROLES.EXPERTO}>
+              <ExpertDashboard />
+            </ProtectedRoute>
           }
         />
         <Route
           path="/consultas-aprobadas"
           element={
-            <RutaExpertoPrivada usuario={usuario}>
+            <ProtectedRoute roleRequired={ROLES.EXPERTO}>
               <ConsultasAprobadas />
-            </RutaExpertoPrivada>
-          }
-        />
-
-        <Route
-          path="/mis-consultas"
-          element={
-            <RutaUsuarioPrivada>
-              <MisConsultas />
-            </RutaUsuarioPrivada>
-          }
-        />
-        <Route
-          path="/admin/por-validar"
-          element={
-            <RutaAdminPrivada usuario={usuario}>
-              <AdminPorValidar />
-            </RutaAdminPrivada>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/historial-respuestas"
           element={
-            <RutaExpertoPrivada usuario={usuario}>
+            <ProtectedRoute roleRequired={ROLES.EXPERTO}>
               <ExpertHistorialR />
-            </RutaExpertoPrivada>
+            </ProtectedRoute>
           }
         />
 
+        {/* Rutas protegidas para usuarios */}
+        <Route
+          path="/mis-consultas"
+          element={
+            <ProtectedRoute roleRequired={ROLES.USUARIO}>
+              <MisConsultas />
+            </ProtectedRoute>
+          }
+        />
 
+        {/* Rutas protegidas para administradores */}
+        <Route
+          path="/admin-expertos"
+          element={
+            <ProtectedRoute roleRequired={ROLES.ADMIN}>
+              <AdminExpertos />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/consultas"
+          element={
+            <ProtectedRoute roleRequired={ROLES.ADMIN}>
+              <AdminConsultas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/solicitudes"
+          element={
+            <ProtectedRoute roleRequired={ROLES.ADMIN}>
+              <AdminSolicitudes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/por-validar"
+          element={
+            <ProtectedRoute roleRequired={ROLES.ADMIN}>
+              <AdminPorValidar />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

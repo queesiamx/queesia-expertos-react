@@ -1,4 +1,4 @@
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 
 function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
+  const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
+  
   const cambiarAprobacion = async (nuevoEstado) => {
     await enviarCorreoEstadoExperto(
       expert.email,
@@ -28,9 +30,18 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
     }
 
     try {
-      await updateDoc(doc(db, 'experts', expert.id), {
-        aprobado: nuevoEstado,
-      });
+      // Si se está aprobando y el usuario ya existía en "usuarios", actualiza su rol
+      if (nuevoEstado) {
+        const userDocRef = doc(db, 'usuarios', expert.id);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+          await updateDoc(userDocRef, {
+            rol: 'expert',
+          });
+        }
+      }
+
 
       toast.success(`Experto ${nuevoEstado ? 'aprobado' : 'rechazado'} correctamente.`);
       onUpdate({ ...expert, aprobado: nuevoEstado });
@@ -79,6 +90,24 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
     }
   };
 
+  // 🔁 Función para limpieza de expertos incompletos
+
+
+const limpiarExpertosIncompletos = async () => {
+  const snapshot = await getDocs(collection(db, 'experts'));
+  snapshot.docs.forEach(async (docSnap) => {
+    const data = docSnap.data();
+    if (
+      !data.formularioCompleto &&
+      (!data.nombre || !data.especialidad || !data.experiencia)
+    ) {
+      await deleteDoc(doc(db, 'experts', docSnap.id));
+      console.log(`Eliminado: ${docSnap.id}`);
+    }
+  });
+};
+
+
   const getIconByTipo = (tipo) => {
     const lower = tipo?.toLowerCase();
     if (lower.includes('curso')) return <GraduationCap className="w-5 h-5 inline mr-1 text-blue-500" />;
@@ -86,6 +115,8 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
     if (lower.includes('manual')) return <BookOpen className="w-5 h-5 inline mr-1 text-orange-500" />;
     return <FileText className="w-5 h-5 inline mr-1 text-gray-500" />;
   };
+
+  
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow max-w-3xl mx-auto font-sans">
@@ -229,6 +260,14 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
           Eliminar
         </button>
 
+        {adminEmails.includes(expert.email) && (
+          <button
+            onClick={limpiarExpertosIncompletos}
+            className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white mt-4"
+          >
+            Limpiar expertos incompletos
+          </button>
+        )}
         <button
           onClick={onClose}
           className="text-sm text-blue-600 underline mt-4 block"

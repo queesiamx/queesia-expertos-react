@@ -59,10 +59,16 @@ export default function QuesiaNavbar() {
         {!usuario ? (
           <a
             href="/login"
-            className="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-neutral-800 transition"
+            className="flex items-center justify-center w-10 h-10 bg-black rounded-full shadow-md hover:shadow-lg border border-blue-300 transition"
           >
-            Iniciar sesión
+            <img
+              src="/google-icon.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
+            <span className="text-sm text-gray-700 font-medium"></span>
           </a>
+
         ) : (
           <div className="flex items-center gap-3 ml-4">
             {esAdmin && (

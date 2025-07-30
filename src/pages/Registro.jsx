@@ -84,14 +84,9 @@ export default function Registro() {
           toast('Completa tu formulario para continuar.');
         }
       } else {
-        await setDoc(expertRef, {
-          email: user.email,
-          aprobado: false,
-          creadoEn: serverTimestamp(),
-          formularioCompleto: false
-        });
-        toast('Bienvenido. Completa tu formulario.');
+        toast('Bienvenido. Completa tu formulario para continuar.');
       }
+
 
       setForm(prev => ({
         ...prev,
