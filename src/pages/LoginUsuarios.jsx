@@ -2,9 +2,12 @@
 import React from "react";
 import { auth, db } from "../firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+
+// Correos autorizados como administradores
+const adminEmails = ["admin@queesia.com", "soporte@queesia.com"];
 
 export default function LoginUsuarios() {
   const navigate = useNavigate();
@@ -15,19 +18,42 @@ export default function LoginUsuarios() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      const docSnap = await getDoc(doc(db, "users", user.uid));
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
+
         if (data.aprobado) {
           toast.success("Bienvenido de nuevo.");
-          navigate("/dashboard");
+          if (data.rol === "admin") {
+            navigate("/admin-dashboard");
+          } else {
+            navigate("/dashboard");
+          }
         } else {
           toast("Tu cuenta aún no ha sido aprobada.");
         }
       } else {
-        toast("Completa tu registro primero.");
-        navigate("/registro");
+        // Detectar si es administrador por correo
+        const rol = adminEmails.includes(user.email) ? "admin" : "usuario";
+
+        // Crear nuevo usuario con aprobado en true
+        await setDoc(docRef, {
+          nombre: user.displayName,
+          email: user.email,
+          rol,
+          aprobado: true,
+          creadoEn: serverTimestamp(),
+          fotoPerfil: user.photoURL // 👈 AGREGA ESTA LÍNEA
+        });
+
+        toast.success("Registro exitoso. Bienvenido.");
+        if (rol === "admin") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } catch (error) {
       console.error("Error de login:", error);
@@ -46,7 +72,6 @@ export default function LoginUsuarios() {
         >
           <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
         </button>
-
         <span className="text-sm text-gray-700 mt-3 block">Continuar con Google</span>
       </div>
     </div>

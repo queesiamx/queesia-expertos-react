@@ -21,6 +21,11 @@ export default function LoginSolo() {
       if (docSnap.exists()) {
         const data = docSnap.data();
 
+        if (data.rol !== "experto") {
+          toast.error("Este login es exclusivo para expertos.");
+          return;
+        }
+
         if (data.aprobado) {
           toast.success("Bienvenido de nuevo, experto aprobado.");
           navigate("/dashboard");
@@ -28,7 +33,6 @@ export default function LoginSolo() {
           toast("Tu cuenta aún no ha sido aprobada por el equipo de Queesia.");
         }
       } else {
-        // Usuario autenticado pero no registrado: llevarlo al formulario
         toast("Primero completa tu registro como experto.");
         navigate("/registro");
       }
