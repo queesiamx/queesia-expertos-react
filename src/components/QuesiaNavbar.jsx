@@ -47,7 +47,7 @@ export default function QuesiaNavbar() {
           <a href="https://expertos.queesia.com" className="text-black hover:text-blue-600 transition-colors duration-200">
             Expertos
           </a>
-          <a href="https://queesia.com/acerca" className="text-black hover:text-blue-600 transition-colors duration-200 flex items-center gap-1">
+          <a href="https://queesia.com/nosotros/" className="text-black hover:text-blue-600 transition-colors duration-200 flex items-center gap-1">
             Acerca de 🧀
           </a>
           <a href="https://queesia.com/contacto" className="text-black hover:text-blue-600 transition-colors duration-200">

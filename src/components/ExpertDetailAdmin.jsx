@@ -1,4 +1,4 @@
-import { doc, updateDoc, deleteDoc, getDocs, collection } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
@@ -32,7 +32,8 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
     try {
       // Si se está aprobando y el usuario ya existía en "usuarios", actualiza su rol
       if (nuevoEstado) {
-        const userDocRef = doc(db, 'usuarios', expert.id);
+        const userDocRef = doc(db, 'users', expert.id);
+
         const userSnap = await getDoc(userDocRef);
 
         if (userSnap.exists()) {
