@@ -25,7 +25,6 @@ import LoginUsuarios from "./pages/LoginUsuarios";
 import MisConsultas from "./pages/MisConsultas";
 import MisContenidos from './pages/MisContenidos';
 import VistaDetalleContenido from './pages/VistaDetalleContenido';
-import Dashboard from './pages/Dashboard';
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -52,7 +51,7 @@ function App() {
 
         {/* Rutas protegidas para expertos */}
         <Route
-          path="/dashboard"
+          path="/expert-dashboard"
           element={
             <ProtectedRoute roleRequired={ROLES.EXPERTO}>
               <ExpertDashboard />

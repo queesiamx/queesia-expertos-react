@@ -6,14 +6,25 @@ import { ROLES } from "../constants/roles";
 export default function ProtectedRoute({ children, roleRequired }) {
   const { user, rol, aprobado, loading } = useAuth();
 
-  if (loading) return <p className="text-center mt-10">Cargando...</p>;
+  // 🧪 Logs de depuración
+  console.log("🔐 [ProtectedRoute]");
+  console.log("Usuario:", user?.email || null);
+  console.log("Rol actual:", rol);
+  console.log("Rol requerido:", roleRequired);
+  console.log("Aprobado:", aprobado);
+  console.log("Loading:", loading);
 
-  // Si no hay usuario autenticado o el rol no coincide
+  // ⏳ Esperamos hasta que se termine de cargar la sesión y los datos
+  if (loading) {
+    return <p className="text-center mt-10">Cargando...</p>;
+  }
+
+  // ❌ Si no hay sesión activa o el rol no coincide, redirigimos al home
   if (!user || rol !== roleRequired) {
     return <Navigate to="/" replace />;
   }
 
-  // Si el usuario es experto pero aún no ha sido aprobado
+  // ⚠️ Si el rol requerido es EXPERTO pero aún no ha sido aprobado
   if (roleRequired === ROLES.EXPERTO && !aprobado) {
     return (
       <div className="text-center mt-10 text-red-600">
@@ -22,5 +33,6 @@ export default function ProtectedRoute({ children, roleRequired }) {
     );
   }
 
+  // ✅ Usuario autenticado y con rol correcto
   return children;
 }

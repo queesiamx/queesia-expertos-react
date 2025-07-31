@@ -1,4 +1,3 @@
-// src/hooks/useAuth.js
 import { useEffect, useState, useContext, createContext } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -22,15 +21,13 @@ export function AuthProvider({ children }) {
           const data = docSnap.data();
           setUser(firebaseUser);
           setRol(data.rol || null);
-          setAprobado(data.aprobado || false);
+          setAprobado(data.aprobado === true); // 👈 Aquí booleano explícito
         } else {
-          // Usuario autenticado pero sin documento en Firestore
           setUser(firebaseUser);
           setRol(null);
           setAprobado(false);
         }
       } else {
-        // No hay usuario autenticado
         setUser(null);
         setRol(null);
         setAprobado(false);

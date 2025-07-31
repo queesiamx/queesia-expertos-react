@@ -9,7 +9,7 @@ export default function RedirectByRole() {
   useEffect(() => {
     if (!loading && user && rol) {
       if (rol === "admin") navigate("/admin-expertos");
-      else if (rol === "experto") navigate("/expert-dashboard");
+      else if (rol === "experto") navigate("/dashboard");
       else if (rol === "usuario") navigate("/mis-consultas");
       else navigate("/");
     }
