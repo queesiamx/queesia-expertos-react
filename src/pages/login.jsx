@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "../firebase";
 import {
@@ -13,11 +13,19 @@ import toast from "react-hot-toast";
 import QuesiaNavbar from "../components/QuesiaNavbar";
 import Footer from "../components/Footer";
 import RedirectByRole from "../components/RedirectByRole";
+import { useAuth } from "../hooks/useAuth"; // ✅ Asegúrate que el hook existe
 
 const Login = () => {
   const [loginExitoso, setLoginExitoso] = useState(false);
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth(); // ✅ Hook para saber si ya hay sesión
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard"); // ✅ Redirección automática si ya hay sesión
+    }
+  }, [user, navigate]);
 
   const iniciarSesion = async () => {
     setCargando(true);
@@ -99,14 +107,23 @@ const Login = () => {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
             Soy experto 🧐
           </h2>
-          <button
-            onClick={iniciarSesion}
-            disabled={cargando}
-            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
-          >
-            {cargando ? "Conectando..." : "Conectar con Google"}
-          </button>
+
+          {/* ✅ Mostrar botón solo si no hay sesión */}
+          {!user ? (
+            <button
+              onClick={iniciarSesion}
+              disabled={cargando}
+              className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+            >
+              {cargando ? "Conectando..." : "Conectar con Google"}
+            </button>
+          ) : (
+            <p className="text-sm text-gray-600 mt-4">
+              Ya has iniciado sesión. Redirigiéndote al panel...
+            </p>
+          )}
         </div>
+
         {loginExitoso && <RedirectByRole />}
       </main>
       <Footer />
