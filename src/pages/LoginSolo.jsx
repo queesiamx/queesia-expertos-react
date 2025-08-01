@@ -28,7 +28,7 @@ export default function LoginSolo() {
 
         if (data.aprobado) {
           toast.success("Bienvenido de nuevo, experto aprobado.");
-          navigate("/dashboard");
+          navigate("/expert-dashboard");
         } else {
           toast("Tu cuenta aún no ha sido aprobada por el equipo de Queesia.");
         }

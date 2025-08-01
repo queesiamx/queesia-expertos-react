@@ -1,5 +1,5 @@
 // src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Registro from './pages/Registro';
 import { ROLES } from './constants/roles';
@@ -29,7 +29,7 @@ import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
-    <Router>
+      <>
       <Toaster />
       <Routes>
         {/* Rutas públicas */}
@@ -51,7 +51,7 @@ function App() {
 
         {/* Rutas protegidas para expertos */}
         <Route
-          path="/expert-dashboard"
+          path="/dashboard"
           element={
             <ProtectedRoute roleRequired={ROLES.EXPERTO}>
               <ExpertDashboard />
@@ -119,7 +119,7 @@ function App() {
           }
         />
       </Routes>
-    </Router>
+   </>
   );
 }
 
