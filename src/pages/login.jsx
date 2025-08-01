@@ -8,6 +8,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { ROLES } from "../constants/roles"; // 👈 Asegúrate de tener esta línea arriba
 import toast from "react-hot-toast";
 import QuesiaNavbar from "../components/QuesiaNavbar";
 import Footer from "../components/Footer";
@@ -62,6 +63,7 @@ const Login = () => {
               nombre: data.nombre || "",
               correo: user.email,
               rol: "experto",
+                aprobado: true, // ✅ Añade este campo
               createdAt: serverTimestamp(),
             });
             toast.success("Bienvenido experto 😎");
