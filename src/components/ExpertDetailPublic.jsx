@@ -1,3 +1,5 @@
+
+
 // src/components/ExpertDetailPublic.jsx
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, Fragment } from 'react';
@@ -56,6 +58,8 @@ export default function ExpertDetailPublic() {
   const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
   const [fechaSeleccionada, setFechaSeleccionada] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
+
 
 
   useEffect(() => {
@@ -98,6 +102,13 @@ export default function ExpertDetailPublic() {
     setContenidoSeleccionado(contenido);
     setModalAbierto(true);
   };
+
+const handleAbrirModalCompra = (contenido) => {
+  setContenidoSeleccionado(contenido);
+  setIsBuying(true);
+  setModalAbierto(true);
+};
+
 
   const handleRegistroGratuito = async () => {
     if (!usuario || !contenidoSeleccionado) return;
@@ -344,35 +355,49 @@ setTimeout(() => {
     )}
 
     <div className="flex items-center justify-between pt-4">
-      <div className="text-xl font-semibold text-gray-800">
-        {contenido.tipoContenido === 'consulta' ? (
-          <span className="text-yellow-700 text-sm font-medium">
-            Sujeto a aplicación de costos
-          </span>
-        ) : contenido.precio ? (
-          <span>${Number(contenido.precio).toFixed(2)}</span>
-        ) : (
-          <span className="text-gray-500 text-sm">Contenido gratuito</span>
-        )}
-      </div>
+  <div className="text-xl font-semibold text-gray-800">
+    {contenido.tipoContenido === 'consulta' ? (
+      <span className="text-yellow-700 text-sm font-medium">
+        Sujeto a aplicación de costos
+      </span>
+    ) : contenido.precio ? (
+      <span>${Number(contenido.precio).toFixed(2)}</span>
+    ) : (
+      <span className="text-gray-500 text-sm">Contenido gratuito</span>
+    )}
+  </div>
 
-      {contenido.tipoContenido === 'curso' && !contenido.precio && (
-        <button
-          onClick={() => handleAbrirModal(contenido)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-        >
-          Registrarme
-        </button>
-      )}
-      {contenido.tipoContenido === 'curso' && contenido.precio && (
-        <button
-          onClick={() => handleBuy(contenido)}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
-        >
-          Comprar
-        </button>
-      )}
-    </div>
+  {/* Cursos gratuitos */}
+  {contenido.tipoContenido === 'curso' && !contenido.precio && (
+    <button
+      onClick={() => handleAbrirModal(contenido)}
+      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+    >
+      Registrarme
+    </button>
+  )}
+
+  {/* Manuales de pago → van directo a pagar */}
+{contenido.tipoContenido === 'manual' && contenido.precio && (
+  <button
+    onClick={() => handleBuy(contenido)}
+    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+  >
+    Comprar
+  </button>
+)}
+
+{/* Cursos de pago → primero seleccionar fecha */}
+{contenido.tipoContenido === 'curso' && contenido.precio && (
+  <button
+    onClick={() => handleAbrirModalCompra(contenido)}
+    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+  >
+    Comprar
+  </button>
+)}
+
+</div>
   </div>
 ))}
 
@@ -424,14 +449,26 @@ setTimeout(() => {
                 <button
                   type="button"
                   className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-                  onClick={() => setModalAbierto(false)}
+                  onClick={() => {
+                  setModalAbierto(false);
+                  setIsBuying(false);
+                }}
+
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                  onClick={handleRegistroGratuito}
+                  onClick={() => {
+                    if (isBuying) {
+                      handleBuy(contenidoSeleccionado);
+                      setIsBuying(false); // reiniciar estado
+                    } else {
+                      handleRegistroGratuito();
+                    }
+                  }}
+
                   disabled={!fechaSeleccionada}
                 >
                   Confirmar registro

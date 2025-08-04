@@ -114,13 +114,22 @@ export default async function handler(req, res) {
         );
 
         console.log(`✅ Consulta ${consultaId} pagada y correos enviados`);
+      
       } else if (contenidoId && uid) {
-        // 🔁 Caso: Pago de contenido
         const ref = doc(db, 'contenidosExpertos', contenidoId);
         await updateDoc(ref, {
           usuariosAutorizados: arrayUnion(uid),
+          usuariosRegistrados: arrayUnion({
+            correo: email,
+            nombre: session.metadata?.nombreUsuario || 'Usuario',
+            fechaRegistro: new Date().toISOString(),
+            fechaAgendada: session.metadata?.fechaAgendada || null,
+            estatus: 'confirmado',
+            pagado: true
+          }),
           ultimaCompra: new Date().toISOString(),
         });
+
 
         // 📧 Correo al usuario que compró contenido
         await emailjs.send(

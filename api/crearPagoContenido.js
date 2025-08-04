@@ -1,5 +1,7 @@
 // /api/crearPagoContenido.js
 import Stripe from 'stripe';
+import { db } from '../../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -10,11 +12,31 @@ export default async function handler(req, res) {
 
   const { contenidoId, uid, email, nombreContenido } = req.body;
 
-  if (!contenidoId || !userUid || !email) {
+  if (!contenidoId || !uid || !email) {
     return res.status(400).json({ error: 'Faltan datos requeridos' });
   }
 
   try {
+    // 🔍 1. Consultar el contenido en Firestore para obtener precio y nombre real
+    const contenidoRef = doc(db, 'contenidosExpertos', contenidoId);
+    const contenidoSnap = await getDoc(contenidoRef);
+
+    if (!contenidoSnap.exists()) {
+      return res.status(404).json({ error: 'Contenido no encontrado' });
+    }
+
+    const contenidoData = contenidoSnap.data();
+    const precio = contenidoData.precio; // Debe estar en pesos MXN
+    const tituloContenido = contenidoData.nombre || nombreContenido || 'Contenido exclusivo';
+
+    if (!precio || isNaN(precio) || precio <= 0) {
+      return res.status(400).json({ error: 'Precio inválido en base de datos' });
+    }
+
+    // 🔄 Convertir a centavos para Stripe
+    const precioEnCentavos = Math.round(precio * 100);
+
+    // 💳 2. Crear la sesión de pago en Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -24,17 +46,18 @@ export default async function handler(req, res) {
           price_data: {
             currency: 'mxn',
             product_data: {
-              name: nombreContenido || 'Contenido exclusivo',
+              name: tituloContenido,
             },
-            unit_amount: 12000, // 💰 Precio en centavos
+            unit_amount: precioEnCentavos,
           },
           quantity: 1,
         },
       ],
       metadata: {
         contenidoId,
-        uid: userUid, // <- renombrado aquí
-        email,        // <- agregado
+        uid,
+        email,
+        nombreContenido: tituloContenido,
       },
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/PagoExitoso`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/PagoCancelado`,
