@@ -4,7 +4,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import Footer from '../components/Footer';
-import QuesiaNavbar from "../components/QuesiaNavbar";
+import UnifiedNavbar from "../components/UnifiedNavbar";
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -42,7 +43,8 @@ export default function Home() {
 
   return (
     <>
-      <QuesiaNavbar />
+      <UnifiedNavbar />
+
       <div className="min-h-screen bg-primary-soft flex flex-col justify-between">
         <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center text-center px-4 py-24 font-sans">
           

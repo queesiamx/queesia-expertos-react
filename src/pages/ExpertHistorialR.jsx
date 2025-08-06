@@ -3,7 +3,8 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
-import NavbarExperto from '../components/NavbarExperto';
+import UnifiedNavbar from "../components/UnifiedNavbar";
+
 
 export default function ExpertHistorialR() {
   const [respuestas, setRespuestas] = useState([]);
@@ -54,7 +55,8 @@ export default function ExpertHistorialR() {
 
   return (
     <>
-      <NavbarExperto />
+      <UnifiedNavbar />
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6 text-center">Mi historial de respuestas</h1>
 

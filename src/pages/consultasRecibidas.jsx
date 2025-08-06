@@ -5,7 +5,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
-import NavbarExperto from '../components/NavbarExperto';
+import UnifiedNavbar from "../components/UnifiedNavbar";
 import { useNavigate } from 'react-router-dom';
 
 export default function ConsultasRecibidas() {
@@ -86,7 +86,7 @@ export default function ConsultasRecibidas() {
 
   return (
     <>
-      <NavbarExperto />
+      <UnifiedNavbar />
 
       {consultaModalVisible && consultaSeleccionada && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

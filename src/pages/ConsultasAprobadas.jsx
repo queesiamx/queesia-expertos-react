@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import NavbarExperto from "../components/NavbarExperto";
+import UnifiedNavbar from "../components/UnifiedNavbar";
+
 
 export default function ConsultasAprobadas() {
   const [consultas, setConsultas] = useState([]);
@@ -36,7 +37,8 @@ export default function ConsultasAprobadas() {
 
   return (
     <>
-      <NavbarExperto />
+      <UnifiedNavbar />
+
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Consultas Aprobadas</h1>
 

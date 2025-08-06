@@ -8,7 +8,7 @@ import {
   doc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import AdminNavbar from '../components/AdminNavbar';
+import UnifiedNavbar from "../components/UnifiedNavbar";
 import toast, { Toaster } from 'react-hot-toast';
 import { unparse } from 'papaparse';
 
@@ -236,7 +236,8 @@ export default function AdminConsultas() {
   return (
     <div className="min-h-screen bg-primary-soft px-6 py-10 mt-[72px] font-sans">
       <Toaster position="top-right" />
-      <AdminNavbar />
+      <UnifiedNavbar />
+
 
       <h1 className="text-3xl font-bold text-default mb-6 font-montserrat">
         Consultas pendientes

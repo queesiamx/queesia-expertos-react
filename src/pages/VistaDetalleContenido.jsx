@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import NavbarUsuario from '../components/NavbarUsuario';
+import UnifiedNavbar from "../components/UnifiedNavbar";
+
 
 export default function VistaDetalleContenido() {
   const { id } = useParams();
@@ -44,7 +45,8 @@ export default function VistaDetalleContenido() {
 
   return (
     <div>
-      <NavbarUsuario />
+      <UnifiedNavbar />
+
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-2">{contenido.titulo}</h1>
         <p className="text-sm text-gray-600 mb-2">{contenido.descripcion}</p>

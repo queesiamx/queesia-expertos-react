@@ -1,25 +1,22 @@
-// src/components/MobileMenu.jsx
-
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
 import { menuControl } from "../hooks/useMenuControl";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { ROLES } from "../constants/roles";
 
-export default function MobileMenu() {
+
+export default function MobileMenu({ handleLogout }) {
+
   const [isOpen, setIsOpen] = useState(false);
   const [usuario, setUsuario] = useState(null);
-  const navigate = useNavigate();
-
-  const correosAdmin = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
-  const esAdmin = usuario && correosAdmin.includes(usuario.email);
+  const { rol, aprobado } = useAuth();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setUsuario(user);
+      setUsuario(user ? { ...user, rol, aprobado } : null);
     });
 
     if (isOpen) {
@@ -38,17 +35,35 @@ export default function MobileMenu() {
       unsubscribeAuth();
       unsubscribeMenu();
     };
-  }, [isOpen]);
+  }, [isOpen, rol, aprobado]);
 
   const handleLinkClick = () => setIsOpen(false);
 
-  const cerrarSesion = async () => {
-    await signOut(auth);
-    setUsuario(null);
-    setIsOpen(false);
-    toast.success("Sesión cerrada correctamente");
-    navigate("/");
-  };
+  // Opciones dinámicas por rol
+  const opciones = [
+    { label: "Catálogo", href: "/#catalogo" },
+    { label: "Quesos de éxito", href: "/casos" },
+    { label: "Expertos", href: "https://expertos.queesia.com", external: true },
+    { label: "Acerca de 🧀", href: "/nosotros" },
+    { label: "Contacto", href: "/contacto" },
+    ...(rol === ROLES.ADMIN
+      ? [{ label: "Panel Admin", href: "/admin-expertos" }]
+      : []),
+    ...(rol === ROLES.EXPERTO && aprobado
+      ? [
+          { label: "Mi Dashboard", href: "/expert-dashboard" },
+          { label: "Mis Servicios", href: "/mis-servicios" },
+          { label: "Consultas Recibidas", href: "/consultas-recibidas" },
+        ]
+      : []),
+    ...(rol === ROLES.USUARIO
+      ? [
+          { label: "Mis Consultas", href: "/mis-consultas" },
+          { label: "Mis Compras", href: "/mis-compras" },
+        ]
+      : []),
+    ...(usuario ? [{ label: "Mi Perfil", href: "/perfil" }] : []),
+  ];
 
   return (
     <div className="lg:hidden relative">
@@ -78,53 +93,18 @@ export default function MobileMenu() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <a
-                href="/#catalogo"
-                onClick={handleLinkClick}
-                className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition"
-              >
-                Catálogo
-              </a>
-              <a
-                href="/casos"
-                onClick={handleLinkClick}
-                className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition"
-              >
-                Quesos de éxito
-              </a>
-              <a
-                href="https://expertos.queesia.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleLinkClick}
-                className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition"
-              >
-                Expertos
-              </a>
-              <a
-                href="/nosotros"
-                onClick={handleLinkClick}
-                className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition"
-              >
-                Acerca de 🧀
-              </a>
-              <a
-                href="/contacto"
-                onClick={handleLinkClick}
-                className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition"
-              >
-                Contacto
-              </a>
-
-              {esAdmin && (
+              {opciones.map((op, idx) => (
                 <a
-                  href="/admin-expertos"
+                  key={idx}
+                  href={op.href}
+                  target={op.external ? "_blank" : "_self"}
+                  rel={op.external ? "noopener noreferrer" : undefined}
                   onClick={handleLinkClick}
-                  className="block px-4 py-2 text-blue-700 hover:bg-blue-100 font-semibold transition text-sm"
+                  className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition text-sm"
                 >
-                  Queesia Admin 🧀
+                  {op.label}
                 </a>
-              )}
+              ))}
 
               <hr className="my-2" />
 
@@ -137,17 +117,23 @@ export default function MobileMenu() {
                   Iniciar sesión
                 </a>
               ) : (
-                <>
-                  <span className="px-4 text-xs text-gray-600 truncate">
-                    {usuario.email}
-                  </span>
-                  <button
-                    onClick={cerrarSesion}
-                    className="text-left px-4 py-2 text-red-600 hover:bg-gray-200 hover:text-red-700 text-sm transition"
-                  >
-                    Cerrar sesión
-                  </button>
-                </>
+                <div className="px-4 py-2">
+                <span className="block text-xs text-gray-600 truncate mb-2">
+                  {usuario.email}
+                </span>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                  className="mt-2 w-full flex items-center gap-2 text-sm text-red-600 hover:bg-gray-200 transition px-2 py-1 rounded"
+                >
+                  <LogOut size={16} />
+                  Cerrar sesión
+                </button>
+              </div>
+
+
               )}
             </motion.div>
           </>

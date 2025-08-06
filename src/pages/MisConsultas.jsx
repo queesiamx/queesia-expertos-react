@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import NavbarUsuario from "../components/NavbarUsuario";
+import UnifiedNavbar from "../components/UnifiedNavbar";
 import toast from "react-hot-toast";
 
 export default function MisConsultas() {
@@ -66,7 +66,8 @@ export default function MisConsultas() {
 
   return (
     <>
-      <NavbarUsuario />
+     <UnifiedNavbar />
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">Mis consultas</h1>
         {consultas.length === 0 ? (

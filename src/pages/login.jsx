@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../constants/roles";
 import toast from "react-hot-toast";
-import QuesiaNavbar from "../components/QuesiaNavbar";
+import UnifiedNavbar from "../components/UnifiedNavbar";
 import Footer from "../components/Footer";
 import RedirectByRole from "../components/RedirectByRole";
 import { useAuth } from "../hooks/useAuth"; // ✅ Asegúrate que el hook existe
@@ -101,7 +101,8 @@ const Login = () => {
 
   return (
     <>
-      <QuesiaNavbar />
+      <UnifiedNavbar />
+
       <main className="min-h-screen bg-primary-soft flex flex-col items-center justify-center px-4 py-10">
         <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 text-center animate-fade-in">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">

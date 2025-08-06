@@ -18,7 +18,7 @@ import {
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
-import NavbarExperto from "../components/NavbarExperto";
+import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertProfileCard from "../components/ExpertProfileCard";
 import ExpertProfileEditor from "../components/ExpertProfileEditor";
 import UploadContenido from "../components/UploadContenido";
@@ -161,7 +161,8 @@ const ExpertDashboard = () => {
 
   return (
     <>
-      <NavbarExperto />
+      <UnifiedNavbar />
+
       <div className="p-6 max-w-4xl mx-auto font-sans">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Panel de Experto</h1>

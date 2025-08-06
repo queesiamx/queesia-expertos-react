@@ -1,15 +1,17 @@
-// src/components/LoginButton.jsx
-
 import React, { useEffect, useState } from "react";
 import { db, auth, googleProvider } from '../../lib/firebaseConfig';
 import { signInWithPopup } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { menuControl } from "../hooks/useMenuControl";
+import { useAuth } from "../hooks/useAuth";
+import { ROLES } from "../constants/roles";
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
   const [openMenu, setOpenMenu] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
+  const { rol, aprobado } = useAuth();
   const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
 
   useEffect(() => {
@@ -25,14 +27,12 @@ export default function LoginButton() {
     return () => unsubscribe();
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (selectedRole) => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-
       const token = await user.getIdToken();
 
-      // Guarda sesión local
       localStorage.setItem("authToken", token);
       localStorage.setItem("user", JSON.stringify({
         uid: user.uid,
@@ -41,26 +41,26 @@ export default function LoginButton() {
         photo: user.photoURL,
       }));
 
-      // Flujo 1: Admin
-      if (adminEmails.includes(user.email)) {
+      // Redirección según modalidad elegida
+      if (selectedRole === ROLES.ADMIN || adminEmails.includes(user.email)) {
         window.location.href = "/admin-expertos";
         return;
       }
 
-      // Flujo 2: Verificar si es experto registrado
-      const expertRef = doc(db, "experts", user.uid);
-      const expertSnap = await getDoc(expertRef);
-
-      if (expertSnap.exists()) {
-        const data = expertSnap.data();
-        if (data.aprobado === true && data.nombre && data.especialidad) {
+      if (selectedRole === ROLES.EXPERTO) {
+        const expertRef = doc(db, "experts", user.uid);
+        const expertSnap = await getDoc(expertRef);
+        if (expertSnap.exists() && expertSnap.data().aprobado) {
           window.location.href = "/dashboard";
         } else {
           window.location.href = "/registro";
         }
-      } else {
-        // Flujo 3: Usuario nuevo
-        window.location.href = "/registro";
+        return;
+      }
+
+      if (selectedRole === ROLES.USUARIO) {
+        window.location.href = "/mis-consultas";
+        return;
       }
 
     } catch (error) {
@@ -92,26 +92,33 @@ export default function LoginButton() {
           onClick={toggleMenu}
         />
         {openMenu && (
-          <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg z-50">
-            <div className="px-4 py-2 text-sm text-gray-800 truncate">
+          <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
+            <div className="px-4 py-2 text-sm text-gray-800 truncate border-b">
               {user.name?.split(" ")[0]}
             </div>
-            <a
-              href="/mis-consultas"
-              className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100"
-            >
-              Mis consultas
-            </a>
-            <button
-            onClick={handleLogout}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
-            title="Cerrar sesión"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7" />
-            </svg>
-          </button>
 
+            {rol === ROLES.ADMIN && (
+              <a href="/admin-expertos" className="block px-4 py-2 text-sm hover:bg-gray-100">
+                Panel de admin
+              </a>
+            )}
+            {rol === ROLES.EXPERTO && aprobado && (
+              <a href="/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-100">
+                Mi dashboard
+              </a>
+            )}
+            {rol === ROLES.USUARIO && (
+              <a href="/mis-consultas" className="block px-4 py-2 text-sm hover:bg-gray-100">
+                Mis consultas
+              </a>
+            )}
+
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Cerrar sesión
+            </button>
           </div>
         )}
       </div>
@@ -119,17 +126,41 @@ export default function LoginButton() {
   }
 
   return (
-    <button
-      onClick={handleLogin}
-      className="flex items-center justify-center gap-2 bg-black text-white text-sm font-medium px-3 py-2 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
-    >
-      <img
-        src="https://www.svgrepo.com/show/475656/google-color.svg"
-        alt="Google"
-        className="w-5 h-5 md:w-4 md:h-4"
-        onError={(e) => (e.target.style.display = "none")}
-      />
-      <span className="hidden md:inline">Iniciar sesión</span>
-    </button>
+    <div className="relative">
+      <button
+        onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+        className="flex items-center justify-center gap-2 bg-black text-white text-sm font-medium px-3 py-2 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
+      >
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          className="w-5 h-5 md:w-4 md:h-4"
+        />
+        <span className="hidden md:inline">Iniciar sesión</span>
+      </button>
+
+      {roleMenuOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
+          <button
+            onClick={() => handleLogin(ROLES.ADMIN)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          >
+            🛠 Soy admin
+          </button>
+          <button
+            onClick={() => handleLogin(ROLES.EXPERTO)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          >
+            👨‍💼 Soy experto
+          </button>
+          <button
+            onClick={() => handleLogin(ROLES.USUARIO)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          >
+            🙋 Soy usuario
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

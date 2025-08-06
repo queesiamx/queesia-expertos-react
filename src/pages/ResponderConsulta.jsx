@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import toast from "react-hot-toast";
-import NavbarExperto from "../components/NavbarExperto";
+import UnifiedNavbar from "../components/UnifiedNavbar";
+
 
 export default function ResponderConsulta() {
   const { id } = useParams();
@@ -81,7 +82,8 @@ export default function ResponderConsulta() {
   if (!consulta) {
     return (
       <>
-        <NavbarExperto />
+        <UnifiedNavbar />
+
         <div className="p-6">Cargando consulta...</div>
       </>
     );
@@ -89,7 +91,8 @@ export default function ResponderConsulta() {
 
   return (
     <>
-      <NavbarExperto />
+      <UnifiedNavbar />
+
       <div className="p-6 max-w-3xl mx-auto font-sans">
         <h1 className="text-2xl font-bold mb-4">Responder Consulta</h1>
         <div className="bg-white shadow rounded p-4 space-y-4">

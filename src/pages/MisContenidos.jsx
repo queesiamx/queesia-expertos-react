@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import NavbarUsuario from '../components/NavbarUsuario';
+import UnifiedNavbar from "../components/UnifiedNavbar";
+
 import { useNavigate } from 'react-router-dom'; // 👈 Importar navegación
 
 export default function MisContenidos() {
@@ -42,7 +43,8 @@ export default function MisContenidos() {
 
   return (
     <div>
-      <NavbarUsuario />
+      <UnifiedNavbar />
+
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Mis contenidos adquiridos</h1>
         {contenidos.length === 0 ? (

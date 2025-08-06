@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import ExpertDetailAdmin from '../components/ExpertDetailAdmin';
-import AdminNavbar from '../components/AdminNavbar';
+import UnifiedNavbar from "../components/UnifiedNavbar";
 import { Toaster } from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -130,7 +130,7 @@ export default function AdminExpertos() {
     <div className="min-h-screen bg-primary-soft px-6 py-10 font-sans mt-[72px]">
       <div className="fixed inset-0 bg-primary-soft -z-10"></div>
       <Toaster position="top-right" />
-      <AdminNavbar onLogout={handleLogout} />
+      <UnifiedNavbar onLogout={handleLogout} />
 
       <h1 className="text-3xl font-bold text-default mb-6 font-montserrat">
         Panel de Administración de Expertos
