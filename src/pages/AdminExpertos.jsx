@@ -127,8 +127,12 @@ export default function AdminExpertos() {
   const totalCursos = expertos.reduce((acc, exp) => acc + (Array.isArray(exp.servicios) ? exp.servicios.filter(s => s.tipo === 'curso').length : 0), 0);
 
   return (
-    <div className="min-h-screen bg-primary-soft px-6 py-10 font-sans mt-[72px]">
-      <div className="fixed inset-0 bg-primary-soft -z-10"></div>
+  <div className="relative min-h-screen font-sans mt-[72px]">
+    {/* Fondo amarillo detrás del contenido */}
+    <div className="bg-primary-soft min-h-screen">
+
+
+      
       <Toaster position="top-right" />
       <UnifiedNavbar onLogout={handleLogout} />
 
@@ -253,6 +257,8 @@ export default function AdminExpertos() {
             ))}
         </div>
       )}
+    </div>
+
     </div>
   );
 }

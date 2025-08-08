@@ -1,3 +1,11 @@
+/* RESET GLOBAL */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
 :root {
   @apply font-sans;
   line-height: 1.5;
@@ -82,4 +90,11 @@ html, body, #root {
   margin: 0;
   padding: 0;
   background-color: #ffe75c; /* tu color de fondo o el de bg-primary-soft */
+}
+body {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+iframe[name^="__privateStripeController"] {
+  display: none !important;
 }
