@@ -65,7 +65,11 @@ export default function UserMenu({ usuario, handleLogout }) {
     );
   }
 
-  // Opciones por rol
+  // Mostrar "Mis valoraciones" solo si es USUARIO o si aún no hay rol definido
+  const showMisValoraciones =
+    !userData?.rol || userData?.rol === ROLES.USUARIO;
+
+  // Opciones por rol (sin duplicados)
   const opciones = [
     ...(userData?.rol === ROLES.ADMIN
       ? [{ label: "Panel Admin", href: "/admin-expertos" }]
@@ -74,7 +78,7 @@ export default function UserMenu({ usuario, handleLogout }) {
     ...(userData?.rol === ROLES.EXPERTO && userData?.aprobado
       ? [
           { label: "Mi Dashboard", href: "/expert-dashboard" },
-          { label: "Mis Servicios", href: "/mis-servicios" },
+          { label: "Mis Servicios", href: "/expert-dashboard#servicios" }, // << aquí
           { label: "Consultas Recibidas", href: "/consultas-recibidas" },
         ]
       : []),
@@ -83,13 +87,12 @@ export default function UserMenu({ usuario, handleLogout }) {
       ? [
           { label: "Mis Consultas", href: "/mis-consultas" },
           { label: "Mis Compras", href: "/mis-compras" },
-          // 🔥 NUEVO: historial de calificaciones y comentarios
-          { label: "Mis valoraciones", href: "/mis-valoraciones" },
         ]
       : []),
 
-    // Muestra "Mis valoraciones" también si no está fijado el rol (por si acaso)
-    ...(userData?.rol && userData?.rol !== ROLES.USUARIO ? [] : [{ label: "Mis valoraciones", href: "/mis-valoraciones" }]),
+    ...(showMisValoraciones
+      ? [{ label: "Mis valoraciones", href: "/mis-valoraciones" }]
+      : []),
 
     { label: "Mi Perfil", href: "/perfil" },
   ];

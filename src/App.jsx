@@ -1,5 +1,5 @@
 // src/App.jsx
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Navigate, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Registro from './pages/Registro';
 import { ROLES } from './constants/roles';
@@ -8,8 +8,7 @@ import AdminExpertos from './pages/AdminExpertos';
 import ExpertDetailPublic from './components/ExpertDetailPublic';
 import Terminos from './pages/Terminos';
 import Privacidad from './pages/Privacidad';
-import Login from "./pages/login";            // <- deja solo una ruta /login
-// import LoginSolo from "./pages/LoginSolo"; // <- quítalo o dale otra ruta si lo necesitas
+import Login from "./pages/login";
 import LoginUsuarios from "./pages/LoginUsuarios";
 
 import ExpertDashboard from "./pages/ExpertDashboard";
@@ -28,6 +27,10 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import MisConsultas from "./pages/MisConsultas";
 import MisValoraciones from "./pages/MisValoraciones.jsx";
 
+// 🔥 nuevas páginas
+import MisCompras from "./pages/MisCompras.jsx";
+import Perfil from "./pages/Perfil.jsx";
+
 import MisContenidos from './pages/MisContenidos';
 import VistaDetalleContenido from './pages/VistaDetalleContenido';
 import { Toaster } from "react-hot-toast";
@@ -43,6 +46,8 @@ function App() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/expertos" element={<Expertos />} />
+        <Route path="/dashboard" element={<Navigate to="/expert-dashboard" replace />} />
+        <Route path="/mis-servicios" element={<Navigate to="/expert-dashboard#servicios" replace />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-usuario" element={<LoginUsuarios />} />
@@ -66,10 +71,20 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/mis-compras"
+          element={
+            <ProtectedRoute roleRequired={ROLES.USUARIO}>
+              <MisCompras />
+            </ProtectedRoute>
+          }
+        />
+        {/* Perfil: pública; la página muestra aviso si no hay sesión */}
+        <Route path="/perfil" element={<Perfil />} />
 
         {/* Experto */}
         <Route
-          path="/expert-dashboard"   // <- alineado con el menú
+          path="/expert-dashboard"
           element={
             <ProtectedRoute roleRequired={ROLES.EXPERTO}>
               <ExpertDashboard />

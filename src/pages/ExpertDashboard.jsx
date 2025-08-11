@@ -1,5 +1,5 @@
 // src/pages/ExpertDashboard.jsx
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { auth, db } from "../firebase";
 import {
   onAuthStateChanged,
@@ -17,7 +17,7 @@ import {
   arrayUnion
 } from "firebase/firestore";
 import toast from "react-hot-toast";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertProfileCard from "../components/ExpertProfileCard";
 import ExpertProfileEditor from "../components/ExpertProfileEditor";
@@ -27,6 +27,8 @@ import ConsultaModal from "../components/ConsultaModal";
 
 const ExpertDashboard = () => {
   const navigate = useNavigate();
+  const { hash } = useLocation();               // <-- para leer #servicios
+  const serviciosRef = useRef(null);            // <-- referencia al bloque
   const [expert, setExpert] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -158,6 +160,24 @@ const ExpertDashboard = () => {
       toast.error("No se pudo guardar el perfil.");
     }
   };
+    // Scroll suave cuando la URL trae #servicios
+  useEffect(() => {
+    if (hash === "#servicios" && serviciosRef.current) {
+      const OFFSET = 90; // ajusta si tu navbar ocupa más/menos alto
+      const y = serviciosRef.current.getBoundingClientRect().top + window.scrollY - OFFSET;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  }, [hash]);
+
+  useEffect(() => {
+  if (window.location.hash === "#servicios" && serviciosRef.current) {
+    const OFFSET = 90;
+    const y = serviciosRef.current.getBoundingClientRect().top + window.scrollY - OFFSET;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  }
+  // disparar cuando ya hay experto y cambia la lista
+}, [expert, contenidos.length]);
+
 
   return (
     <>
@@ -196,7 +216,14 @@ const ExpertDashboard = () => {
               📤 Cargar contenidos
             </button>
 
-            <h2 className="text-xl font-semibold mt-8 mb-4">📚 Servicios</h2>
+            <h2
+              id="servicios"
+              ref={serviciosRef}
+              className="text-xl font-semibold mt-8 mb-4 scroll-mt-24"
+            >
+              📚 Servicios
+            </h2>
+
             {contenidos.length === 0 ? (
               <p className="text-gray-600">No has subido contenidos aún.</p>
             ) : (
