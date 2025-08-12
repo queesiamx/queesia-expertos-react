@@ -1,5 +1,5 @@
 import { doc, updateDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { toast } from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
 import {
@@ -18,39 +18,44 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
   const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
   
   const cambiarAprobacion = async (nuevoEstado) => {
-    await enviarCorreoEstadoExperto(
-      expert.email,
-      expert.nombre,
-      nuevoEstado ? 'aprobado' : 'rechazado'
-    );
+  await enviarCorreoEstadoExperto(
+    expert.email,
+    expert.nombre,
+    nuevoEstado ? "aprobado" : "rechazado"
+  );
 
-    if (!expert.formularioCompleto) {
-      toast.error("Este experto no ha completado su formulario.");
-      return;
+  if (!expert.formularioCompleto) {
+    toast.error("Este experto no ha completado su formulario.");
+    return;
+  }
+
+  try {
+    // 1) Persistir en la colección 'experts'
+    const expertRef = doc(db, "experts", expert.id);
+    await updateDoc(expertRef, {
+      aprobado: nuevoEstado,
+      aprobadoPor: auth?.currentUser?.email || null,
+      aprobadoAt: new Date(),
+    });
+
+    // 2) Ajustar el rol del usuario en 'users' (si existe su doc)
+    const userDocRef = doc(db, "users", expert.id);
+    const userSnap = await getDoc(userDocRef);
+    if (userSnap.exists()) {
+      await updateDoc(userDocRef, {
+        rol: nuevoEstado ? "experto" : "usuario", // o null si prefieres
+      });
     }
 
-    try {
-      // Si se está aprobando y el usuario ya existía en "usuarios", actualiza su rol
-      if (nuevoEstado) {
-        const userDocRef = doc(db, 'users', expert.id);
+    // 3) Actualizar UI local
+    toast.success(`Experto ${nuevoEstado ? "aprobado" : "rechazado"} correctamente.`);
+    onUpdate({ ...expert, aprobado: nuevoEstado });
+  } catch (e) {
+    console.error("Error al actualizar aprobación:", e);
+    toast.error("Error al actualizar aprobación.");
+  }
+};
 
-        const userSnap = await getDoc(userDocRef);
-
-        if (userSnap.exists()) {
-          await updateDoc(userDocRef, {
-            rol: 'expert',
-          });
-        }
-      }
-
-
-      toast.success(`Experto ${nuevoEstado ? 'aprobado' : 'rechazado'} correctamente.`);
-      onUpdate({ ...expert, aprobado: nuevoEstado });
-    } catch (e) {
-      console.error("Error al actualizar aprobación:", e);
-      toast.error('Error al actualizar aprobación.');
-    }
-  };
 
   const eliminar = async () => {
     const confirmar = confirm('¿Estás seguro de que deseas eliminar este experto?');
