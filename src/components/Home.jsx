@@ -63,22 +63,20 @@ export default function Home() {
               onClick={() => navigate('/expertos')}
               className="bg-primary hover:bg-primary-strong text-white font-medium px-6 py-3 rounded-lg transition"
             >
-              Ver expertos
+              Ver expertos 
             </button>
 
-            <button
-              onClick={() => navigate('/registro')}
-              className="bg-white text-default border border-default px-6 py-3 rounded-lg hover:bg-default-soft transition"
-            >
-              Quiero ser experto <span className="text-sm text-default-soft">(registrarse)</span>
-            </button>
+<button
+  onClick={() => navigate('/registro')}
+  className="bg-white text-default border-2 border-default font-medium px-6 py-3 rounded-lg shadow-sm hover:bg-default hover:text-white transition duration-200"
+>
+  Quiero ser experto <span className="text-sm opacity-75">(registrarse)</span>
+</button>
 
-            <button
-              onClick={() => navigate('/login')}
-              className="bg-default text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-6 py-3 rounded-lg hover:opacity-90 transition"
-            >
-              Soy experto (ingresar)
-            </button>
+
+
+
+
           </div>
 
           {/* Logo derretido */}

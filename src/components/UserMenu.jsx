@@ -10,6 +10,7 @@ export default function UserMenu({ usuario, handleLogout }) {
   const [userData, setUserData] = useState(usuario);
   const menuRef = useRef(null);
   const btnRef = useRef(null);
+  const [errorFoto, setErrorFoto] = useState(false);
 
   // Sincroniza datos del usuario con rol/aprobado del hook
   useEffect(() => {
@@ -97,26 +98,73 @@ export default function UserMenu({ usuario, handleLogout }) {
     { label: "Mi Perfil", href: "/perfil" },
   ];
 
+    // --- Avatar (Google) con fallback y reset de error ---
+const rawFoto =
+  userData?.fotoPerfilURL ||  // opcional si lo usas
+  userData?.photoURL ||
+  userData?.providerData?.[0]?.photoURL ||
+  null;
+
+
+// (Opcional) Forzar tamaño pequeño de Google si viene con params: ...=s96-c
+const normalizeGooglePhoto = (url) => {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    // Si la URL ya trae "=sXX-c", la dejamos; si no, no forzamos nada.
+    return u.toString();
+  } catch {
+    return url;
+  }
+};
+
+const normalizedFotoURL = rawFoto ? normalizeGooglePhoto(rawFoto) : null;
+
+// Si cambia la URL de foto, limpia el estado de error para reintentar
+useEffect(() => {
+  setErrorFoto(false);
+}, [normalizedFotoURL]);
+
+const fotoURL = !errorFoto && normalizedFotoURL ? normalizedFotoURL : null;
+
+const inicial = (
+  userData?.displayName?.[0] ||
+  userData?.email?.[0] ||
+  "U"
+).toUpperCase();
+
+
+
   return (
     <div className="relative">
       {/* Avatar / Botón */}
       <button
-        ref={btnRef}
-        onClick={() => setIsOpen((v) => !v)}
-        className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border border-gray-300 bg-white"
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-      >
-        {userData?.photoURL ? (
-          <img
-            src={userData.photoURL}
-            alt={userData.displayName || "Usuario"}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <Menu size={20} />
-        )}
-      </button>
+  ref={btnRef}
+  onClick={() => setIsOpen((v) => !v)}
+  className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden border border-gray-300 bg-white"
+  aria-haspopup="menu"
+  aria-expanded={isOpen}
+  title={userData.displayName || userData.email || "Usuario"}
+>
+  {fotoURL ? (
+    <img
+      src={fotoURL}
+      alt={userData.displayName || "Usuario"}
+      className="w-full h-full object-cover"
+        width={40}
+        height={40}
+      onError={() => setErrorFoto(true)}
+      referrerPolicy="no-referrer"
+    />
+  ) : (
+    <div className="w-full h-full grid place-items-center bg-gray-200">
+      <span className="font-semibold text-gray-800 text-lg leading-none">
+        {inicial}
+      </span>
+    </div>
+  )}
+</button>
+
 
       {/* Menú */}
       {isOpen && (

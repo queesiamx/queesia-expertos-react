@@ -127,16 +127,14 @@ export default function AdminExpertos() {
   const totalCursos = expertos.reduce((acc, exp) => acc + (Array.isArray(exp.servicios) ? exp.servicios.filter(s => s.tipo === 'curso').length : 0), 0);
 
   return (
-  <div className="relative min-h-screen font-sans mt-[72px]">
-    {/* Fondo amarillo detrás del contenido */}
-    <div className="bg-primary-soft min-h-screen">
-
-
+  <div className="relative min-h-screen font-sans bg-primary-soft">
       
       <Toaster position="top-right" />
       <UnifiedNavbar onLogout={handleLogout} />
 
-      <h1 className="text-3xl font-bold text-default mb-6 font-montserrat">
+    {/* Si tu navbar es sticky ~64–72px, usa pt-20 (80px) o ajusta */}
+    <div className="max-w-6xl mx-auto px-4 pt-20">
+      <h1 className="text-3xl font-bold text-default mb-6 font-montserrat mt-0">
         Panel de Administración de Expertos
       </h1>
 
@@ -258,7 +256,7 @@ export default function AdminExpertos() {
         </div>
       )}
     </div>
+  </div>
 
-    </div>
   );
 }

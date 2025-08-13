@@ -57,14 +57,6 @@ export default function UnifiedNavbar() {
             <a href="https://queesia.com/#catalogo" className="text-black hover:text-blue-600 transition">
               Catálogo
             </a>
-            <div className="absolute hidden group-hover:block bg-white shadow-lg rounded-md mt-2 w-48">
-              <a href="https://queesia.com/#catalogo" className="block px-4 py-2 hover:bg-gray-100">
-                Todas las apps
-              </a>
-              <a href="https://queesia.com/categorias" className="block px-4 py-2 hover:bg-gray-100">
-                Categorías
-              </a>
-            </div>
           </div>
 
           {/* Casos de éxito */}
