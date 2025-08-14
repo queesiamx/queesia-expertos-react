@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertHeader from "../components/ExpertHeader";
 import ExpertContentList from "../components/ExpertContentList";
+import CompraContenidoModal from "../components/CompraContenidoModal";
 import ExpertModal from "../components/ExpertModal";
 import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
@@ -31,6 +32,9 @@ export default function ExpertDetailPublic() {
   const navigate = useNavigate();
   const { user: usuario } = useAuth();
 
+  // dentro del componente de detalle:
+const [openCurso, setOpenCurso] = useState(false);
+const [cursoSel, setCursoSel] = useState(null);
   const [expert, setExpert] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [contenidos, setContenidos] = useState([]);
@@ -138,26 +142,78 @@ export default function ExpertDetailPublic() {
     }
   };
 
-  // 🔹 Compra con Stripe
-  const handleBuy = async (contenido) => {
-    const stripe = await stripePromise;
-    const response = await fetch("/api/crearPagoContenido", {
+  // 🔹 Compra con Stripe (curso y manual)
+const handleBuy = async (contenido) => {
+  try {
+    if (!usuario) {
+      toast.error("Inicia sesión para comprar");
+      await handleLoginConGoogle();
+      return;
+    }
+
+    const isCourse = Array.isArray(contenido.fechasDisponibles) && contenido.fechasDisponibles.length > 0;
+    const precio = Number(contenido.precio ?? 0);
+
+    // Validar fecha si es curso
+    if (isCourse && !fechaSeleccionada) {
+      toast.error("Selecciona una fecha para el curso");
+      return;
+    }
+
+    // 1) Crear intención de compra en Firestore
+    const compraData = {
+      userId: usuario.uid,
+      expertoId: expert.id,
+      contenidoId: contenido.id,
+      titulo: contenido.titulo || "Contenido",
+      tipo: isCourse ? "curso" : "manual",
+      precio,
+      fechaSeleccionada: isCourse ? fechaSeleccionada : null,
+      estado: import.meta.env.VITE_STRIPE_PUBLIC_KEY ? "pagando" : "porPagar",
+      createdAt: serverTimestamp(),
+    };
+
+    const ref = await addDoc(collection(db, "comprasContenido"), compraData);
+
+    // 2) Si NO hay Stripe, cerramos y avisamos
+    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+      toast.success("Reserva creada. Te contactaremos para completar el pago.");
+      setModalAbierto(false);
+      return;
+    }
+
+    // 3) Crear sesión de Checkout (Vercel function)
+    const resp = await fetch("/api/crearPagoContenido", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contenidoId: contenido.id,
-        uid: usuario?.uid,
-        email: usuario?.email,
-        nombreContenido: contenido.titulo,
+        compraId: ref.id,
+        name: compraData.titulo,
+        amount: Math.round(precio * 100), // MXN → centavos
+        metadata: {
+          compraId: ref.id,
+          expertoId: expert.id,
+          contenidoId: contenido.id,
+          tipo: compraData.tipo,
+          fechaSeleccionada: compraData.fechaSeleccionada || "",
+          userId: usuario.uid,
+          userEmail: usuario.email || "",
+        },
       }),
     });
-    const data = await response.json();
-    if (data.url) {
+
+    const data = await resp.json();
+    if (data?.url) {
       window.location.href = data.url;
     } else {
-      toast.error("No se pudo iniciar el pago");
+      throw new Error(data?.error || "No se pudo iniciar el pago");
     }
-  };
+  } catch (e) {
+    console.error(e);
+    toast.error("No se pudo iniciar la compra");
+  }
+};
+
 
   if (cargando) return <p className="p-6">Cargando experto...</p>;
   if (!expert) return <p className="p-6">Experto no encontrado.</p>;

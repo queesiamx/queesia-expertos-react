@@ -1,71 +1,83 @@
 // /api/crearPagoContenido.js
-import Stripe from 'stripe';
-import { db } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import Stripe from "stripe";
+import { db } from "../../firebase";
+import {
+  doc, getDoc, addDoc, collection, serverTimestamp,
+} from "firebase/firestore";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
-
-  const { contenidoId, uid, email, nombreContenido } = req.body;
-
-  if (!contenidoId || !uid || !email) {
-    return res.status(400).json({ error: 'Faltan datos requeridos' });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
 
   try {
-    // 🔍 1. Consultar el contenido en Firestore para obtener precio y nombre real
-    const contenidoRef = doc(db, 'contenidosExpertos', contenidoId);
-    const contenidoSnap = await getDoc(contenidoRef);
-
-    if (!contenidoSnap.exists()) {
-      return res.status(404).json({ error: 'Contenido no encontrado' });
+    const { contenidoId, uid, email, nombreContenido, fechaSeleccionada } = req.body;
+    if (!contenidoId || !uid || !email) {
+      return res.status(400).json({ error: "Faltan datos requeridos" });
     }
 
-    const contenidoData = contenidoSnap.data();
-    const precio = contenidoData.precio; // Debe estar en pesos MXN
-    const tituloContenido = contenidoData.nombre || nombreContenido || 'Contenido exclusivo';
+    // 1) Traer contenido para obtener precio y datos
+    const contenidoRef = doc(db, "contenidosExpertos", contenidoId);
+    const snap = await getDoc(contenidoRef);
+    if (!snap.exists()) return res.status(404).json({ error: "Contenido no encontrado" });
 
+    const data = snap.data();
+    const precio = Number(data.precio);
     if (!precio || isNaN(precio) || precio <= 0) {
-      return res.status(400).json({ error: 'Precio inválido en base de datos' });
+      return res.status(400).json({ error: "Precio inválido en base de datos" });
     }
 
-    // 🔄 Convertir a centavos para Stripe
-    const precioEnCentavos = Math.round(precio * 100);
+    const titulo = data.titulo || data.nombre || nombreContenido || "Contenido";
+    const esCurso = Array.isArray(data.fechasDisponibles) && data.fechasDisponibles.length > 0;
 
-    // 💳 2. Crear la sesión de pago en Stripe
+    // Validar fecha si es curso
+    if (esCurso && !fechaSeleccionada) {
+      return res.status(400).json({ error: "Falta seleccionar una fecha" });
+    }
+
+    // 2) Crear intención de compra en Firestore
+    const compra = await addDoc(collection(db, "comprasContenido"), {
+      userId: uid,
+      expertoId: data.expertoId || "",
+      contenidoId,
+      titulo,
+      tipo: esCurso ? "curso" : "manual",
+      precio,
+      fechaSeleccionada: esCurso ? fechaSeleccionada : null,
+      estado: "pagando",
+      createdAt: serverTimestamp(),
+    });
+
+    // 3) Crear sesión de Checkout
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
+      mode: "payment",
+      payment_method_types: ["card"],
       customer_email: email,
       line_items: [
         {
           price_data: {
-            currency: 'mxn',
-            product_data: {
-              name: tituloContenido,
-            },
-            unit_amount: precioEnCentavos,
+            currency: "mxn",
+            product_data: { name: titulo },
+            unit_amount: Math.round(precio * 100),
           },
           quantity: 1,
         },
       ],
       metadata: {
+        compraId: compra.id,
         contenidoId,
         uid,
-        email,
-        nombreContenido: tituloContenido,
+        fechaSeleccionada: esCurso ? fechaSeleccionada : "",
+        tipo: esCurso ? "curso" : "manual",
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/PagoExitoso`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/PagoCancelado`,
+      // ⚠️ Asegúrate de definir PUBLIC_URL en Vercel (https://expertos.tu-dominio.com)
+      success_url: `${process.env.PUBLIC_URL}/PagoExitoso?c=${compra.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.PUBLIC_URL}/PagoCancelado?c=${compra.id}`,
     });
 
     return res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error('❌ Error al crear sesión de pago:', error);
-    return res.status(500).json({ error: 'Error al crear sesión de pago' });
+    console.error("❌ Error al crear sesión de pago:", error);
+    return res.status(500).json({ error: "Error al crear sesión de pago" });
   }
 }
