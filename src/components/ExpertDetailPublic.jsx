@@ -14,36 +14,45 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { loadStripe } from "@stripe/stripe-js";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import toast from "react-hot-toast";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertHeader from "../components/ExpertHeader";
 import ExpertContentList from "../components/ExpertContentList";
-import CompraContenidoModal from "../components/CompraContenidoModal";
 import ExpertModal from "../components/ExpertModal";
 import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+// Usa el endpoint absoluto en dev y relativo en producción
+const API_BASE =
+  import.meta.env.DEV
+    ? (import.meta.env.VITE_PUBLIC_URL || "https://expertos.queesia.com")
+    : "";
 
 export default function ExpertDetailPublic() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: usuario } = useAuth();
 
-  // dentro del componente de detalle:
-const [openCurso, setOpenCurso] = useState(false);
-const [cursoSel, setCursoSel] = useState(null);
+  // Estados básicos
   const [expert, setExpert] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [contenidos, setContenidos] = useState([]);
   const [verTemario, setVerTemario] = useState(null);
 
+  // Modal compra/registro
   const [modalAbierto, setModalAbierto] = useState(false);
   const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
   const [fechaSeleccionada, setFechaSeleccionada] = useState("");
   const [isBuying, setIsBuying] = useState(false);
+
+  // Guards para evitar popups/duplicados
+  const [authBusy, setAuthBusy] = useState(false);
+  const [buyingBusy, setBuyingBusy] = useState(false);
+
+  // (no usados, pero los dejaste en tu archivo original)
+  const [openCurso, setOpenCurso] = useState(false);
+  const [cursoSel, setCursoSel] = useState(null);
 
   // 🔹 Obtener datos del experto
   useEffect(() => {
@@ -58,7 +67,7 @@ const [cursoSel, setCursoSel] = useState(null);
     obtener();
   }, [id]);
 
-  // 🔹 Obtener contenidos
+  // 🔹 Obtener contenidos del experto
   useEffect(() => {
     const cargarContenidos = async () => {
       if (!expert?.id) return;
@@ -76,7 +85,7 @@ const [cursoSel, setCursoSel] = useState(null);
     cargarContenidos();
   }, [expert]);
 
-  // 🔹 Iniciar sesión con Google
+  // 🔹 Iniciar sesión con Google (para botón “Iniciar sesión”)
   const handleLoginConGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -86,7 +95,30 @@ const [cursoSel, setCursoSel] = useState(null);
     }
   };
 
-  // 🔹 Verificar si ya está registrado
+  // 🔹 Asegurar sesión (lo usa handleBuy)
+  const ensureSignedIn = async () => {
+    if (auth.currentUser) return auth.currentUser;
+    if (authBusy) return null;
+    setAuthBusy(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (e) {
+      console.error("Login error:", e);
+      if (
+        e.code !== "auth/popup-closed-by-user" &&
+        e.code !== "auth/cancelled-popup-request"
+      ) {
+        toast.error("No se pudo iniciar sesión");
+      }
+      return null;
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  // 🔹 Verificar si ya está registrado (para cursos gratis)
   const yaRegistrado = (usuariosRegistrados) => {
     return usuariosRegistrados?.some((u) => u.correo === usuario?.email);
   };
@@ -98,14 +130,14 @@ const [cursoSel, setCursoSel] = useState(null);
     setModalAbierto(true);
   };
 
-  // 🔹 Abrir modal para curso de pago
+  // 🔹 Abrir modal para compra (curso o manual)
   const handleAbrirModalCompra = (contenido) => {
     setContenidoSeleccionado(contenido);
     setIsBuying(true);
     setModalAbierto(true);
   };
 
-  // 🔹 Registro gratuito
+  // 🔹 Registro gratuito (curso)
   const handleRegistroGratuito = async () => {
     if (!usuario || !contenidoSeleccionado) return;
 
@@ -143,77 +175,103 @@ const [cursoSel, setCursoSel] = useState(null);
   };
 
   // 🔹 Compra con Stripe (curso y manual)
-const handleBuy = async (contenido) => {
-  try {
-    if (!usuario) {
-      toast.error("Inicia sesión para comprar");
-      await handleLoginConGoogle();
-      return;
-    }
+  const handleBuy = async (contenido) => {
+    if (buyingBusy) return; // evita doble clic
+    setBuyingBusy(true);
 
-    const isCourse = Array.isArray(contenido.fechasDisponibles) && contenido.fechasDisponibles.length > 0;
-    const precio = Number(contenido.precio ?? 0);
+    try {
+      // Usa SIEMPRE auth.currentUser para que las reglas coincidan
+      let current = auth.currentUser;
+      if (!current) {
+        current = await ensureSignedIn();
+        if (!current) {
+          setBuyingBusy(false);
+          return;
+        }
+      }
 
-    // Validar fecha si es curso
-    if (isCourse && !fechaSeleccionada) {
-      toast.error("Selecciona una fecha para el curso");
-      return;
-    }
+      const isCourse =
+        Array.isArray(contenido.fechasDisponibles) &&
+        contenido.fechasDisponibles.length > 0;
+      const precio = Number(contenido.precio ?? 0);
 
-    // 1) Crear intención de compra en Firestore
-    const compraData = {
-      userId: usuario.uid,
-      expertoId: expert.id,
-      contenidoId: contenido.id,
-      titulo: contenido.titulo || "Contenido",
-      tipo: isCourse ? "curso" : "manual",
-      precio,
-      fechaSeleccionada: isCourse ? fechaSeleccionada : null,
-      estado: import.meta.env.VITE_STRIPE_PUBLIC_KEY ? "pagando" : "porPagar",
-      createdAt: serverTimestamp(),
-    };
+      if (isCourse && !fechaSeleccionada) {
+        toast.error("Selecciona una fecha para el curso");
+        setBuyingBusy(false);
+        return;
+      }
 
-    const ref = await addDoc(collection(db, "comprasContenido"), compraData);
+      // 1) Crear intención de compra en Firestore
+      const compraData = {
+        userId: current.uid, // 👈 clave para pasar reglas
+        expertoId: expert.id,
+        contenidoId: contenido.id,
+        titulo: contenido.titulo || "Contenido",
+        tipo: isCourse ? "curso" : "manual",
+        precio,
+        fechaSeleccionada: isCourse ? fechaSeleccionada : null,
+        estado: import.meta.env.VITE_STRIPE_PUBLIC_KEY ? "pagando" : "porPagar",
+        createdAt: serverTimestamp(),
+      };
 
-    // 2) Si NO hay Stripe, cerramos y avisamos
-    if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-      toast.success("Reserva creada. Te contactaremos para completar el pago.");
-      setModalAbierto(false);
-      return;
-    }
+      const ref = await addDoc(collection(db, "comprasContenido"), compraData);
 
-    // 3) Crear sesión de Checkout (Vercel function)
-    const resp = await fetch("/api/crearPagoContenido", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        compraId: ref.id,
-        name: compraData.titulo,
-        amount: Math.round(precio * 100), // MXN → centavos
-        metadata: {
+      // 2) Si NO hay Stripe, cerramos y avisamos
+      if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+        toast.success("Reserva creada. Te contactaremos para completar el pago.");
+        setModalAbierto(false);
+        setBuyingBusy(false);
+        return;
+      }
+
+      // 3) Stripe Checkout (usa API_BASE para dev)
+      const resp = await fetch(`${API_BASE}/api/crearPagoContenido`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           compraId: ref.id,
-          expertoId: expert.id,
-          contenidoId: contenido.id,
-          tipo: compraData.tipo,
-          fechaSeleccionada: compraData.fechaSeleccionada || "",
-          userId: usuario.uid,
-          userEmail: usuario.email || "",
-        },
-      }),
-    });
+          name: compraData.titulo,
+          amount: Math.round(precio * 100), // MXN → centavos
+          metadata: {
+            compraId: ref.id,
+            expertoId: expert.id,
+            contenidoId: contenido.id,
+            tipo: compraData.tipo,
+            fechaSeleccionada: compraData.fechaSeleccionada || "",
+            userId: current.uid,
+            userEmail: current.email || "",
+          },
+        }),
+      });
 
-    const data = await resp.json();
-    if (data?.url) {
-      window.location.href = data.url;
-    } else {
-      throw new Error(data?.error || "No se pudo iniciar el pago");
+      // tolera respuestas no-JSON si el server falla
+      const raw = await resp.text();
+      let data = null;
+      try {
+        data = JSON.parse(raw);
+      } catch {}
+
+      if (resp.ok && data?.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("crearPagoContenido FAIL:", {
+          status: resp.status,
+          raw,
+          data,
+        });
+        throw new Error((data && data.error) || raw || "No se pudo iniciar el pago");
+      }
+    } catch (e) {
+      console.error("handleBuy error:", e);
+      if (String(e).includes("Missing or insufficient permissions")) {
+        toast.error("Permisos insuficientes al crear la compra. Revisa login y reglas.");
+      } else {
+        toast.error("No se pudo iniciar la compra");
+      }
+    } finally {
+      setBuyingBusy(false);
     }
-  } catch (e) {
-    console.error(e);
-    toast.error("No se pudo iniciar la compra");
-  }
-};
-
+  };
 
   if (cargando) return <p className="p-6">Cargando experto...</p>;
   if (!expert) return <p className="p-6">Experto no encontrado.</p>;
@@ -222,51 +280,43 @@ const handleBuy = async (contenido) => {
     <>
       <UnifiedNavbar />
 
-
       <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
-  <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Botón volver */}
+          <div>
+            <button
+              onClick={() => navigate("/expertos")}
+              className="text-sm text-primary hover:underline"
+            >
+              ← Volver al listado
+            </button>
+          </div>
 
-    {/* Botón volver */}
-    <div>
-      <button
-        onClick={() => navigate("/expertos")}
-        className="text-sm text-primary hover:underline"
-      >
-        ← Volver al listado
-      </button>
-    </div>
+          {/* Card: Encabezado del experto */}
+          <div className="bg-white p-8 rounded-2xl shadow-md">
+            <ExpertHeader expert={expert} />
+          </div>
 
-    {/* Card: Encabezado del experto */}
-    <div className="bg-white p-8 rounded-2xl shadow-md">
-      <ExpertHeader expert={expert} />
-    </div>
+          {/* Card: Lista de contenidos */}
+          <ExpertContentList
+            contenidos={contenidos}
+            usuario={usuario}
+            verTemario={verTemario}
+            setVerTemario={setVerTemario}
+            handleAbrirModal={handleAbrirModal}             // registro gratis
+            handleAbrirModalCompra={handleAbrirModalCompra} // compra curso/manual
+            handleBuy={handleBuy}
+            handleLoginConGoogle={handleLoginConGoogle}
+          />
 
-    {/* Card: Lista de contenidos */}
-    
-      <ExpertContentList
-        contenidos={contenidos}
-        usuario={usuario}
-        verTemario={verTemario}
-        setVerTemario={setVerTemario}
-        handleAbrirModal={handleAbrirModal}
-        handleAbrirModalCompra={handleAbrirModalCompra}
-        handleBuy={handleBuy}
-        handleLoginConGoogle={handleLoginConGoogle}
-      />
-    
-
-    {/* Card: Calificaciones */}
-    
-      <ExpertRatingSection
-        expertId={expert.id}
-        usuario={usuario}
-        handleLoginConGoogle={handleLoginConGoogle}
-      />
-    </div>
-
-  </div>
-
-
+          {/* Card: Calificaciones */}
+          <ExpertRatingSection
+            expertId={expert.id}
+            usuario={usuario}
+            handleLoginConGoogle={handleLoginConGoogle}
+          />
+        </div>
+      </div>
 
       {/* Modal para registro o compra */}
       <ExpertModal
@@ -276,9 +326,7 @@ const handleBuy = async (contenido) => {
         fechaSeleccionada={fechaSeleccionada}
         setFechaSeleccionada={setFechaSeleccionada}
         onConfirm={() =>
-          isBuying
-            ? handleBuy(contenidoSeleccionado)
-            : handleRegistroGratuito()
+          isBuying ? handleBuy(contenidoSeleccionado) : handleRegistroGratuito()
         }
         isBuying={isBuying}
       />
