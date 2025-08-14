@@ -1,45 +1,60 @@
 // /api/obtener-url-contenido.js
-import { db, bucket } from '../../lib/firebaseAdmin';
+import crypto from "node:crypto";
+
+// autoriza localhost y prod (ajústalo si necesitas)
+const ALLOWED = (process.env.CORS_ORIGINS || "http://localhost:5173,https://expertos.queesia.com")
+  .split(",").map(s => s.trim());
+
+function setCors(req, res) {
+  const origin = req.headers.origin || "";
+  if (ALLOWED.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
 
 export default async function handler(req, res) {
-  const { usuarioId, contenidoId } = req.query;
-
-  if (!usuarioId || !contenidoId) {
-    return res.status(400).json({ error: 'Faltan parámetros' });
-  }
+  setCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST")   return res.status(405).json({ error: "Método no permitido" });
 
   try {
-    const comprasSnap = await db.collection('comprasContenido')
-      .where('usuarioId', '==', usuarioId)
-      .where('contenidoId', '==', contenidoId)
-      .where('accesoValido', '==', true)
-      .limit(1)
-      .get();
-
-    if (comprasSnap.empty) {
-      return res.status(403).json({ error: 'Acceso denegado' });
+    const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } = process.env;
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return res.status(500).json({ error: "Faltan variables de Cloudinary" });
     }
 
-    // Obtener la ruta del archivo desde la colección de contenidos
-    const contenidoSnap = await db.collection('contenidosExpertos')
-      .doc(contenidoId).get();
+    // tipo: "perfil" | "contenido"
+    const { tipo = "contenido", folder: folderIn } = (req.body || {});
+    const folder = folderIn || (tipo === "perfil" ? "queesia/perfiles" : "queesia/contenidos");
 
-    if (!contenidoSnap.exists) {
-      return res.status(404).json({ error: 'Contenido no encontrado' });
-    }
+    // Para imágenes de perfil usamos endpoint image/upload;
+    // para pdfs podemos usar auto/upload (detecta pdf) y te regresa secure_url igual.
+    const endpoint = tipo === "perfil" ? "image" : "auto";
 
-    const archivoPath = contenidoSnap.data().archivoPath;
+    const timestamp = Math.floor(Date.now() / 1000);
+    // construir string a firmar (parámetros en orden alfabético)
+    const params = new URLSearchParams();
+    if (folder) params.append("folder", folder);
+    params.append("timestamp", String(timestamp));
 
-    // Crear URL firmada válida por 10 minutos
-    const [url] = await bucket.file(archivoPath).getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 10 * 60 * 1000, // 10 minutos
+    const toSign = params.toString(); // e.g. folder=queesia/contenidos&timestamp=...
+    const signature = crypto.createHash("sha1").update(toSign + CLOUDINARY_API_SECRET).digest("hex");
+
+    return res.status(200).json({
+      uploadUrl: `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${endpoint}/upload`,
+      cloudName: CLOUDINARY_CLOUD_NAME,
+      apiKey: CLOUDINARY_API_KEY,
+      timestamp,
+      signature,
+      folder,
+      endpoint,        // "image" o "auto" (por si quieres depurar)
+      paramsSigned: toSign
     });
-
-    res.status(200).json({ url });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+  } catch (e) {
+    console.error("obtener-url-contenido error:", e);
+    return res.status(500).json({ error: "No se pudo generar la firma" });
   }
 }
