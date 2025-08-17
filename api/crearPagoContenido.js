@@ -1,10 +1,10 @@
-// /api/crearPagoContenido.js  (ESM; tu package.json tiene "type":"module")
+// /api/crearPagoContenido.js  (ESM; package.json con "type":"module")
 import Stripe from "stripe";
 
 // Permitir dev local + tu dominio prod (ajústalo si necesitas)
 const ALLOWED = (process.env.CORS_ORIGINS || "http://localhost:5173,https://expertos.queesia.com")
   .split(",")
-  .map(s => s.trim());
+  .map((s) => s.trim());
 
 function setCors(req, res) {
   const origin = req.headers.origin || "";
@@ -26,28 +26,59 @@ export default async function handler(req, res) {
     // ✅ Valida envs ANTES y crea Stripe DENTRO del try
     const { STRIPE_SECRET_KEY, PUBLIC_URL } = process.env;
     if (!STRIPE_SECRET_KEY) return res.status(500).json({ error: "Falta STRIPE_SECRET_KEY" });
-    if (!PUBLIC_URL)       return res.status(500).json({ error: "Falta PUBLIC_URL" });
+    if (!PUBLIC_URL) return res.status(500).json({ error: "Falta PUBLIC_URL" });
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    const { compraId, name, amount, metadata } = req.body || {};
-    if (!compraId || !name || !amount) {
+    // El cliente envía el precio en centavos; aquí se valida
+    const {
+      compraId,
+      name,
+      amount,
+      metadata = {},
+      uid = "",
+      contenidoId = "",
+    } = req.body || {};
+
+    if (!compraId || !name || amount == null) {
       return res.status(400).json({ error: "Faltan parámetros" });
     }
+
+    const unit = Number(amount);
+    if (!Number.isFinite(unit) || unit <= 0) {
+      return res.status(400).json({ error: "amount inválido (usa centavos enteros > 0)" });
+    }
+    // Stripe requiere enteros; si llega con decimales, se redondea
+    const unit_amount = Math.round(unit);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      line_items: [{
-        price_data: { currency: "mxn", product_data: { name }, unit_amount: Number(amount) },
-        quantity: 1,
-      }],
-      metadata: { compraId, ...(metadata || {}) },
-      success_url: `${PUBLIC_URL}/PagoExitoso?c=${compraId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${PUBLIC_URL}/PagoCancelado?c=${compraId}`,
+      line_items: [
+        {
+          price_data: {
+            currency: "mxn",
+            product_data: { name },
+            unit_amount,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        compraId,
+        uid,
+        contenidoId,
+        ...metadata,
+      },
+      // 👇 usa las rutas que existen en tu router (minúsculas)
+      success_url: `${PUBLIC_URL}/pago-exitoso?c=${encodeURIComponent(
+        compraId
+      )}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${PUBLIC_URL}/pago-cancelado?c=${encodeURIComponent(compraId)}`,
+      allow_promotion_codes: true,
     });
 
-    return res.status(200).json({ url: session.url });
+    return res.status(200).json({ url: session.url, id: session.id });
   } catch (e) {
     console.error("Stripe error:", e?.message || e);
     return res.status(500).json({ error: e?.message || "Error al crear sesión de pago" });
