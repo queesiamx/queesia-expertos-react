@@ -25,8 +25,12 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
 
 
   const db = getFirestore(app);
-  const cloudinaryUrl = import.meta.env.VITE_CLOUDINARY_URL;
+  // Cloudinary: usar cloud name + endpoint auto/upload (no VITE_CLOUDINARY_URL)
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const cloudinaryPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  const cloudinaryUrl = cloudName
+    ? `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`
+    : '';
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -71,7 +75,12 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       return;
     }
 
-    setSubiendo(true);
+  // ✅ Validar Cloudinary antes de iniciar la subida
+  if (!cloudName || !cloudinaryPreset || !cloudinaryUrl) {
+    toast.error('Faltan variables de Cloudinary (VITE_CLOUDINARY_CLOUD_NAME o VITE_CLOUDINARY_UPLOAD_PRESET).');
+    return;
+  }
+  setSubiendo(true);
 
     let archivoUrl = '';
     let public_id = '';
@@ -81,7 +90,7 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
       formData.append('file', file);
       formData.append('upload_preset', cloudinaryPreset);
       formData.append('folder', 'expertos-queesia');
-      formData.append('resource_type', 'raw');
+      
 
       try {
         const res = await fetch(cloudinaryUrl, {
