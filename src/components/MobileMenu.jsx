@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+// src/components/MobileMenu.jsx
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Menu, X, LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase";
@@ -7,13 +8,24 @@ import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
 
-
 export default function MobileMenu({ handleLogout }) {
-
   const [isOpen, setIsOpen] = useState(false);
   const [usuario, setUsuario] = useState(null);
   const { rol, aprobado } = useAuth();
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
 
+  const close = useCallback(() => setIsOpen(false), []);
+  const open = useCallback(() => setIsOpen(true), []);
+
+  // ESC para cerrar
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    if (isOpen) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, close]);
+
+  // Auth + bloqueo scroll + coordinación de menús
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setUsuario(user ? { ...user, rol, aprobado } : null);
@@ -22,8 +34,10 @@ export default function MobileMenu({ handleLogout }) {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       menuControl.openMenu("mobile");
+      setTimeout(() => panelRef.current?.focus(), 0);
     } else {
       document.body.style.overflow = "";
+      btnRef.current?.focus?.();
     }
 
     const unsubscribeMenu = menuControl.subscribe((menu) => {
@@ -39,16 +53,14 @@ export default function MobileMenu({ handleLogout }) {
 
   const handleLinkClick = () => setIsOpen(false);
 
-  // Opciones dinámicas por rol
+  // Opciones por rol
   const opciones = [
-    { label: "Catálogo", href: "/#catalogo" },
-    { label: "Quesos de éxito", href: "/casos" },
+    { label: "Catálogo", href: "https://queesia.com/#catalogo" },
+    { label: "Quesos de éxito", href: "https://queesia.com/casos" },
     { label: "Expertos", href: "https://expertos.queesia.com", external: true },
-    { label: "Acerca de 🧀", href: "/nosotros" },
-    { label: "Contacto", href: "/contacto" },
-    ...(rol === ROLES.ADMIN
-      ? [{ label: "Panel Admin", href: "/admin-expertos" }]
-      : []),
+    { label: "Acerca de 🧀", href: "https://queesia.com/nosotros" },
+    { label: "Contacto", href: "https://queesia.com/contacto" },
+    ...(rol === ROLES.ADMIN ? [{ label: "Panel Admin", href: "/admin-expertos" }] : []),
     ...(rol === ROLES.EXPERTO && aprobado
       ? [
           { label: "Mi Dashboard", href: "/expert-dashboard" },
@@ -66,75 +78,132 @@ export default function MobileMenu({ handleLogout }) {
   ];
 
   return (
-    <div className="lg:hidden relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-black focus:outline-none flex items-center justify-center w-10 h-10"
-        aria-label="Menú"
-      >
-        {isOpen ? <X size={28} /> : <Menu size={28} />}
-      </button>
+    <div className={`lg:hidden relative ${isOpen ? "z-[10002]" : "z-[10000]"}`}>
+      {/* Botón hamburguesa */}
+<button
+  data-debug="mm-v5"
+  ref={btnRef}
+  onClick={() => (isOpen ? close() : open())}
+  className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-soft text-black shadow-md ring-1 ring-black/10 hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+  aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+  aria-expanded={isOpen}
+  aria-haspopup="menu"
+>
+  <span className="relative block w-6 h-6" aria-hidden="true">
+    <span className={`absolute inset-x-0 top-0 h-[2px] bg-black rounded transition-transform duration-200 ${isOpen ? "translate-y-2 rotate-45" : ""}`} />
+    <span className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-black rounded transition-opacity duration-200 ${isOpen ? "opacity-0" : "opacity-100"}`} />
+    <span className={`absolute inset-x-0 bottom-0 h-[2px] bg-black rounded transition-transform duration-200 ${isOpen ? "-translate-y-2 -rotate-45" : ""}`} />
+  </span>
+  {isOpen ? "X" : "≡"}
+</button>
+
+
 
       <AnimatePresence>
         {isOpen && (
           <>
+            {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black/40 z-40"
+              className="fixed inset-0 bg-black/40 z-[10000]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
+              onClick={close}
             />
 
+            {/* Panel */}
             <motion.div
-              className="absolute right-0 mt-2 w-60 bg-gray-100 rounded-lg shadow-lg z-50 flex flex-col text-left py-2"
+              role="menu"
+              aria-label="Menú principal"
+              tabIndex={-1}
+              ref={panelRef}
+              className="absolute right-0 mt-2 w-60 bg-white text-black rounded-xl shadow-xl ring-1 ring-black/10 z-[10001] flex flex-col text-left py-2 outline-none"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.18 }}
             >
-              {opciones.map((op, idx) => (
-                <a
-                  key={idx}
-                  href={op.href}
-                  target={op.external ? "_blank" : "_self"}
-                  rel={op.external ? "noopener noreferrer" : undefined}
-                  onClick={handleLinkClick}
-                  className="block px-4 py-2 text-black hover:bg-gray-200 hover:text-primary transition text-sm"
-                >
-                  {op.label}
-                </a>
-              ))}
-
-              <hr className="my-2" />
-
-              {!usuario ? (
-                <a
-                  href="/login"
-                  onClick={handleLinkClick}
-                  className="block px-4 py-2 text-black hover:bg-gray-200 transition text-sm"
-                >
-                  Iniciar sesión
-                </a>
-              ) : (
-                <div className="px-4 py-2">
-                <span className="block text-xs text-gray-600 truncate mb-2">
-                  {usuario.email}
-                </span>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                  className="mt-2 w-full flex items-center gap-2 text-sm text-red-600 hover:bg-gray-200 transition px-2 py-1 rounded"
-                >
-                  <LogOut size={16} />
-                  Cerrar sesión
-                </button>
+              {/* Marca / Rol */}
+              <div className="px-4 pb-2 pt-2 border-b border-gray-100 text-sm">
+                <div className="font-semibold">
+                  quees<span className="text-primary">ia</span>
+                </div>
+                {rol && (
+                  <div className="text-xs text-gray-600 mt-0.5">Rol actual: {rol}</div>
+                )}
               </div>
 
+              {/* Navegación */}
+              <nav className="py-1 text-sm">
+                {opciones.map((op, idx) => (
+                  <a
+                    key={idx}
+                    href={op.href}
+                    target={op.external ? "_blank" : "_self"}
+                    rel={op.external ? "noopener noreferrer" : undefined}
+                    onClick={handleLinkClick}
+                    className="block px-4 py-2 hover:bg-gray-100 hover:text-primary transition"
+                  >
+                    {op.label}
+                  </a>
+                ))}
 
-              )}
+                <hr className="my-2" />
+
+                {/* Inicio de sesión con selector de rol */}
+                {!usuario ? (
+                  <div className="px-1">
+                    <button
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
+                      type="button"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                    >
+                      <span>Iniciar sesión</span>
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    <div className="mt-1 mb-1">
+                      <a
+                        href="/login?role=admin"
+                        onClick={handleLinkClick}
+                        className="block px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                      >
+                        ⭐ Soy admin
+                      </a>
+                      <a
+                        href="/login?role=experto"
+                        onClick={handleLinkClick}
+                        className="block px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                      >
+                        👨‍💼 Soy experto
+                      </a>
+                      <a
+                        href="/login?role=usuario"
+                        onClick={handleLinkClick}
+                        className="block px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                      >
+                        🙋 Soy usuario
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="px-4 py-2">
+                    <span className="block text-xs text-gray-600 truncate mb-2">
+                      {usuario.email}
+                    </span>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        close();
+                      }}
+                      className="mt-1 w-full flex items-center gap-2 text-sm text-red-600 hover:bg-gray-100 transition px-2 py-1 rounded"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
+              </nav>
             </motion.div>
           </>
         )}

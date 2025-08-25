@@ -98,3 +98,11 @@ body {
 iframe[name^="__privateStripeController"] {
   display: none !important;
 }
+/* Kill-switch final para el botón del menú móvil */
+.mobile-menu-btn,
+.mobile-menu-btn svg,
+.mobile-menu-btn svg * {
+  color: #000 !important;
+  stroke: #000 !important;
+  fill: none !important;
+}
