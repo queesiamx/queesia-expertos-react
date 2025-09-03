@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Privacidad() {
   return (
-    <div className="min-h-screen bg-primary-soft px-4 py-12 text-gray-800 font-sans">
+    <div className="min-h-screen bg-white px-4 py-12 text-gray-800 font-sans">
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-md">
         <h1 className="text-3xl font-bold mb-6 text-center text-default">
           Aviso de Privacidad

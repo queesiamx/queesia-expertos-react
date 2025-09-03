@@ -62,7 +62,7 @@ export default function LoginUsuarios() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-primary-soft px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-sm w-full text-center">
         <h2 className="text-2xl font-semibold mb-4">Iniciar sesión</h2>
         <p className="text-gray-600 mb-6">Accede con tu cuenta de Google</p>

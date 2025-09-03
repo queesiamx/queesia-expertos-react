@@ -27,7 +27,10 @@ export default function QuesiaNavbar() {
 }, [rol, aprobado]);
 
   return (
-    <header className="sticky top-0 z-[9999] w-full bg-primary-soft shadow-sm overflow-visible">
+   <header className="sticky top-0 z-[9999] w-full
+  bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70
+   border-b border-slate-200 shadow-sm">
+    
       <div className="flex items-center justify-between px-6 py-4">
         {/* Logo */}
         <a

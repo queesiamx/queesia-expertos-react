@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db, auth } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -53,6 +53,33 @@ export default function ExpertDetailPublic() {
   // (no usados, pero los dejaste en tu archivo original)
   const [openCurso, setOpenCurso] = useState(false);
   const [cursoSel, setCursoSel] = useState(null);
+
+  // Carrusel (helpers)
+const carruselRef = useRef(null);
+const scrollStep = () =>
+  Math.floor((carruselRef.current?.clientWidth || 600) * 0.9);
+const scrollByX = (dx) =>
+  carruselRef.current?.scrollBy({ left: dx, behavior: "smooth" });
+
+// ---------- Normalizadores a array ----------
+const toList = (v) =>
+  Array.isArray(v)
+    ? v
+    : (typeof v === "string"
+        ? v.split(",").map(s => s.trim()).filter(Boolean)
+        : []);
+
+// preferimos la primera lista no vacía entre skills, tags o tecnologias
+const tagsList =
+  (toList(expert?.skills).length ? toList(expert?.skills)
+   : toList(expert?.tags).length ? toList(expert?.tags)
+   : toList(expert?.tecnologias));
+
+// idiomas (puede venir string o array)
+const idiomasList = toList(expert?.idiomas);
+
+// experiencia (nos aseguramos que sea array; si no, vacío)
+const experienciaList = Array.isArray(expert?.experiencia) ? expert.experiencia : [];
 
   // 🔹 Obtener datos del experto
   useEffect(() => {
@@ -280,41 +307,268 @@ export default function ExpertDetailPublic() {
     <>
       <UnifiedNavbar />
 
-      <div className="min-h-screen bg-primary-soft px-4 py-10 font-sans">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="min-h-screen bg-white px-4 py-10 font-sans">
+        <div className="max-w-5xl mx-auto">
           {/* Botón volver */}
           <div>
             <button
               onClick={() => navigate("/expertos")}
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-blue-500 hover:underline"
             >
               ← Volver al listado
             </button>
           </div>
 
           {/* Card: Encabezado del experto */}
-          <div className="bg-white p-8 rounded-2xl shadow-md">
-            <ExpertHeader expert={expert} />
-          </div>
+          <div className="mt-5 rounded-3xl border border-black/5 bg-white shadow-xl shadow-gray-200 p-6 md:p-8">
+            {/* Header de perfil */}
+<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+  <div className="flex items-start gap-5">
+    {/* Foto o fallback */}
+    { (expert?.fotoPerfilURL || expert?.foto || expert?.photoURL) ? (
+      <img
+        src={expert.fotoPerfilURL || expert.foto || expert.photoURL}
+        alt={expert?.nombre || "Foto de perfil"}
+        className="h-24 w-24 md:h-28 md:w-28 rounded-2xl object-cover ring-1 ring-black/5"
+      />
+    ) : (
+      <div className="h-24 w-24 md:h-28 md:w-28 rounded-2xl bg-slate-100 ring-1 ring-black/5 grid place-items-center text-slate-400">
+        IMG
+      </div>
+    )}
 
-          {/* Card: Lista de contenidos */}
-          <ExpertContentList
-            contenidos={contenidos}
-            usuario={usuario}
-            verTemario={verTemario}
-            setVerTemario={setVerTemario}
-            handleAbrirModal={handleAbrirModal}             // registro gratis
-            handleAbrirModalCompra={handleAbrirModalCompra} // compra curso/manual
-            handleBuy={handleBuy}
-            handleLoginConGoogle={handleLoginConGoogle}
-          />
+    <div>
+      <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{expert?.nombre}</h1>
+      <p className="mt-1 text-emerald-700 font-medium">
+        {expert?.titulo || expert?.especialidad}
+      </p>
+      <p className="mt-1 text-sm text-slate-600">
+        {expert?.especialidad} • {expert?.ciudad} • {(expert?.aniosExp ?? expert?.experienciaAnios) || "—"}+ años exp.
+      </p>
 
-          {/* Card: Calificaciones */}
-          <ExpertRatingSection
-            expertId={expert.id}
-            usuario={usuario}
-            handleLoginConGoogle={handleLoginConGoogle}
-          />
+      {/* Tags/skills */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {tagsList.map(tag => (
+          <span key={tag} className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs ring-1 ring-black/5">
+            {tag}
+          </span>
+        ))}
+
+      </div>
+    </div>
+  </div>
+
+  <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+    <button className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 font-medium shadow-sm hover:bg-emerald-700">
+      Consultar
+    </button>
+    <button className="rounded-xl bg-slate-100 text-slate-700 px-4 py-2.5 font-medium ring-1 ring-black/5 hover:bg-white">
+      Reservar sesión
+    </button>
+    <div className="flex gap-2">
+      <button className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">
+        Seguir
+      </button>
+      <button className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">
+        Compartir
+      </button>
+    </div>
+  </div>
+</div>
+
+{/* Métricas */}
+<div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+  <div className="rounded-xl bg-slate-50 ring-1 ring-black/5 p-3">
+    <p className="text-xs text-slate-500">Calificación</p>
+    <p className="mt-1 font-semibold">
+      {expert?.rating ?? "—"} <span className="text-xs text-slate-500">({expert?.ratingCount || 0})</span>
+    </p>
+  </div>
+  <div className="rounded-xl bg-slate-50 ring-1 ring-black/5 p-3">
+    <p className="text-xs text-slate-500">Proyectos</p>
+    <p className="mt-1 font-semibold">{expert?.proyectos || 0}</p>
+  </div>
+  <div className="rounded-xl bg-slate-50 ring-1 ring-black/5 p-3">
+    <p className="text-xs text-slate-500">Alumnos</p>
+    <p className="mt-1 font-semibold">{expert?.alumnos || 0}</p>
+  </div>
+  <div className="rounded-xl bg-slate-50 ring-1 ring-black/5 p-3">
+    <p className="text-xs text-slate-500">Respuesta</p>
+    <p className="mt-1 font-semibold">{expert?.tiempoRespuesta || "< 24h"}</p>
+  </div>
+</div>
+
+        
+        </div>
+
+        {/* === GRID PRINCIPAL (3/5 + 2/5) === */}
+<div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+  {/* === Columna izquierda (3/5) === */}
+  <section className="lg:col-span-3 space-y-6">
+
+    {/* === Sobre mí === */}
+    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+      <h2 className="text-lg font-semibold">Sobre mí</h2>
+      <p className="mt-2 text-sm text-slate-700 leading-relaxed">
+        {expert?.sobreMi}
+      </p>
+    </div>
+
+    {/* === Experiencia === */}
+    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+      <h2 className="text-lg font-semibold">Experiencia</h2>
+      <ul className="mt-3 space-y-3">
+        {experienciaList.map((item, i) => (
+          <li key={i} className="flex items-start gap-3">
+            <div className="h-8 w-8 rounded-lg bg-slate-100 ring-1 ring-black/5 grid place-items-center text-slate-400">🏢</div>
+            <div>
+              <p className="font-medium">{item?.titulo}</p>
+              <p className="text-sm text-slate-600">{item?.periodo} • {item?.empresa}</p>
+              <p className="text-sm text-slate-600 mt-1">{item?.descripcion}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    {/* === Contenidos disponibles — CARRUSEL === */}
+    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg font-semibold">Contenidos disponibles</h2>
+        <div className="flex gap-2">
+          <button onClick={() => scrollByX(-scrollStep())} className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">←</button>
+          <button onClick={() => scrollByX( scrollStep())} className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">→</button>
+        </div>
+      </div>
+
+      <div className="mt-4 relative">
+        <div
+          ref={carruselRef}
+          className="scrollbar-none overflow-x-auto overscroll-x-contain snap-x snap-mandatory flex gap-4 pb-2"
+          role="region"
+          aria-roledescription="Carrusel"
+          aria-label="Contenidos del experto"
+          tabIndex={0}
+        >
+          {(contenidos || []).map((c) => (
+            <article key={c.id} className="min-w-[280px] sm:min-w-[360px] snap-start rounded-2xl ring-1 ring-black/5 bg-slate-50 p-5 md:p-6 flex flex-col justify-between">
+              <div>
+                <a className="font-medium hover:underline" href={c.href || '#'}>{c.titulo}</a>
+                <p className="text-sm text-slate-600 mt-1">{c.descripcion}</p>
+                {(c.temarioHref || setVerTemario) && (
+                  <button
+                    type="button"
+                    onClick={() => (c.temarioHref ? window.open(c.temarioHref, "_blank") : setVerTemario?.(c.id))}
+                    className="inline-block text-xs mt-2 px-3 py-1 ring-1 ring-black/5 rounded-lg bg-white hover:bg-slate-100"
+                  >
+                    Ver temario
+                  </button>
+                )}
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-4">
+
+                {(() => {
+                  // detectar tipos
+                  const isConsulta =
+                    c.tipo === "consulta" ||
+                    c.esConsulta === true ||
+                    c.slug === "consulta" ||
+                    /consulta/i.test(String(c.titulo || ""));
+
+                  // precio válido solo si es número > 0
+                  const precioNum = Number(c.precio);
+                  const hasPrice = Number.isFinite(precioNum) && precioNum > 0;
+
+                  // consideramos “gratis” si el contenido lo marca
+                  // o si es una consulta, o no hay precio válido
+                  const isFree = Boolean(c.gratis) || isConsulta || !hasPrice;
+
+                  const cta =
+                    c.cta || (isConsulta ? "Enviar" : hasPrice ? "Comprar" : "Obtener");
+
+                  return (
+                    <>
+                      {hasPrice && (
+                        <p className="font-semibold">${precioNum}</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => (isFree ? handleAbrirModal(c) : handleAbrirModalCompra(c))}
+                        className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-medium shadow-sm hover:bg-emerald-700"
+                      >
+                        {cta}
+                      </button>
+                    </>
+                  );
+                })()}
+
+
+                {typeof c.precio !== "undefined" && <p className="font-semibold">${c.precio}</p>}
+                <button
+                  type="button"
+                  onClick={() => (c.gratis ? handleAbrirModal(c) : handleAbrirModalCompra(c))}
+                  className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-medium shadow-sm hover:bg-emerald-700"
+                >
+                  {c.cta || (c.gratis ? "Enviar" : "Comprar")}
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+
+{/* === Califica a este experto === */}
+<ExpertRatingSection
+  expertId={expert.id}
+  usuario={usuario}
+  handleLoginConGoogle={handleLoginConGoogle}
+/>
+
+
+  </section>
+
+  {/* === Columna derecha (2/5) === */}
+  <aside className="lg:col-span-2 space-y-6">
+    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+      <h3 className="text-base font-semibold">Disponibilidad</h3>
+      <ul className="mt-3 space-y-2 text-sm text-slate-600">
+        <li>{expert?.disponibilidad || "Lunes a viernes — 10:00 a 18:00 (UTC-6)"}</li>
+        <li>{expert?.SLA || "Responde en 24 h"}</li>
+      </ul>
+    </div>
+
+    {/*<div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+      <h3 className="text-base font-semibold">Idiomas</h3>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {idiomasList.map((lang) => (
+        <span key={lang} className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs ring-1 ring-black/5">{lang}</span>
+      ))}
+
+      </div>
+    </div>*/}
+
+
+  </aside>
+
+</div>
+
+
+          {/* Card: Lista de contenidos //<ExpertContentList
+          // // contenidos={contenidos}
+           // usuario={usuario}
+          //  verTemario={verTemario}
+           // setVerTemario={setVerTemario}
+          //  handleAbrirModal={handleAbrirModal}             // registro gratis
+          //  handleAbrirModalCompra={handleAbrirModalCompra} // compra curso/manual
+          //  handleBuy={handleBuy}
+           // handleLoginConGoogle={handleLoginConGoogle}
+          
+          */}
+          
+           
+
         </div>
       </div>
 

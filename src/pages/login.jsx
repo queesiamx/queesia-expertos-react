@@ -103,7 +103,7 @@ const Login = () => {
     <>
       <UnifiedNavbar />
 
-      <main className="min-h-screen bg-primary-soft flex flex-col items-center justify-center px-4 py-10">
+      <main className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-10">
         <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 text-center animate-fade-in">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
             Soy experto 🧐

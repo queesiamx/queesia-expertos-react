@@ -6,7 +6,7 @@ import UnifiedNavbar from "../components/UnifiedNavbar";
 
 function KpiCard({ title, value }) {
   return (
-    <div className="bg-yellow-100 rounded-lg p-4 shadow text-center">
+    <div className="bg-gray-100 rounded-lg p-4 shadow text-center">
       <p className="text-md font-medium">{title}</p>
       <p className="text-2xl font-bold">{value}</p>
     </div>
