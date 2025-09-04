@@ -58,18 +58,19 @@ export default function UnifiedNavbar() {
             Catálogo
           </a>
 
-          <div className="relative group">
-            <a
-              href="https://queesia.com/casos"
-              className="text-slate-700 hover:text-slate-900 transition-colors"
-            >
-              Casos de éxito
-            </a>
-            {/* Dropdown */}
-            <div
-              className="absolute left-1/2 -translate-x-1/2 mt-3 hidden group-hover:block
-                         bg-white border border-slate-200 shadow-lg rounded-xl p-2 w-56"
-            >
+              <div className="relative group">
+                <a href="https://queesia.com/casos" className="text-slate-700 hover:text-slate-900 transition-colors">
+                  Casos de éxito
+                </a>
+                {/* puente de hover, no altera layout */}
+                <span className="absolute left-0 right-0 -bottom-3 h-3 block" aria-hidden="true"></span>
+
+                {/* Dropdown */}
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 top-full z-50 hidden
+                            group-hover:block group-focus-within:block
+                            bg-white border border-slate-200 shadow-lg rounded-xl p-2 w-56"
+                >
               <a href="https://queesia.com/casos" className="block px-3 py-2 rounded-md hover:bg-slate-50">
                 Todos los casos
               </a>
@@ -82,18 +83,18 @@ export default function UnifiedNavbar() {
             </div>
           </div>
 
-          <div className="relative group">
-            <a
-              href="https://expertos.queesia.com"
-              className="text-slate-700 hover:text-slate-900 transition-colors"
-            >
-              Expertos
-            </a>
-            {/* Dropdown */}
-            <div
-              className="absolute left-1/2 -translate-x-1/2 mt-3 hidden group-hover:block
-                         bg-white border border-slate-200 shadow-lg rounded-xl p-2 w-48"
-            >
+          <div className="relative group ">
+          <a href="https://expertos.queesia.com" className="text-slate-700 hover:text-slate-900 transition-colors">
+            Expertos
+          </a>
+          {/* Dropdown */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 top-full hidden
+                      group-hover:block group-focus-within:block z-50
+                      bg-white border border-slate-200 shadow-lg rounded-xl p-2 w-56"
+          >
+
+            
               <a href="https://expertos.queesia.com/expertos" className="block px-3 py-2 rounded-md hover:bg-slate-50">
                 Ver expertos
               </a>
@@ -127,8 +128,8 @@ export default function UnifiedNavbar() {
               <LoginButton />
               <Link
                 to="/registro"
-                className="h-9 px-4 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700"
-              >
+                className="btn btn-emerald btn-lg">
+
                 Ser Experto
               </Link>
             </>

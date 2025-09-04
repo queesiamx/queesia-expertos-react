@@ -12,7 +12,7 @@ import Footer from "../components/Footer"; // <-- ajusta la ruta si difiere
 // ————————————————— Hero (mock)
 function HeroExpertos() {
   return (
-    <section className="bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white">
+  <section className="relative overflow-hidden bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
 <img
   src="/logo-bg.png"
@@ -45,13 +45,17 @@ function HeroExpertos() {
         </div>
 
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a href="#filtros" className="h-11 px-5 rounded-xl bg-white text-[#1e3a8a] font-semibold hover:opacity-90">
-            Explorar Expertos
-          </a>
-          <a href="/registro" className="h-11 px-5 rounded-xl border border-white/30 text-white hover:bg-white/10">
-            Convertirme en un Experto
-          </a>
-        </div>
+        <a href="#filtros"
+          className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-white text-[#1e3a8a] font-semibold leading-none hover:opacity-90">
+          Explorar Expertos
+        </a>
+        <a href="/registro"
+          className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-emerald-600 text-white leading-none hover:bg-emerald-700">
+          Convertirme en un Experto
+        </a>
+      </div>
+
+
       </div>
     </section>
   );
@@ -62,7 +66,10 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
   const chips = ["Mejor valorados", "Disponibles ahora", "Precio económico", "Respuesta rápida"];
 
   return (
-    <section id="filtros" className="mx-auto max-w-6xl px-4 sm:px-6 -mt-8">
+    <section
+  id="filtros"
+  className="mx-auto max-w-6xl px-4 sm:px-6 -mt-2 md:-mt-4 lg:-mt-6 relative z-10"
+>
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-4 sm:px-6 py-4">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
           <label className="flex-1 relative block">
@@ -83,13 +90,13 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
           </label>
 
           <div className="flex gap-2">
-            <select className="h-11 rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
+            <select className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
               <option>Todas las especialidades</option>
             </select>
-            <select className="h-11 rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
+            <select className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
               <option>Todos los servicios</option>
             </select>
-            <select className="h-11 rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
+            <select className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
               <option>Cualquier precio</option>
             </select>
           </div>

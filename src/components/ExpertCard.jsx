@@ -4,15 +4,16 @@ import { useNavigate } from "react-router-dom";
 function Rating({ rating = 0, reviews = 0 }) {
   const stars = Math.round(rating);
   return (
-    <div className="flex items-center gap-1 text-sm">
-      <div className="flex">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <svg
-            key={i}
-            viewBox="0 0 24 24"
-            className={`${i < stars ? "text-amber-400" : "text-slate-300"} w-4 h-4`}
-            aria-hidden="true"
-          >
+    <div className="flex items-center gap-1.5 text-sm leading-none">
+  <div className="flex items-center">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <svg
+        key={i}
+        viewBox="0 0 24 24"
+        className={`${i < stars ? "text-amber-400" : "text-slate-300"} w-4 h-4 block`}
+        aria-hidden="true"
+      >
+
             <path
               fill="currentColor"
               d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
@@ -20,7 +21,7 @@ function Rating({ rating = 0, reviews = 0 }) {
           </svg>
         ))}
       </div>
-      <span className="text-slate-500 text-[13px]">
+      <span className="text-slate-500 text-[13px] leading-none">
         {Number(rating || 0).toFixed(1)} ({reviews || 0} {reviews === 1 ? "review" : "reviews"})
       </span>
     </div>
@@ -35,7 +36,7 @@ function Badge({ children, color = "slate" }) {
     slate: "bg-slate-100 text-slate-700 border-slate-200",
   };
   return (
-    <span className={`px-2.5 h-7 rounded-full text-xs inline-flex items-center border ${map[color]}`}>
+    <span className={`px-2.5 h-7 rounded-full text-xs inline-flex items-center justify-center leading-none border ${map[color]}`}>
       {children}
     </span>
   );
@@ -123,8 +124,9 @@ export default function ExpertCard({ expert }) {
 
         {/* fila: responde en Xh · precio */}
         <div className="mt-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[13px] text-slate-600">
-            <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true">
+  <div className="flex items-center gap-2 text-[13px] text-slate-600 leading-none">
+    <svg viewBox="0 0 24 24" className="w-4 h-4 block" aria-hidden="true">
+
               <path
                 fill="currentColor"
                 d="M12 8v5h4v-2h-2V8h-2Zm0-6a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16A8 8 0 0 1 12 4Z"
@@ -146,28 +148,33 @@ export default function ExpertCard({ expert }) {
         </div>
 
         {/* footer: botón azul + favorito */}
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={() => navigate(`/expertos/${expert.id}`)}
-            className="flex-1 h-10 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
-          >
-            Ver Perfil
-          </button>
+<div className="mt-4 flex items-center gap-3">
+  <button
+    onClick={() => navigate(`/expertos/${expert.id}`)}
+    className="flex-1 h-10 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
+  >
+    Ver Perfil
+  </button>
 
-          <button
-            type="button"
-            aria-label="Guardar"
-            className="h-10 w-10 grid place-items-center rounded-lg border border-slate-300 text-slate-600 hover:border-blue-300"
-          >
-            <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
-              <path
-                fill="currentColor"
-                d="M16.5,3c-1.74,0-3.41,0.81-4.5,2.09C10.91,3.81,9.24,3,7.5,3C4.42,3,2,5.42,2,8.5
-                   c0,3.78,3.4,6.86,8.55,11.54L12,21.35l1.45-1.32C18.6,15.36,22,12.28,22,8.5C22,5.42,19.58,3,16.5,3z"
-              />
-            </svg>
-          </button>
-        </div>
+  <button
+    type="button"
+    aria-label="Guardar"
+    className="h-10 w-10 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:border-blue-300 leading-none"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      className="w-5 h-5 block text-slate-600 fill-current"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M16.5,3c-1.74,0-3.41,0.81-4.5,2.09C10.91,3.81,9.24,3,7.5,3C4.42,3,2,5.42,2,8.5
+           c0,3.78,3.4,6.86,8.55,11.54L12,21.35l1.45-1.32C18.6,15.36,22,12.28,22,8.5C22,5.42,19.58,3,16.5,3z"
+      />
+    </svg>
+  </button>
+</div>
+
       </div>
     </article>
   );
