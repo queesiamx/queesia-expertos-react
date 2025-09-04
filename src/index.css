@@ -37,7 +37,7 @@ a:hover {
 body,
 html,
 #root {
-  @apply w-full min-h-screen bg-white text-slate-900;
+  @apply w-full min-h-screen overflow-x-hidden bg-white text-slate-900;
 }
 
 
@@ -106,5 +106,24 @@ iframe[name^="__privateStripeController"] {
   fill: none !important;
 }
 /* Ocultar scrollbar horizontal en carruseles */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+/* --- Global: evita scroll horizontal accidental --- */
+html, body, #root {
+  overflow-x: hidden;
+}
+
+/* Botones y chips centrados por defecto (reutilizable) */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium leading-none;
+  }
+  .btn-lg { @apply h-11 px-5 text-base; }
+  .btn-emerald { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-outline { @apply ring-1 ring-black/10 bg-white hover:bg-slate-50; }
+  .chip { @apply inline-flex items-center justify-center rounded-full px-3 py-1 text-xs; }
+}
+
+/* Carruseles sin barra visible */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
