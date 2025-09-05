@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 // arriba, junto con tus imports
-import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp  } from "firebase/firestore";
 
 import { db } from "../firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
@@ -155,26 +155,33 @@ export default function Expertos() {
   const [visitas, setVisitas] = useState(null);
 
   useEffect(() => {
-  const ref = doc(db, "metrics", "expertos"); // colección/ID a tu gusto
-  const key = "visit:expertos";
+  // No cuentes en desarrollo
+  if (import.meta.env.MODE !== "production") return;
+
+  const ref = doc(db, "metrics", "expertos"); // tu doc agregado
+  const KEY = "visit:expertos:v1";
+  const now = Date.now();
+  const last = Number(localStorage.getItem(KEY) || 0);
+  const WINDOW = 24 * 60 * 60 * 1000; // 24 horas
 
   const run = async () => {
     try {
-      // crea el doc si no existe
-      await setDoc(ref, { visitas: 0 }, { merge: true });
-
-      // evita contar varias veces en la misma sesión
-      const firstTime = !sessionStorage.getItem(key);
-      if (firstTime) {
-        await updateDoc(ref, { visitas: increment(1) });
-        sessionStorage.setItem(key, "1");
+      // Sólo una vez cada 24h por navegador
+      if (now - last > WINDOW) {
+        await setDoc(
+          ref,
+          { visitas: increment(1), last: serverTimestamp() },
+          { merge: true }
+        );
+        localStorage.setItem(KEY, String(now));
       }
 
-      // lee el total
+      // Leer total (o escucha en tiempo real con onSnapshot si prefieres)
       const snap = await getDoc(ref);
       setVisitas(snap.data()?.visitas ?? 0);
     } catch (e) {
-      console.error("contador visitas", e);
+      // Silencia permission-denied si no quieres “ensuciar” la consola
+      if (e?.code !== "permission-denied") console.error("contador visitas", e);
       setVisitas(0);
     }
   };
@@ -320,20 +327,11 @@ export default function Expertos() {
               <p className="text-slate-600 max-w-2xl mx-auto">
                 Únete a nuestra comunidad de especialistas y ayuda a empresas a implementar IA
               </p>
-              <div className="mt-6 flex items-center justify-center gap-3">
-                <a
-                  href="/registro"
-                  className="h-11 px-5 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700"
-                >
-                  Registrarse como Experto
-                </a>
-                <a
-                  href="/acerca"
-                  className="h-11 px-5 rounded-xl border border-slate-300 text-slate-700 hover:border-blue-300"
-                >
-                  Conocer más
-                </a>
-              </div>
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+  <a href="/registro" className="btn btn-lg btn-emerald">Registrarse como Experto</a>
+  <a href="https://queesia.com/nosotros/" className="btn btn-lg btn-outline">Conocer más</a>
+</div>
+
             </div>
           </div>
         </section>
