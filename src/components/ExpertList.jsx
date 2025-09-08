@@ -4,7 +4,18 @@ import { collection, getDocs } from "firebase/firestore";
 import ExpertCard from "./ExpertCard";
 import { useNavigate } from "react-router-dom";
 
-export default function ExpertList() {
+// antes: export default function ExpertList(props) { ... }
+export default function ExpertList({
+  query,
+  specialty,
+  service,
+  price,
+  sortBy,
+  showHeader = false,   // 👈 por defecto oculto
+  showCTA = false,      // 👈 por defecto oculto
+  ...rest
+}) {
+
   const [expertos, setExpertos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -112,6 +123,9 @@ export default function ExpertList() {
   return (
     <div className="w-full bg-transparent text-inherit">
       {/* Header sticky como en el mock */}
+      {showHeader && (
+  <section className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
+    {/* TODO EL CÓDIGO QUE YA TIENES DENTRO DEL SECTION */}
       <section className="hidden sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-3">
           <div className="flex-1 flex items-center gap-3">
@@ -198,32 +212,36 @@ export default function ExpertList() {
           )}
         </div>
       </section>
+  </section>
+)}
+{/* CTA inferior */}
+{showCTA && (
+  <footer className="mx-auto max-w-6xl px-4 sm:px-6 pb-12">
+    <div className="rounded-[2rem] bg-[var(--surface)] ring-1 ring-[var(--ring)] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        <h3 className="text-lg sm:text-xl font-semibold">¿Eres experto/a? Únete a Queesia</h3>
+        <p className="text-[var(--subtext)] text-sm mt-1">
+          Crea tu perfil, ofrece cursos y servicios, y llega a nuevos clientes.
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate("/registro")}
+          className="h-11 px-5 rounded-2xl bg-[var(--primary)] text-[var(--primaryText)] font-medium"
+        >
+          Crear perfil
+        </button>
+        <button
+          onClick={() => navigate("/terminos")}
+          className="h-11 px-5 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]"
+        >
+          Saber más
+        </button>
+      </div>
+    </div>
+  </footer>
+)}
 
-      {/* CTA inferior */}
-      <footer className="hidden mx-auto max-w-6xl px-4 sm:px-6 pb-12">
-        <div className="rounded-[2rem] bg-[var(--surface)] ring-1 ring-[var(--ring)] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg sm:text-xl font-semibold">¿Eres experto/a? Únete a Queesia</h3>
-            <p className="text-[var(--subtext)] text-sm mt-1">
-              Crea tu perfil, ofrece cursos y servicios, y llega a nuevos clientes.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/registro")}
-              className="h-11 px-5 rounded-2xl bg-[var(--primary)] text-[var(--primaryText)] font-medium"
-            >
-              Crear perfil
-            </button>
-            <button
-              onClick={() => navigate("/terminos")}
-              className="h-11 px-5 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]"
-            >
-              Saber más
-            </button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
