@@ -8,11 +8,13 @@ import { db } from "../firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertCard from "../components/ExpertCard";
 import Footer from "../components/Footer"; // <-- ajusta la ruta si difiere
+import ExpertsBrowser from "./ExpertsBrowser";
+
 
 // ————————————————— Hero (mock)
 function HeroExpertos() {
   return (
-  <section className="relative overflow-hidden bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white">
+  <section className="relative isolate overflow-hidden bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
 <img
   src="/logo-bg.png"
@@ -45,17 +47,19 @@ function HeroExpertos() {
         </div>
 
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a href="#filtros"
-          className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-white text-[#1e3a8a] font-semibold leading-none hover:opacity-90">
-          Explorar Expertos
-        </a>
-        <a href="/registro"
-          className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-emerald-600 text-white leading-none hover:bg-emerald-700">
-          Convertirme en un Experto
-        </a>
-      </div>
-
-
+          <a
+            href="#filtros"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-white text-[#1e3a8a] font-semibold leading-none hover:opacity-90"
+          >
+            Explorar Expertos
+          </a>
+          <a
+            href="/registro"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-emerald-600 text-white leading-none hover:bg-emerald-700"
+          >
+            Convertirme en un Experto
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -66,9 +70,9 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
   const chips = ["Mejor valorados", "Disponibles ahora", "Precio económico", "Respuesta rápida"];
 
   return (
-    <section
+<section
   id="filtros"
-  className="mx-auto max-w-6xl px-4 sm:px-6 -mt-2 md:-mt-4 lg:-mt-6 relative z-10"
+  className="relative z-10 scroll-mt-28 bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
 >
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-4 sm:px-6 py-4">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center">

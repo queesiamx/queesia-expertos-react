@@ -216,7 +216,7 @@ export default function ExpertList() {
               Crear perfil
             </button>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/terminos")}
               className="h-11 px-5 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]"
             >
               Saber más
