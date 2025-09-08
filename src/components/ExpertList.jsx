@@ -186,7 +186,7 @@ export default function ExpertList() {
 
       {/* Grid de tarjetas */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {cargando ? (
             <p className="text-center text-[var(--subtext)] col-span-full">Cargando expertos…</p>
           ) : filtrados.length === 0 ? (
