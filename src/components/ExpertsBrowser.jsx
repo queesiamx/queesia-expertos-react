@@ -19,16 +19,17 @@ export default function ExpertsBrowser({
   const [sortBy, setSortBy] = useState(defaultSort);
 
   // --- COMPACTACIÓN de la barra ---
-  const pad = "p-3 md:p-4";           // antes p-4 md:p-6
-  const controlH = "h-10";            // antes h-11
-  const chipPad = "px-2.5 py-1";      // antes px-3 py-1
+const pad = "p-2.5 md:p-3";   // ↓ menos padding del contenedor
+const controlH = "h-10";      // (igual)
+const chipPad = "px-2.5 py-1"; // (igual)
+
 
   return (
     <section id={anchorId} className={`relative z-10 scroll-mt-28 ${shell}`}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4 pb-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-4 pb-6">
         {/* FILTROS */}
 
-        <div className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad} mb-3
+        <div className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad} mb-2
                  bg-white text-slate-900 dark:bg-slate-900 dark:text-white`}>
 
 
@@ -96,7 +97,7 @@ export default function ExpertsBrowser({
           </div>
 
           {!compactFilters && (
-            <div className="mt-3 flex flex-wrap gap-2 text-sm">
+            <div className="mt-2 flex flex-wrap gap-2 text-sm">
               <button
                 onClick={() => setSortBy("mejor_calificados")}
                 className={`rounded-full ${chipPad} border border-slate-200/70
@@ -122,7 +123,7 @@ export default function ExpertsBrowser({
           )}
         </div>
 
-        <h2 className="mt-2 mb-2 text-[22px] sm:text-2xl font-bold">Expertos Disponibles</h2>
+        <h2 className="mt-2 mb-1 text-[22px] sm:text-2xl font-bold">Expertos Disponibles</h2>
         <p className="text-slate-500 dark:text-slate-400 mb-4" />
 
         <ExpertList
