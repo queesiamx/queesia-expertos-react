@@ -110,9 +110,9 @@ export default function ExpertList() {
   }, [expertos, chip, query, sort]);
 
   return (
-    <div className="min-h-screen w-full bg-[var(--bg)] text-[var(--text)]">
+    <div className="w-full bg-transparent text-inherit">
       {/* Header sticky como en el mock */}
-      <section className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
+      <section className="hidden sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-3">
           <div className="flex-1 flex items-center gap-3">
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]">
@@ -200,7 +200,7 @@ export default function ExpertList() {
       </section>
 
       {/* CTA inferior */}
-      <footer className="mx-auto max-w-6xl px-4 sm:px-6 pb-12">
+      <footer className="hidden mx-auto max-w-6xl px-4 sm:px-6 pb-12">
         <div className="rounded-[2rem] bg-[var(--surface)] ring-1 ring-[var(--ring)] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="text-lg sm:text-xl font-semibold">¿Eres experto/a? Únete a Queesia</h3>

@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="bg-black text-white py-6 px-4 mt-10 font-sans">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm gap-4">
         <p className="text-center md:text-left text-white">
-          © {new Date().getFullYear()} Quesia. Todos los derechos reservados.
+          © {new Date().getFullYear()} Queesia. Todos los derechos reservados.
         </p>
 
         <div className="flex gap-4 items-center justify-center">

@@ -27,10 +27,10 @@ export default function ExpertsBrowser({
     <section id={anchorId} className={`relative z-10 scroll-mt-28 ${shell}`}>
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
         {/* FILTROS */}
-        <div
-          className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad}
-                      bg-white text-slate-900 dark:bg-slate-900 dark:text-white`}
-        >
+
+        <div className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad} mb-4
+                 bg-white text-slate-900 dark:bg-slate-900 dark:text-white`}>
+
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="flex-1">
               <input
@@ -121,7 +121,7 @@ export default function ExpertsBrowser({
           )}
         </div>
 
-        <h2 className="mt-8 text-2xl font-bold">Expertos Disponibles</h2>
+        <h2 className="mt-4 text-2xl font-bold">Expertos Disponibles</h2>
         <p className="text-slate-500 dark:text-slate-400 mb-4" />
 
         <ExpertList

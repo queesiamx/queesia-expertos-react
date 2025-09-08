@@ -167,7 +167,7 @@ export default function ExpertRatingSection({ expertId, usuario, handleLoginConG
 
       {loading && <div className="text-gray-500 mt-3">Cargando calificaciones...</div>}
 
-      {/* Mostrar comentarios como en Quesia Apps */}
+      {/* Mostrar comentarios como en Queesia Apps */}
       {!loading && ratings.length > 0 && (
         <div className="mt-6 space-y-4">
           {ratings.map((r) => (

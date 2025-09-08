@@ -55,7 +55,7 @@ export default function Terminos() {
               </li>
 
               <li>
-                <strong>Facturación:</strong> los expertos que reciban pagos a través de Quesia deben emitir una factura fiscal válida a nombre de Quesia. La emisión de esta factura es indispensable para liberar el pago correspondiente.
+                <strong>Facturación:</strong> los expertos que reciban pagos a través de Queesia deben emitir una factura fiscal válida a nombre de Queesia. La emisión de esta factura es indispensable para liberar el pago correspondiente.
               </li>
 
               <li>
