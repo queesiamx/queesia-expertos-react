@@ -4,25 +4,24 @@ import { collection, getDocs } from "firebase/firestore";
 import ExpertCard from "./ExpertCard";
 import { useNavigate } from "react-router-dom";
 
-// antes: export default function ExpertList(props) { ... }
+
 export default function ExpertList({
-  query,
-  specialty,
-  service,
-  price,
-  sortBy,
-  showHeader = false,   // 👈 por defecto oculto
-  showCTA = false,      // 👈 por defecto oculto
-  ...rest
+  query: pQuery,
+  specialty: pSpecialty,
+  service: pService,
+  price: pPrice,
+  sortBy: pSortBy,
+  showHeader = false,
+  showCTA = false,
 }) {
+
 
   const [expertos, setExpertos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  // Filtros/orden
-  const [query, setQuery] = useState("");
-  const [chip, setChip] = useState("Todos");
-  const [sort, setSort] = useState("top"); // top | priceAsc | priceDesc | reviews
+const [localQuery, setLocalQuery] = useState(pQuery ?? "");
+const [localSort, setLocalSort]   = useState(pSortBy ?? "relevancia");
+const [localChip, setLocalChip]   = useState("");
 
   const navigate = useNavigate();
 
