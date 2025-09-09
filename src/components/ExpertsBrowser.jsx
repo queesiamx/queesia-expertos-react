@@ -1,6 +1,6 @@
 // src/components/ExpertsBrowser.jsx
 import { useState } from "react";
-import ExpertList from "./ExpertList.jsx"; // ruta relativa, mismo folder
+import ExpertList from "./ExpertList.jsx";
 
 export default function ExpertsBrowser({
   variant = "light",
@@ -18,24 +18,26 @@ export default function ExpertsBrowser({
   const [price, setPrice] = useState(null);
   const [sortBy, setSortBy] = useState(defaultSort);
 
-  // --- COMPACTACIÓN de la barra ---
-const pad = "p-2.5 md:p-3";   // ↓ menos padding del contenedor
-const controlH = "h-10";      // (igual)
-const chipPad = "px-2.5 py-1"; // (igual)
-
+  // Compactación barra
+  const pad = "p-2.5 md:p-3";
+  const controlH = "h-10";
+  const chipPad = "px-2.5 py-1";
 
   return (
-
-    
     <section id={anchorId} className={`relative z-10 scroll-mt-28 ${shell}`}>
-      <h2 className="mt-2 mb-1 text-[22px] sm:text-2xl font-bold">Expertos Disponibles</h2>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-4 pb-6">
+      {/* ↓↓↓ quita el hueco arriba/abajo: pb-0 (o pb-2) */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 pt-4 pb-0">
+
+        {/* TÍTULO ARRIBA (fuera de la tarjeta de filtros) */}
+        <h2 className="mb-3 text-[22px] sm:text-2xl font-bold">
+          Expertos disponibles
+        </h2>
+
         {/* FILTROS */}
-
-        <div className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad} mb-2
-                 bg-white text-slate-900 dark:bg-slate-900 dark:text-white`}>
-
-            
+        <div
+          className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad} mb-4
+                      bg-white text-slate-900 dark:bg-slate-900 dark:text-white`}
+        >
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="flex-1">
               <input
@@ -126,8 +128,8 @@ const chipPad = "px-2.5 py-1"; // (igual)
           )}
         </div>
 
-        
-        <p className="text-slate-500 dark:text-slate-400 mb-4" />
+        {/* ↓↓↓ elimina el <p/> vacío que metía margen */}
+        {/* <p className="text-slate-500 dark:text-slate-400 mb-4" /> */}
 
         <ExpertList
           query={q}
