@@ -83,30 +83,46 @@ export default function UnifiedNavbar() {
             </div>
           </div>
 
-          <div className="relative group ">
-          <a href="https://expertos.queesia.com" className="text-slate-700 hover:text-slate-900 transition-colors">
-            Expertos
-          </a>
-          {/* Dropdown */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2 top-full hidden
-                      group-hover:block group-focus-within:block z-50
-                      bg-white border border-slate-200 shadow-lg rounded-xl p-2 w-56"
-          >
+          {/* EXPERTOS (dropdown) */}
+<div className="relative group">
+  <a
+    href="https://expertos.queesia.com"
+    className="text-slate-700 hover:text-slate-900 transition-colors"
+  >
+    Expertos
+  </a>
 
-            
-          <a
-            href="#filtros"
-            className= "text-slate-700 hover:text-slate-900 transition-colors">
-            Explorar Expertos
-          </a>
-          <a
-            href="/registro"
-            className="text-slate-700 hover:text-slate-900 transition-colors">
-            Convertirme en un Experto
-          </a>
-        </div>
-      </div>
+  {/* puente de hover/focus */}
+  <span
+    className="absolute left-0 right-0 -bottom-3 h-3 block"
+    aria-hidden="true"
+  />
+
+  {/* Dropdown */}
+  <div
+    className="absolute left-1/2 -translate-x-1/2 top-full z-50 hidden
+               group-hover:block group-focus-within:block
+               bg-white border border-slate-200 shadow-lg rounded-xl p-2 w-56"
+    role="menu"
+    aria-label="Submenú Expertos"
+  >
+    <a href="https://expertos.queesia.com/#filtros"
+   className="block px-3 py-2 rounded-md text-indigo-500 hover:bg-gray-50">
+  Explorar expertos
+</a>
+<a href="/registro"
+   className="block px-3 py-2 rounded-md text-indigo-500  hover:bg-gray-50">
+  Convertirme en un Experto
+</a>
+
+  </div>
+</div>
+                <a
+              href="https://foro.queesia.com"
+              className="text-slate-700 hover:text-slate-900 transition-colors"
+            >
+              Foro
+            </a>
 
           <a
             href="https://queesia.com/nosotros/"

@@ -1,64 +1,87 @@
 // components/ConsultaModal.jsx
 import React, { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
+import { auth } from "../firebase"; // para tomar el experto actual
 import toast from "react-hot-toast";
 
 export default function ConsultaModal({ consulta, onClose }) {
   const [respuesta, setRespuesta] = useState("");
-  const [tipoRespuesta, setTipoRespuesta] = useState("gratis");
+  const [tipoRespuesta, setTipoRespuesta] = useState("gratis"); // "gratis" | "cobro"
   const [monto, setMonto] = useState("");
+  const expertoUid = auth.currentUser?.uid || null;
+  const expertoNombre =
+    auth.currentUser?.displayName ||
+    consulta?.expertoNombre ||
+    "Experto";
 
   const marcarComoResuelta = async () => {
-  try {
-    await updateDoc(doc(db, "consultasModeradas", consulta.id), {
-      estado: "resuelta",
-    });
-    toast.success("Consulta marcada como resuelta");
-    onClose(); // Cierra el modal
-  } catch (error) {
-    console.error("Error al marcar como resuelta", error);
-    toast.error("Error al actualizar el estado");
-  }
-};
- 
+    try {
+      await updateDoc(doc(db, "consultasModeradas", consulta.id), {
+        estado: "resuelta",
+        tipoRespuesta: "gratis",
+        respuesta: (respuesta && respuesta.trim()) || "Marcada como resuelta.",
+        respondidaPorUid: expertoUid,
+        respondidaPorNombre: expertoNombre,
+        respondidaEn: serverTimestamp(),
+        montoSugerido: 0,
+        requiereValidacionAdmin: false,
+      });
+      toast.success("Consulta marcada como resuelta");
+      onClose?.();
+    } catch (error) {
+      console.error("Error al marcar como resuelta", error);
+      toast.error("Error al actualizar el estado");
+    }
+  };
 
   const enviarRespuesta = async () => {
     if (!respuesta.trim()) return toast.error("Escribe una respuesta.");
 
-    const updateData = {
-      respuesta,
-      tipoRespuesta,
-      respondidaPor: consulta.expertoNombre || "Experto",
-      respondidaEn: new Date(),
-    };
-
-    if (tipoRespuesta === "cobro") {
-      if (!monto || isNaN(monto)) {
-        return toast.error("Monto inválido.");
-      }
-      updateData.montoSugerido = parseFloat(monto);
-      updateData.requiereValidacionAdmin = true;
-    }
-
     try {
-      await updateDoc(doc(db, "consultasModeradas", consulta.id), updateData);
-      toast.success("Respuesta enviada");
-      onClose(); // cerrar modal
+      if (tipoRespuesta === "cobro") {
+        const n = Number(monto);
+        if (!Number.isFinite(n) || n <= 0) {
+          return toast.error("Monto inválido.");
+        }
+        await updateDoc(doc(db, "consultasModeradas", consulta.id), {
+          respuesta: respuesta.trim(),
+          tipoRespuesta: "cobro",
+          montoSugerido: n,               // mantengo tu nombre de campo
+          requiereValidacionAdmin: true,  // para el panel Admin
+          estado: "porValidar",           // clave para tu flujo
+          respondidaPorUid: expertoUid,
+          respondidaPorNombre: expertoNombre,
+          respondidaEn: serverTimestamp(),
+        });
+        toast.success("Respuesta enviada. Pendiente de validación.");
+      } else {
+        await updateDoc(doc(db, "consultasModeradas", consulta.id), {
+          respuesta: respuesta.trim(),
+          tipoRespuesta: "gratis",
+          montoSugerido: 0,
+          requiereValidacionAdmin: false,
+          estado: "resuelta",
+          respondidaPorUid: expertoUid,
+          respondidaPorNombre: expertoNombre,
+          respondidaEn: serverTimestamp(),
+        });
+        toast.success("Respuesta enviada.");
+      }
+      onClose?.();
     } catch (error) {
-      toast.error("Error al enviar respuesta");
       console.error(error);
+      toast.error("Error al enviar respuesta");
     }
-
-    // 🔔 (opcional) aquí invocarías una función para enviar correo al admin
-    // si tipoRespuesta === "cobro"
   };
 
+  const textoPregunta = consulta?.consulta ?? "(sin texto)";
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-xl w-full max-w-lg shadow">
         <h2 className="text-xl font-bold mb-3">Responder consulta</h2>
-        <p className="text-sm mb-4">{consulta.consulta}</p>
+        <p className="text-sm mb-4 text-slate-700">{textoPregunta}</p>
 
         <textarea
           className="w-full p-2 border rounded mb-3"
@@ -68,7 +91,9 @@ export default function ConsultaModal({ consulta, onClose }) {
           rows={4}
         />
 
-        <label className="block font-semibold mb-1">¿La respuesta es gratuita o requiere cobro?</label>
+        <label className="block font-semibold mb-1">
+          ¿La respuesta es gratuita o requiere cobro?
+        </label>
         <select
           className="w-full mb-3 p-2 border rounded"
           value={tipoRespuesta}
@@ -85,27 +110,34 @@ export default function ConsultaModal({ consulta, onClose }) {
             placeholder="Monto sugerido (MXN)"
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
+            min="1"
+            step="1"
           />
         )}
 
-                          // Dentro del return (...)
-          {consulta.estado !== "resuelta" && (
-            <div className="mt-4">
-              <button
-                onClick={marcarComoResuelta}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-              >
-                Marcar como resuelta (sin respuesta)
-              </button>
-            </div>
-          )}
+        {/* Dentro del return (...) */}
+        {consulta.estado !== "resuelta" && (
+          <div className="mt-4">
+            <button
+              onClick={marcarComoResuelta}
+              className="w-full px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
+            >
+              Marcar como resuelta (sin respuesta)
+            </button>
+          </div>
+        )}
 
-
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
-          <button onClick={enviarRespuesta} className="px-4 py-2 bg-blue-600 text-white rounded">Enviar</button>
+        <div className="mt-3 flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">
+            Cancelar
+          </button>
+          <button
+            onClick={enviarRespuesta}
+            className="px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            Enviar
+          </button>
         </div>
-
       </div>
     </div>
   );

@@ -156,7 +156,7 @@ export default function ExpertRatingSection({ expertId, usuario, handleLoginConG
             disabled={saving}
           />
           <button
-            className="bg-green-600 hover:bg-green-700 text-white px-5 py-1.5 rounded font-semibold"
+            className="bg-emerald-600 hover:bg-green-700 text-white px-5 py-1.5 rounded font-semibold"
             type="submit"
             disabled={saving}
           >

@@ -22,6 +22,7 @@ import ExpertContentList from "../components/ExpertContentList";
 import ExpertModal from "../components/ExpertModal";
 import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
+import ConsultaBox from "../components/ConsultaBox";
 
 // Usa el endpoint absoluto en dev y relativo en producción
 const API_BASE =
@@ -30,8 +31,8 @@ const API_BASE =
     : "";
 
 export default function ExpertDetailPublic() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id: expertoId } = useParams();
+ const navigate = useNavigate();
   const { user: usuario } = useAuth();
 
   // Estados básicos
@@ -39,6 +40,9 @@ export default function ExpertDetailPublic() {
   const [cargando, setCargando] = useState(true);
   const [contenidos, setContenidos] = useState([]);
   const [verTemario, setVerTemario] = useState(null);
+
+  const resolvedExpertId = expert?.id ?? expertoId; // usa el del doc si ya cargó
+  
 
   // Modal compra/registro
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -82,17 +86,23 @@ const idiomasList = toList(expert?.idiomas);
 const experienciaList = Array.isArray(expert?.experiencia) ? expert.experiencia : [];
 
   // 🔹 Obtener datos del experto
-  useEffect(() => {
-    const obtener = async () => {
-      const docRef = doc(db, "experts", id);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        setExpert({ id: snapshot.id, ...snapshot.data() });
-      }
-      setCargando(false);
-    };
-    obtener();
-  }, [id]);
+useEffect(() => {
+  if (!expertoId) return; // evita correr sin id
+
+  const obtener = async () => {
+    const docRef = doc(db, "experts", expertoId);   // ✅ usa el id de la URL
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      setExpert({ id: snapshot.id, ...snapshot.data() });
+    } else {
+      setExpert(null);
+    }
+    setCargando(false);
+  };
+
+  obtener();
+}, [expertoId]); // ✅ dependencia correcta
+
 
   // 🔹 Obtener contenidos del experto
   useEffect(() => {
@@ -451,7 +461,28 @@ const experienciaList = Array.isArray(expert?.experiencia) ? expert.experiencia 
           aria-label="Contenidos del experto"
           tabIndex={0}
         >
-          {(contenidos || []).map((c) => (
+
+          {/* Slide fijo: Consulta al experto */}
+          <article className="min-w-[280px] sm:min-w-[360px] snap-start rounded-2xl ring-1 ring-black/5 bg-slate-50 p-5 md:p-6">
+            <ConsultaBox
+              expertoId={resolvedExpertId}   // resolvedExpertId = expert?.id ?? expertoId
+              expertoNombre={expert?.nombre}
+            />
+
+          </article>
+
+
+          {(contenidos ?? [])
+            .filter((c) => {
+              const isConsulta =
+                c.tipo === "consulta" ||
+                c.esConsulta === true ||
+                c.slug === "consulta" ||
+                /consulta/i.test(String(c.titulo || ""));
+              return !isConsulta; // ⬅️ excluye consultas del carrusel
+            })
+            .map((c) => (
+
             <article key={c.id} className="min-w-[280px] sm:min-w-[360px] snap-start rounded-2xl ring-1 ring-black/5 bg-slate-50 p-5 md:p-6 flex flex-col justify-between">
               <div>
                 <a className="font-medium hover:underline" href={c.href || '#'}>{c.titulo}</a>
@@ -504,14 +535,7 @@ const experienciaList = Array.isArray(expert?.experiencia) ? expert.experiencia 
                 })()}
 
 
-                {typeof c.precio !== "undefined" && <p className="font-semibold">${c.precio}</p>}
-                <button
-                  type="button"
-                  onClick={() => (c.gratis ? handleAbrirModal(c) : handleAbrirModalCompra(c))}
-                  className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-medium shadow-sm hover:bg-emerald-700"
-                >
-                  {c.cta || (c.gratis ? "Enviar" : "Comprar")}
-                </button>
+
               </div>
             </article>
           ))}
