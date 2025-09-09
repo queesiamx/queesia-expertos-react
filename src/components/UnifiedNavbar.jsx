@@ -97,14 +97,12 @@ export default function UnifiedNavbar() {
             
           <a
             href="#filtros"
-            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-white text-[#1e3a8a] font-semibold leading-none hover:opacity-90"
-          >
+            className= "text-slate-700 hover:text-slate-900 transition-colors">
             Explorar Expertos
           </a>
           <a
             href="/registro"
-            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-emerald-600 text-white leading-none hover:bg-emerald-700"
-          >
+            className="text-slate-700 hover:text-slate-900 transition-colors">
             Convertirme en un Experto
           </a>
         </div>

@@ -333,7 +333,7 @@ export default function Expertos() {
               </p>
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
   <a href="/registro" className="btn btn-lg btn-emerald">Registrarse como Experto</a>
-  <a href="https://queesia.com/nosotros/" className="btn btn-lg btn-outline">Conocer más</a>
+  <a href="/terminos" className="btn btn-lg btn-outline">Saber más</a>
 </div>
 
             </div>
