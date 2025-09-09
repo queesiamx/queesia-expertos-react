@@ -95,14 +95,20 @@ export default function UnifiedNavbar() {
           >
 
             
-              <a href="https://expertos.queesia.com/expertos" className="block px-3 py-2 rounded-md hover:bg-slate-50">
-                Ver expertos
-              </a>
-              <a href="https://expertos.queesia.com/registro" className="block px-3 py-2 rounded-md hover:bg-slate-50">
-                Registrarse como experto
-              </a>
-            </div>
-          </div>
+          <a
+            href="#filtros"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-white text-[#1e3a8a] font-semibold leading-none hover:opacity-90"
+          >
+            Explorar Expertos
+          </a>
+          <a
+            href="/registro"
+            className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-emerald-600 text-white leading-none hover:bg-emerald-700"
+          >
+            Convertirme en un Experto
+          </a>
+        </div>
+      </div>
 
           <a
             href="https://queesia.com/nosotros/"
