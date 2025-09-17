@@ -9,6 +9,8 @@ import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertCard from "../components/ExpertCard";
 import Footer from "../components/Footer"; // <-- ajusta la ruta si difiere
 import ExpertsBrowser from "./ExpertsBrowser";
+ //import { doc, getDoc } from "firebase/firestore";
+ import { trackVisit } from "../services/analytics"; // ruta relativa desde /src/pages
 
 
 // ————————————————— Hero (mock)
@@ -156,42 +158,22 @@ export default function Expertos() {
   const pageSize = 6;
 
   // 👁️ contador (si no tienes backend, lo dejamos en null)
-  const [visitas, setVisitas] = useState(null);
-
+  const [visitas, setVisitas] = useState(0);
+  const PAGE_KEY = "expertos"; // sin slash; estable para esta vista
+  
   useEffect(() => {
   // No cuentes en desarrollo
-  if (import.meta.env.MODE !== "production") return;
+  // 1) Enviar visita a la API (excluye equipo)
+   trackVisit(PAGE_KEY);
 
-  const ref = doc(db, "metrics", "expertos"); // tu doc agregado
-  const KEY = "visit:expertos:v1";
-  const now = Date.now();
-  const last = Number(localStorage.getItem(KEY) || 0);
-  const WINDOW = 24 * 60 * 60 * 1000; // 24 horas
-
-  const run = async () => {
-    try {
-      // Sólo una vez cada 24h por navegador
-      if (now - last > WINDOW) {
-        await setDoc(
-          ref,
-          { visitas: increment(1), last: serverTimestamp() },
-          { merge: true }
-        );
-        localStorage.setItem(KEY, String(now));
-      }
-
-      // Leer total (o escucha en tiempo real con onSnapshot si prefieres)
-      const snap = await getDoc(ref);
-      setVisitas(snap.data()?.visitas ?? 0);
-    } catch (e) {
-      // Silencia permission-denied si no quieres “ensuciar” la consola
-      if (e?.code !== "permission-denied") console.error("contador visitas", e);
-      setVisitas(0);
-    }
-  };
-
-  run();
-}, []);
+   // 2) Leer el agregado diario generado por la API
+   (async () => {
+     const today = new Date().toISOString().slice(0, 10);
+     const aggRef = doc(db, "page_stats_daily", `${PAGE_KEY}__${today}`);
+     const snap = await getDoc(aggRef).catch(() => null);
+     setVisitas(snap?.exists() ? (snap.data().visits || 0) : 0);
+   })();
+  }, []);
 
 
   // ——— Carga Firestore (experts + contenidosExpertos)
