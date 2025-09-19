@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
+import { sanitizePayload } from "@/utils/sanitize";
 import {
   doc,
   updateDoc,
@@ -33,8 +34,8 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
   const [nuevaImagen, setNuevaImagen] = useState(null);
   const [previewURL, setPreviewURL] = useState("");
 
-  useEffect(() => {
-    if (expert) {
+ useEffect(() => {
+   if (expert) {
       setFormData((prev) => ({
         ...prev,
         ...expert,
@@ -43,11 +44,13 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
           : [],
       }));
       setPreviewURL(expert.fotoPerfilURL || "");
-      cargarServicios(expert.uid);
-    }
-  }, [expert]);
+     // Guard: no llames where(...) con undefined
+     if (expert.uid) cargarServicios(expert.uid);
+   }
+ }, [expert]);
 
-  const cargarServicios = async (uid) => {
+   const cargarServicios = async (uid) => {
+   if (!uid) return; // ← evita where(..., undefined)
     const q = query(collection(db, "contenidosExpertos"), where("expertoUID", "==", uid));
     const querySnapshot = await getDocs(q);
     const serviciosCargados = [];
@@ -142,10 +145,19 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
         formData.fotoPerfilPublicId = imgData.public_id;
       }
 
-      await updateDoc(doc(db, "experts", user.uid), {
-        ...formData,
-        formularioCompleto: true,
-      });
+    // --- SANITIZA Y HAZ MERGE ---
+    const payload = sanitizePayload({
+     ...formData,
+      // Garantiza arreglo válido:
+      certificaciones: Array.isArray(formData.certificaciones)
+        ? formData.certificaciones
+        : String(formData.certificaciones || "")
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean),
+      formularioCompleto: true,
+    });
+    await setDoc(doc(db, "experts", user.uid), payload, { merge: true });
 
       toast.success("Perfil actualizado");
       onSave(formData);
@@ -159,20 +171,24 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
     const user = auth.currentUser;
     if (!user) return;
 
-    const serv = servicios[index];
-    const data = {
-      ...serv,
-      expertoUID: user.uid,
-      actualizado: new Date(),
-    };
+ const serv = servicios[index] || {};
+  const raw = {
+    ...serv,
+    expertoUID: user.uid,
+    actualizado: new Date().toISOString(),
+  };
+  const data = sanitizePayload(raw);
 
     try {
       if (serv.id) {
-        await setDoc(doc(db, "contenidosExpertos", serv.id), data);
-      } else {
-        const docRef = await addDoc(collection(db, "contenidosExpertos"), data);
-        servicios[index].id = docRef.id;
-      }
+     await setDoc(doc(db, "contenidosExpertos", serv.id), data, { merge: true });
+   } else {
+     const docRef = await addDoc(collection(db, "contenidosExpertos"), data);
+     // refleja el id en estado para siguientes guardados
+     setServicios((prev) =>
+        prev.map((s, i) => (i === index ? { ...s, id: docRef.id } : s))
+      );
+    }
       toast.success(`Servicio ${index + 1} guardado`);
     } catch (err) {
       console.error(err);

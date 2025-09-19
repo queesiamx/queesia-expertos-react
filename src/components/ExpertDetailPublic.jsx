@@ -65,6 +65,17 @@ const scrollStep = () =>
 const scrollByX = (dx) =>
   carruselRef.current?.scrollBy({ left: dx, behavior: "smooth" });
 
+ // Normaliza texto multilinea (de un textarea) a arreglo de strings
+ const toLines = (v) =>
+   typeof v === "string"
+     ? v.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+     : Array.isArray(v) ? v : [];
+
+ // Mapea líneas simples a objetos de experiencia genérica
+ const linesToExperiencia = (lines) =>
+   lines.map(txt => ({ titulo: txt, periodo: "", empresa: "", descripcion: "" }));
+
+
 // ---------- Normalizadores a array ----------
 const toList = (v) =>
   Array.isArray(v)
@@ -74,16 +85,21 @@ const toList = (v) =>
         : []);
 
 // preferimos la primera lista no vacía entre skills, tags o tecnologias
-const tagsList =
-  (toList(expert?.skills).length ? toList(expert?.skills)
-   : toList(expert?.tags).length ? toList(expert?.tags)
-   : toList(expert?.tecnologias));
-
+ const tagsList =
+   (toList(expert?.skills).length ? toList(expert?.skills)
+    : toList(expert?.tags).length ? toList(expert?.tags)
+    : toList(expert?.tecnologias).length ? toList(expert?.tecnologias)
+    : toLines(expert?.certificaciones)); // ← fallback a lista plana del dashboard
 // idiomas (puede venir string o array)
 const idiomasList = toList(expert?.idiomas);
 
 // experiencia (nos aseguramos que sea array; si no, vacío)
-const experienciaList = Array.isArray(expert?.experiencia) ? expert.experiencia : [];
+ const experienciaList = Array.isArray(expert?.experiencia)
+   ? expert.experiencia
+   // fallback 1: campo plano "experiencias" del dashboard (texto)
+   : linesToExperiencia(toLines(expert?.experiencias))
+   // fallback 2: otro alias posible
+   || [];
 
   // 🔹 Obtener datos del experto
 useEffect(() => {
@@ -108,15 +124,19 @@ useEffect(() => {
   useEffect(() => {
     const cargarContenidos = async () => {
       if (!expert?.id) return;
-      const q = query(
-        collection(db, "contenidosExpertos"),
-        where("expertoId", "==", expert.id)
-      );
-      const snapshot = await getDocs(q);
-      const docs = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const base = collection(db, "contenidosExpertos");
+
+      // 1) intenta por expertoId
+      let q1 = query(base, where("expertoId", "==", expert.id));
+     let snap = await getDocs(q1);
+
+      // 2) si no hay resultados, intenta por expertoUID
+      if (snap.empty) {
+        const q2 = query(base, where("expertoUID", "==", expert.id));
+       snap = await getDocs(q2);
+     }
+
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setContenidos(docs);
     };
     cargarContenidos();
@@ -420,8 +440,8 @@ useEffect(() => {
     {/* === Sobre mí === */}
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
       <h2 className="text-lg font-semibold">Sobre mí</h2>
-      <p className="mt-2 text-sm text-slate-700 leading-relaxed">
-        {expert?.sobreMi}
+       <p className="mt-2 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+      {expert?.sobreMi || expert?.acercaDe || expert?.bio || ""}
       </p>
     </div>
 
@@ -509,11 +529,12 @@ useEffect(() => {
 
                   // precio válido solo si es número > 0
                   const precioNum = Number(c.precio);
-                  const hasPrice = Number.isFinite(precioNum) && precioNum > 0;
+                 const hasPrice = Number.isFinite(precioNum) && precioNum > 0;
+                  const isFree = Boolean(c.gratis) || !hasPrice ||
+                    /gratis/i.test(String(c.descripcion || ""));
 
                   // consideramos “gratis” si el contenido lo marca
-                  // o si es una consulta, o no hay precio válido
-                  const isFree = Boolean(c.gratis) || isConsulta || !hasPrice;
+                  // o si es una consulta, o no hay precio válido               
 
                   const cta =
                     c.cta || (isConsulta ? "Enviar" : hasPrice ? "Comprar" : "Obtener");

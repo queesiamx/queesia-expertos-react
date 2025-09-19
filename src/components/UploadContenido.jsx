@@ -31,6 +31,10 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
   const cloudinaryUrl = cloudName
     ? `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`
     : '';
+    
+console.log('CLOUD_NAME ->', JSON.stringify(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME));
+console.log('UPLOAD_PRESET ->', JSON.stringify(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET));
+
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
