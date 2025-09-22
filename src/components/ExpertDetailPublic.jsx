@@ -22,6 +22,7 @@ import ExpertContentList from "../components/ExpertContentList";
 import ExpertModal from "../components/ExpertModal";
 import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
+import PriceTag from "@/components/PriceTag";
 import ConsultaBox from "../components/ConsultaBox";
 
 // Usa el endpoint absoluto en dev y relativo en producción
@@ -529,8 +530,9 @@ useEffect(() => {
 
                   // precio válido solo si es número > 0
                   const precioNum = Number(c.precio);
-                 const hasPrice = Number.isFinite(precioNum) && precioNum > 0;
-                  const isFree = Boolean(c.gratis) || !hasPrice ||
+                  const hasPrice = Number.isFinite(precioNum) && precioNum >= 0;
+                  const isFree =
+                    Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
                     /gratis/i.test(String(c.descripcion || ""));
 
                   // consideramos “gratis” si el contenido lo marca
@@ -541,16 +543,19 @@ useEffect(() => {
 
                   return (
                     <>
-                      {hasPrice && (
-                        <p className="font-semibold">${precioNum}</p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => (isFree ? handleAbrirModal(c) : handleAbrirModalCompra(c))}
-                        className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-medium shadow-sm hover:bg-emerald-700"
-                      >
-                        {cta}
-                      </button>
+                    {isFree ? (
+                      <span className="font-semibold text-emerald-700">Gratis</span>
+                    ) : hasPrice ? (
+                      <PriceTag amount={precioNum} className="mt-1" />
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => (isFree ? handleAbrirModal(c) : handleAbrirModalCompra(c))}
+                      className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-medium shadow-sm hover:bg-emerald-700"
+                    >
+                      {cta}
+                    </button>
+
                     </>
                   );
                 })()}

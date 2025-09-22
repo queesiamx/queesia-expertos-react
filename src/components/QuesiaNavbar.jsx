@@ -37,7 +37,7 @@ export default function QuesiaNavbar() {
           href="https://queesia.com"
           className="flex items-center gap-2 font-bold italic text-2xl"
         >
-          <img src="/logo-bg.png" alt="Quesia" className="w-8 h-8" />
+          <img src="/logo-bg.png" alt="Queesia" className="w-8 h-8" />
           <span>
             <span className="text-black font-sans">quees</span>
             <span className="text-primary font-sans">ia</span>

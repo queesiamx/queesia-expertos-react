@@ -80,7 +80,7 @@ if (!user) {
     <div className={"rounded-2xl border border-slate-200/70 bg-slate-50 p-5 shadow-sm " + className}>
       <h3 className="text-lg font-semibold text-slate-800 mb-1">Consulta al experto</h3>
       <p className="text-sm text-slate-600 mb-4">
-        Para enviar una consulta debes <strong>iniciar sesión</strong>. Tu pregunta será revisada por Quesia
+        Para enviar una consulta debes <strong>iniciar sesión</strong>. Tu pregunta será revisada por Queesia
         y podría requerir una respuesta profesional con costo <span className="font-medium">(sujeto a costes)</span>.
       </p>
 

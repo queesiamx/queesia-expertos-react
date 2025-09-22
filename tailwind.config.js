@@ -17,9 +17,12 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Raleway", "ui-sans-serif", "system-ui"],
-        montserrat: ["Montserrat", "ui-sans-serif", "system-ui"],
+       sans: ["Raleway", "ui-sans-serif", "system-ui", "sans-serif"],
+       raleway: ["Raleway", "ui-sans-serif", "system-ui", "sans-serif"],
       },
+      letterSpacing: {
+       snugger: "-0.02em", // un pelín más cerrado que tracking-tight
+     },
 
       // 🎨 Paleta alineada al mock oscuro
       colors: {
