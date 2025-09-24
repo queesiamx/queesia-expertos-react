@@ -148,7 +148,7 @@ export default function UnifiedNavbar() {
               <LoginButton />
               <Link
                 to="/registro"
-                className="btn btn-emerald btn-lg">
+                className="btn btn-lg btn-expert">
 
                 Ser Experto
               </Link>

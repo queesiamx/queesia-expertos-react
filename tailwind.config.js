@@ -14,10 +14,10 @@ module.exports = {
     "bg-ui-bg","bg-ui-card","bg-ui-surface","bg-ui-overlay",
     "text-ui-text","text-ui-subtext","ring-ui-ring","border-ui-ring"
   ],
-  theme: {
-    extend: {
-      fontFamily: {
-       sans: ["Raleway", "ui-sans-serif", "system-ui", "sans-serif"],
+theme: {
+  extend: {
+    fontFamily: {
+      sans: ['Montserrat', 'ui-sans-serif', 'system-ui'],
        raleway: ["Raleway", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       letterSpacing: {

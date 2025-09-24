@@ -19,58 +19,52 @@ import ExpertsBrowser from "./ExpertsBrowser";
 function HeroExpertos() {
   return (
     <section className="relative isolate overflow-hidden bg-slate-50 text-slate-900">
-      {/* CÍRCULOS CON ARO (detrás) */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-        {/* arriba-izquierda */}
+      {/* Circulitos suaves opcionales */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div
           className="absolute -top-24 -left-24 h-72 w-72 md:h-80 md:w-80 rounded-full opacity-70"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(226,232,240,.28), rgba(226,232,240,.12) 60%, rgba(226,232,240,0) 72%)",
-            filter: "blur(0.5px)",
-          }}
+          style={{background:"radial-gradient(closest-side, rgba(226,232,240,.35), rgba(226,232,240,.15) 60%, rgba(226,232,240,0) 70%)"}}
         />
-        {/* abajo-derecha */}
         <div
-          className="absolute -bottom-28 -right-24 h-[22rem] w-[22rem] md:h-[26rem] md:w-[26rem] rounded-full opacity-70"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(226,232,240,.28), rgba(226,232,240,.12) 60%, rgba(226,232,240,0) 72%)",
-            filter: "blur(0.5px)",
-          }}
+          className="absolute -bottom-32 -right-28 h-80 w-80 md:h-[24rem] md:w-[24rem] rounded-full opacity-70"
+          style={{background:"radial-gradient(closest-side, rgba(226,232,240,.35), rgba(226,232,240,.15) 60%, rgba(226,232,240,0) 70%)"}}
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16 text-center">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16 text-center">
         {/* Mascota */}
         <div className="mx-auto mb-6 flex items-center justify-center">
-          <img src="/logo-bg.png" alt="Queesia" className="h-36 w-36 object-contain" />
+          <img src="/logo-bg.png" alt="Queesia" className="h-36 w-36 md:h-36 md:w-36 object-contain" />
         </div>
 
-        {/* Título (todo cursiva; “Expertos” normal) */}
+        {/* Título azul-clásico, pero en claro */}
         <h1 className="font-raleway text-[48px] sm:text-5xl font-extrabold leading-[1.1] tracking-tight text-slate-900 italic">
-          <span>Conecta con</span>{" "}
-          <span className="text-blue-700 not-italic font-extrabold">Expertos</span>{" "}
-          <span>en IA</span>
+          Conecta con{" "}
+          <span className="text-yellow-300 not-italic font-extrabold">Expertos</span>{" "}
+          en IA
         </h1>
 
-        {/* Subtítulo */}
         <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-slate-600">
-          Encuentra especialistas que pueden ayudarte a implementar IA en tus proyectos — con
-          experiencia verificada y respuesta rápida.
+          Encuentra especialistas que pueden ayudarte a implementar IA en tus proyectos — con experiencia verificada y respuesta rápida.
         </p>
 
         {/* CTAs */}
         <div className="mt-8 flex items-center justify-center gap-3">
-          <a href="#filtros" className="h-11 px-5 rounded-xl bg-blue-700 text-white font-semibold shadow hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200 inline-flex items-center justify-center">
+          <a
+            href="#filtros"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-blue-700 px-5 font-semibold leading-none text-white shadow hover:bg-blue-800"
+          >
             Explorar Expertos
           </a>
-          <a href="/registro" className="h-11 px-5 rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200 inline-flex items-center justify-center">
+          <a
+            href="/registro"
+            className="btn btn-lg btn-expert">
+          
             Convertirme en un Experto
           </a>
         </div>
 
-        {/* Métricas */}
+        {/* Métricas (tarjetas claras) */}
         <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="text-2xl font-bold">150+</div>
@@ -89,6 +83,7 @@ function HeroExpertos() {
     </section>
   );
 }
+
 
 
 // ————————————————— Barra de filtros/búsqueda (mock)
@@ -338,8 +333,9 @@ export default function Expertos() {
                 Únete a nuestra comunidad de especialistas y ayuda a empresas a implementar IA
               </p>
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-  <a href="/registro" className="btn btn-lg btn-emerald">Registrarse como Experto</a>
-  <a href="/terminos" className="btn btn-lg btn-outline">Saber más</a>
+  <a href="/registro" className="btn btn-lg btn-expert">Registrarse como Experto</a>
+  <a href="/terminos" className="inline-flex h-11 items-center justify-center rounded-xl bg-gray-400 px-5 font-semibold leading-none text-white shadow hover:bg-blue-800"
+          >Saber más</a>
 </div>
 
             </div>

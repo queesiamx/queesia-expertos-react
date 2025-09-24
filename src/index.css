@@ -1,48 +1,92 @@
-/* RESET GLOBAL */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-
-/* Root: sin imponer colores oscuros (dejamos claro por defecto) */
-:root {
-  @apply font-sans;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light; /* antes: light dark */
-}
-
+/* === Tailwind layers (DEBEN ir primero) === */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* === BASE === */
+@layer base {
+  /* Reset ligero dentro de la capa base */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* Fuente por defecto en 400 en todo el sitio */
+  html, body { @apply font-normal font-sans; }
+
+  /* ÚNICO en negritas */
+  h1 { @apply font-bold; }
+
+  /* Titulares restantes sin negritas */
+  h2, h3, h4, h5, h6 { @apply font-normal; }
+
+  /* Quita bold de etiquetas comunes */
+  b, strong, th, dt, summary { font-weight: 400 !important; }
+
+  /* Controles de formulario sin bold */
+  button, input, select, textarea, label { @apply font-normal; }
+
+  /* Titular genérico (tamaño) — opcional */
+  h1 { font-size: 3.2rem; line-height: 1.1; }
 }
 
-/* Root: sin imponer colores oscuros (dejamos claro por defecto) */
-:root {
-  @apply font-sans;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light; /* antes: light dark */
+/* === COMPONENTES === */
+@layer components {
+  .btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 leading-none; }
+  .btn-lg { @apply h-11 px-5 text-base; }
+
+  /* Variante ÚNICA para todos los verdes (idéntica a navbar) */
+  .btn-expert {
+    @apply bg-emerald-600 text-white shadow-sm
+           hover:bg-emerald-700
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/60;
+  } /* <-- ESTA LLAVE FALTABA */
+
+  .btn-outline { @apply ring-1 ring-black/10 bg-white hover:bg-slate-50; }
+
+  .chip { @apply inline-flex items-center justify-center rounded-full px-3 py-1 text-xs; }
+
+  /* Home de Expertos: hereda 400 en todo salvo H1 */
+  .experts-home { font-weight: 400; }
+  .experts-home * { font-weight: inherit; }
+  .experts-home :is(
+    .font-thin,.font-extralight,.font-light,.font-normal,
+    .font-medium,.font-semibold,.font-bold,.font-extrabold,.font-black,
+    a,b,strong,th,label,button
+  ) { font-weight: inherit !important; }
+
+  .experts-home h1 {
+    font-weight: 800 !important;
+    font-style: italic;
+    letter-spacing: -0.02em;
+  }
 }
 
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* === UTILIDADES === */
+@layer utilities {
+  .bg-aro {
+    background: radial-gradient(closest-side, rgba(226,232,240,.28), rgba(226,232,240,.12) 60%, rgba(226,232,240,0) 72%);
+    filter: blur(0.5px);
+  }
 }
 
-/* Botones legacy (si alguna vista antigua los usa).
-   NO afecta los botones de Tailwind. */
+/* Extras globales sin bold */
+a { color: #646cff; text-decoration: inherit; }
+a:hover { color: #535bf2; }
+.btn-icon { all: unset; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.container-base { @apply max-w-4xl mx-auto px-4 py-8; }
+.form-base { @apply w-full bg-white p-6 rounded-xl shadow-md space-y-6; }
+body { margin-top: 0 !important; padding-top: 0 !important; }
+iframe[name^="__privateStripeController"] { display: none !important; }
+.mobile-menu-btn, .mobile-menu-btn svg, .mobile-menu-btn svg * { color: #000 !important; stroke: #000 !important; fill: none !important; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+html, body, #root { overflow-x: hidden; }
+
+@media (prefers-color-scheme: light) {
+  :root { color: #213547; background-color: #fff; }
+  a:hover { color: #747bff; }
+  .legacy-btn { background-color: #f9f9f9; }
+}
+
 .legacy-btn {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -55,79 +99,4 @@ h1 {
   transition: border-color 0.25s;
 }
 .legacy-btn:hover { border-color: #646cff; }
-.legacy-btn:focus,
-.legacy-btn:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
-
-@media (prefers-color-scheme: light) {
-  :root { color: #213547; background-color: #ffffff; }
-  a:hover { color: #747bff; }
-  .legacy-btn { background-color: #f9f9f9; }
-}
-
-/* Botón icono: asegura que no hereda paddings/fondos globales */
-.btn-icon {
-  all: unset;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-/* index.css */
-.container-base {
-  @apply max-w-4xl mx-auto px-4 py-8;
-}
-
-.form-base {
-  @apply w-full bg-white p-6 rounded-xl shadow-md space-y-6;
-}
-
-/* ya está aplicado en #root dentro de @layer base */
-body {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-}
-iframe[name^="__privateStripeController"] {
-  display: none !important;
-}
-/* Kill-switch final para el botón del menú móvil */
-.mobile-menu-btn,
-.mobile-menu-btn svg,
-.mobile-menu-btn svg * {
-  color: #000 !important;
-  stroke: #000 !important;
-  fill: none !important;
-}
-/* Ocultar scrollbar horizontal en carruseles */
-.scrollbar-none::-webkit-scrollbar { display: none; }
-.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-/* --- Global: evita scroll horizontal accidental --- */
-html, body, #root {
-  overflow-x: hidden;
-}
-
-/* Botones y chips centrados por defecto (reutilizable) */
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium leading-none;
-  }
-  .btn-lg { @apply h-11 px-5 text-base; }
-  .btn-emerald { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
-  .btn-outline { @apply ring-1 ring-black/10 bg-white hover:bg-slate-50; }
-  .chip { @apply inline-flex items-center justify-center rounded-full px-3 py-1 text-xs; }
-}
-
-/* Carruseles sin barra visible */
-.scrollbar-none::-webkit-scrollbar { display: none; }
-.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-@layer utilities {
-  .bg-aro {
-    background: radial-gradient(
-      closest-side,
-      rgba(226,232,240,.28),
-      rgba(226,232,240,.12) 60%,
-      rgba(226,232,240,0) 72%
-    );
-    filter: blur(0.5px);
-  }
-}
+.legacy-btn:focus, .legacy-btn:focus-visible { outline: 4px auto -webkit-focus-ring-color; }

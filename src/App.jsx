@@ -35,6 +35,13 @@ import MisContenidos from './pages/MisContenidos';
 import VistaDetalleContenido from './pages/VistaDetalleContenido';
 import { Toaster } from "react-hot-toast";
 
+// En App.jsx, cerca de los imports
+const ExpertsHomeWrapper = () => (
+  <main className="experts-home">
+    <Expertos />
+  </main>
+);
+
 function App() {
   return (
     <>
@@ -45,7 +52,7 @@ function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/privacidad" element={<Privacidad />} />
-        <Route path="/expertos" element={<Expertos />} />
+        <Route path="/expertos" element={<ExpertsHomeWrapper />} />
         <Route path="/dashboard" element={<Navigate to="/expert-dashboard" replace />} />
         <Route path="/mis-servicios" element={<Navigate to="/expert-dashboard#servicios" replace />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
