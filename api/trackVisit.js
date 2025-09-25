@@ -76,27 +76,44 @@ export default async function handler(req, res) {
     if (user?.email && EXCLUDE_EMAILS.includes((user.email || "").toLowerCase())) return res.json({ ok:true, excluded:"email" });
     if (EXCLUDE_IP_HASHES.has(ipHash)) return res.json({ ok:true, excluded:"ip" });
 
-    // Idempotencia por día/página
+
+        // Idempotencia por día/página con create() + increment()
     const today = new Date().toISOString().slice(0,10);
     const visitDoc = db.collection("page_stats").doc(`${pageKey}__${today}__${ipHash}`);
-    const snap = await visitDoc.get();
 
-    if (!snap.exists) {
-      await visitDoc.set({
-        page: pageKey,
-        rawPage: page || null,
-        date: today,
-        ipHash,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+let createdNew = false;
+try {
+  // crea el doc único; si ya existe, lanza "already-exists"
+  await visitDoc.create({
+    page: pageKey,
+    rawPage: page || null,
+    date: today,
+    ipHash,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  createdNew = true;
+} catch (e) {
+  // Firestore Admin a veces usa code numérico (6) o string "already-exists"
+  if (e?.code === 6 || e?.code === 'already-exists') {
+    createdNew = false; // ya existía → no contamos doble
+  } else {
+    throw e; // otro error real
+  }
+}
 
-      const aggRef = db.collection("page_stats_daily").doc(`${pageKey}__${today}`);
-      await db.runTransaction(async (tx) => {
-        const agg = await tx.get(aggRef);
-        const visits = (agg.data()?.visits || 0) + 1;
-        tx.set(aggRef, { page: pageKey, date: today, visits }, { merge: true });
-      });
-    }
+if (createdNew) {
+  // solo si se creó el doc, incrementa el agregado diario
+  const aggRef = db.collection("page_stats_daily").doc(`${pageKey}__${today}`);
+  await aggRef.set(
+    {
+      page: pageKey,
+      date: today,
+      visits: admin.firestore.FieldValue.increment(1),
+    },
+    { merge: true }
+  );
+}
+
 
     return res.json({ ok:true });
   } catch (e) {
