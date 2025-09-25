@@ -37,12 +37,12 @@ function HeroExpertos() {
           <img src="/logo-bg.png" alt="Queesia" className="h-36 w-36 md:h-36 md:w-36 object-contain" />
         </div>
 
-        {/* Título azul-clásico, pero en claro */}
-        <h1 className="font-raleway text-[48px] sm:text-5xl font-extrabold leading-[1.1] tracking-tight text-slate-900 italic">
-          Conecta con{" "}
-          <span className="text-yellow-300 not-italic font-extrabold">Expertos</span>{" "}
-          en IA
+        {/* Título según Font Picker (Montserrat, 36px, 700, 40px) */}
+        <h1 className="font-montserrat text-[36px] leading-[40px] font-bold tracking-normal text-slate-900 not-italic">
+          Conecta con <span className="text-yellow-300">Expertos</span> en IA
         </h1>
+
+
 
         <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-slate-600">
           Encuentra especialistas que pueden ayudarte a implementar IA en tus proyectos — con experiencia verificada y respuesta rápida.
@@ -71,7 +71,7 @@ function HeroExpertos() {
             <div className="mt-0.5 text-sm text-slate-600">Expertos verificados</div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-2xl font-bold">4.8★</div>
+            <div className="text-2xl font-bold">4.8 <span className="text-yellow-300">★</span></div>
             <div className="mt-0.5 text-sm text-slate-600">Rating promedio</div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

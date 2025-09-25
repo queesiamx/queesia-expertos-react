@@ -2,6 +2,34 @@
 import crypto from "crypto";
 import admin from "firebase-admin";
 
+/* ========= CORS ========= */
+const ALLOWLIST = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+// Fallbacks útiles en dev/prod si no configuras la variable:
+if (ALLOWLIST.length === 0) {
+  ALLOWLIST.push("http://localhost:5173", "http://127.0.0.1:5173", "https://expertos.queesia.com");
+}
+
+function setCors(req, res) {
+  const origin = req.headers.origin || "";
+  const allowed = ALLOWLIST.includes(origin);
+  res.setHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
+  res.setHeader("Access-Control-Allow-Origin", allowed ? origin : ALLOWLIST[0]);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  // Echo de los headers que el navegador quiere enviar (incluye Authorization)
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    req.headers["access-control-request-headers"] || "Content-Type, Authorization"
+  );
+  res.setHeader("Access-Control-Max-Age", "86400"); // cache del preflight (1 día)
+  // Habilita cookies si algún endpoint las usa; no afecta si no las usas:
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+}
+
+/* ========= Firebase Admin ========= */
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -13,6 +41,7 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
+/* ========= Exclusiones opcionales ========= */
 const EXCLUDE_EMAILS = (process.env.EXCLUDE_EMAILS || "")
   .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 const EXCLUDE_UIDS = (process.env.EXCLUDE_UIDS || "")
@@ -32,15 +61,26 @@ function hashIp(ip) {
   return crypto.createHash("sha256").update(`${ip}|${pepper}`).digest("hex");
 }
 
+/* ========= Handler ========= */
 export default async function handler(req, res) {
+  // Siempre setea CORS
+  setCors(req, res);
+
+  // Responde el preflight
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
   try {
-    if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Method not allowed" });
+    if (req.method !== "POST") {
+      return res.status(405).json({ ok:false, error:"Method not allowed" });
+    }
 
     // Permite default "home" y sanitiza
     const { page } = req.body || {};
     const pageKey = String(page || "home").replace(/[^a-z0-9_-]/gi, "_");
 
-    // (opcional) verificar ID token si viene para identificar correo/uid del user
+    // Si viene idToken, verifícalo
     let user = null;
     const authz = req.headers.authorization; // "Bearer <idToken>"
     if (authz?.startsWith("Bearer ")) {
@@ -51,19 +91,19 @@ export default async function handler(req, res) {
 
     // Exclusiones
     if (user?.uid && EXCLUDE_UIDS.includes(user.uid))      return res.json({ ok:true, excluded:"uid" });
-    if (user?.email && EXCLUDE_EMAILS.includes(user.email.toLowerCase()))
+    if (user?.email && EXCLUDE_EMAILS.includes((user.email || "").toLowerCase()))
       return res.json({ ok:true, excluded:"email" });
     if (EXCLUDE_IP_HASHES.has(ipHash))                     return res.json({ ok:true, excluded:"ip" });
 
-    // Idempotencia por día/página (usa pageKey)
+    // Idempotencia por día/página
     const today = new Date().toISOString().slice(0,10);
     const visitDoc = db.collection("page_stats").doc(`${pageKey}__${today}__${ipHash}`);
     const snap = await visitDoc.get();
 
     if (!snap.exists) {
       await visitDoc.set({
-        page: pageKey,          // guardamos la clave ya sanitizada
-        rawPage: page || null,  // opcional, por si quieres saber qué mandó el cliente
+        page: pageKey,
+        rawPage: page || null,
         date: today,
         ipHash,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -78,9 +118,9 @@ export default async function handler(req, res) {
       });
     }
 
-    res.json({ ok:true });
+    return res.json({ ok:true });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ ok:false, error:"Server error" });
+    return res.status(500).json({ ok:false, error:"Server error" });
   }
 }
