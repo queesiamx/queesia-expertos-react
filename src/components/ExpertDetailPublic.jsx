@@ -14,7 +14,12 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+} from "firebase/auth";
 import toast from "react-hot-toast";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertHeader from "../components/ExpertHeader";
@@ -24,6 +29,11 @@ import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
 import PriceTag from "@/components/PriceTag";
 import ConsultaBox from "../components/ConsultaBox";
+
+// Detecta navegador móvil
+const isMobile =
+  typeof navigator !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 // Usa el endpoint absoluto en dev y relativo en producción
 const API_BASE =
@@ -102,6 +112,20 @@ const idiomasList = toList(expert?.idiomas);
    // fallback 2: otro alias posible
    || [];
 
+   // Procesa el regreso del redirect (si el user inició sesión desde esta vista)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((res) => {
+        if (res?.user) {
+          // Aquí no hacemos navigate; solo confirmamos sesión
+         // y dejamos que el flujo normal continúe.
+          // Si quieres, puedes dar feedback:
+         // toast.success("Sesión iniciada");
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // 🔹 Obtener datos del experto
 useEffect(() => {
   if (!expertoId) return; // evita correr sin id
@@ -145,31 +169,37 @@ useEffect(() => {
 
   // 🔹 Iniciar sesión con Google (para botón “Iniciar sesión”)
   const handleLoginConGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
+  try {
+    const provider = new GoogleAuthProvider();
+    if (isMobile) {
+      await signInWithRedirect(auth, provider);
+      return; // volverá por getRedirectResult()
     }
+   await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("Error al iniciar sesión:", error);
+  }
   };
 
   // 🔹 Asegurar sesión (lo usa handleBuy)
   const ensureSignedIn = async () => {
-    if (auth.currentUser) return auth.currentUser;
-    if (authBusy) return null;
-    setAuthBusy(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      return result.user;
-    } catch (e) {
-      console.error("Login error:", e);
-      if (
-        e.code !== "auth/popup-closed-by-user" &&
-        e.code !== "auth/cancelled-popup-request"
-      ) {
-        toast.error("No se pudo iniciar sesión");
-      }
+  if (auth.currentUser) return auth.currentUser;
+  if (authBusy) return null;        // 👈 nuevo
+  setAuthBusy(true);                // 👈 nuevo
+  const provider = new GoogleAuthProvider();
+  try {
+    if (isMobile) {
+     await signInWithRedirect(auth, provider);
+      return null; // volverá por getRedirectResult()
+    }
+    const { user } = await signInWithPopup(auth, provider);
+    return user;
+  } catch (e) {
+    console.error("Login error:", e);
+    // opcional: filtra popups cancelados
+    // if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") {
+    //   toast.error("No se pudo iniciar sesión");
+    // }
       return null;
     } finally {
       setAuthBusy(false);
@@ -532,8 +562,7 @@ useEffect(() => {
                   const precioNum = Number(c.precio);
                   const hasPrice = Number.isFinite(precioNum) && precioNum >= 0;
                   const isFree =
-                    Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
-                    /gratis/i.test(String(c.descripcion || ""));
++   Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
 
                   // consideramos “gratis” si el contenido lo marca
                   // o si es una consulta, o no hay precio válido               

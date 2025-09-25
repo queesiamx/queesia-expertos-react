@@ -1,79 +1,90 @@
-// src/pages/LoginUsuarios.jsx
-import React from "react";
-import { auth, db } from "../firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+// src/pages/LoginUsuarios.jsx  (RTC-CO)
+import React, { useEffect, useState } from "react";
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+} from "firebase/auth";
+import { auth } from "../firebase"; // ⬅️ usa la misma ruta que ya usas en pages
+import UnifiedNavbar from "../components/UnifiedNavbar";
+import Footer from "../components/Footer";
 
-// Correos autorizados como administradores
-const adminEmails = ["admin@queesia.com", "soporte@queesia.com"];
+// Detecta móvil (Android/iOS/iPadOS)
+const isMobile =
+  typeof navigator !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 export default function LoginUsuarios() {
-  const navigate = useNavigate();
+  const [cargando, setCargando] = useState(false);
 
-  const handleLogin = async () => {
+  // Lógica común post-login para usuarios
+  const afterLogin = async (firebaseUser) => {
+    const token = await firebaseUser.getIdToken();
+    localStorage.setItem("authToken", token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photo: firebaseUser.photoURL,
+      })
+    );
+    // Como es login de USUARIO, manda a sus vistas:
+    window.location.href = "/mis-consultas";
+  };
+
+  // Procesa retorno de redirect (móvil)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (res) => {
+        if (!res) return;
+        setCargando(true);
+        try {
+          await afterLogin(res.user);
+        } finally {
+          setCargando(false);
+        }
+      })
+      .catch((e) => console.error("getRedirectResult error:", e));
+  }, []);
+
+  const iniciarSesion = async () => {
+    setCargando(true);
+    const provider = new GoogleAuthProvider();
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        if (data.aprobado) {
-          toast.success("Bienvenido de nuevo.");
-          if (data.rol === "admin") {
-            navigate("/admin-dashboard");
-          } else {
-            navigate("/dashboard");
-          }
-        } else {
-          toast("Tu cuenta aún no ha sido aprobada.");
-        }
-      } else {
-        // Detectar si es administrador por correo
-        const rol = adminEmails.includes(user.email) ? "admin" : "usuario";
-
-        // Crear nuevo usuario con aprobado en true
-        await setDoc(docRef, {
-          nombre: user.displayName,
-          email: user.email,
-          rol,
-          aprobado: true,
-          creadoEn: serverTimestamp(),
-          fotoPerfil: user.photoURL // 👈 AGREGA ESTA LÍNEA
-        });
-
-        toast.success("Registro exitoso. Bienvenido.");
-        if (rol === "admin") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/dashboard");
-        }
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+        return; // volverá por getRedirectResult()
       }
-    } catch (error) {
-      console.error("Error de login:", error);
-      toast.error("Error al iniciar sesión.");
+      const result = await signInWithPopup(auth, provider);
+      await afterLogin(result.user);
+    } catch (e) {
+      console.error("LoginUsuarios error:", e);
+    } finally {
+      setCargando(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      <div className="bg-white shadow-lg rounded-lg p-8 max-w-sm w-full text-center">
-        <h2 className="text-2xl font-semibold mb-4">Iniciar sesión</h2>
-        <p className="text-gray-600 mb-6">Accede con tu cuenta de Google</p>
-        <button
-          onClick={handleLogin}
-          className="flex items-center justify-center w-10 h-10 bg-black rounded-full shadow-md hover:shadow-lg border border-blue-300 transition"
-        >
-          <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
-        </button>
-        <span className="text-sm text-gray-700 mt-3 block">Continuar con Google</span>
-      </div>
-    </div>
+    <>
+      <UnifiedNavbar />
+      <main className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-10">
+        <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
+            Iniciar sesión como usuario
+          </h2>
+          <button
+            onClick={iniciarSesion}
+            disabled={cargando}
+            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+          >
+            {cargando ? "Conectando..." : "Continuar con Google"}
+          </button>
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }

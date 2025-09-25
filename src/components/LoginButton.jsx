@@ -1,10 +1,18 @@
+// src/components/LoginButton.jsx  (RTC-CO)
 import React, { useEffect, useState } from "react";
-import { db, auth, googleProvider } from '../../lib/firebaseConfig';
-import { signInWithPopup } from "firebase/auth";
+import { db, auth, googleProvider } from "../../lib/firebaseConfig";
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+} from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
+
+// Detecta móvil
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
@@ -12,59 +20,87 @@ export default function LoginButton() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
   const { rol, aprobado } = useAuth();
-  const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
+  const adminEmails = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
+    if (userData) setUser(JSON.parse(userData));
 
     const unsubscribe = menuControl.subscribe((menu) => {
       if (menu !== "avatar") setOpenMenu(false);
     });
-
     return () => unsubscribe();
+  }, []);
+
+  // —— Lógica común de post-login (popup y redirect)
+  const afterLogin = async (firebaseUser, selectedRoleFromCaller) => {
+    const token = await firebaseUser.getIdToken();
+    localStorage.setItem("authToken", token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photo: firebaseUser.photoURL,
+      })
+    );
+
+    // Rol elegido (o recuperado de localStorage si venimos de redirect)
+    const pending = localStorage.getItem("pendingRole");
+    const selectedRole = selectedRoleFromCaller || pending || "";
+
+    // Limpia el pendingRole si existía
+    if (pending) localStorage.removeItem("pendingRole");
+
+    // — Redirecciones por rol —
+    if (selectedRole === ROLES.ADMIN || adminEmails.includes(firebaseUser.email)) {
+      window.location.href = "/admin-expertos";
+      return;
+    }
+
+    if (selectedRole === ROLES.EXPERTO) {
+      const expertRef = doc(db, "experts", firebaseUser.uid);
+      const expertSnap = await getDoc(expertRef);
+      if (expertSnap.exists() && expertSnap.data().aprobado) {
+        window.location.href = "/dashboard";
+      } else {
+        window.location.href = "/registro";
+      }
+      return;
+    }
+
+    // Por defecto o USUARIO
+    window.location.href = "/mis-consultas";
+  };
+
+  // —— Procesa el retorno del redirect (móvil)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (res) => {
+        if (!res) return; // no venimos de redirect
+        const firebaseUser = res.user;
+        await afterLogin(firebaseUser); // el rol se toma de pendingRole
+      })
+      .catch((err) => console.error("getRedirectResult error:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogin = async (selectedRole) => {
     try {
+      if (isMobile) {
+        // Guarda el rol elegido para recuperarlo al volver del redirect
+        localStorage.setItem("pendingRole", selectedRole);
+        await signInWithRedirect(auth, googleProvider);
+        return; // el flujo continúa en getRedirectResult()
+      }
+
+      // Desktop: popup
       const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      const token = await user.getIdToken();
-
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("user", JSON.stringify({
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        photo: user.photoURL,
-      }));
-
-      // Redirección según modalidad elegida
-      if (selectedRole === ROLES.ADMIN || adminEmails.includes(user.email)) {
-        window.location.href = "/admin-expertos";
-        return;
-      }
-
-      if (selectedRole === ROLES.EXPERTO) {
-        const expertRef = doc(db, "experts", user.uid);
-        const expertSnap = await getDoc(expertRef);
-        if (expertSnap.exists() && expertSnap.data().aprobado) {
-          window.location.href = "/dashboard";
-        } else {
-          window.location.href = "/registro";
-        }
-        return;
-      }
-
-      if (selectedRole === ROLES.USUARIO) {
-        window.location.href = "/mis-consultas";
-        return;
-      }
-
+      const firebaseUser = result.user;
+      await afterLogin(firebaseUser, selectedRole);
     } catch (error) {
-      console.error("Error al iniciar sesión:", error.message);
+      console.error("Error al iniciar sesión:", error?.message || error);
     }
   };
 
@@ -76,9 +112,7 @@ export default function LoginButton() {
   const toggleMenu = () => {
     const newState = !openMenu;
     setOpenMenu(newState);
-    if (newState) {
-      menuControl.openMenu("avatar");
-    }
+    if (newState) menuControl.openMenu("avatar");
   };
 
   if (user) {

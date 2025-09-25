@@ -10,21 +10,6 @@ export default function QuesiaNavbar() {
   const [usuario, setUsuario] = useState(null);
   const { rol, aprobado } = useAuth();
 
-  useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
-    if (user) {
-      setUsuario({
-        ...user,
-        // no forzamos null, dejamos que useAuth lo complete después
-        rol: rol || user.rol || undefined,
-        aprobado: aprobado ?? user.aprobado
-      });
-    } else {
-      setUsuario(null);
-    }
-  });
-  return () => unsubscribe();
-}, [rol, aprobado]);
 
   return (
    <header className="sticky top-0 z-[9999] w-full

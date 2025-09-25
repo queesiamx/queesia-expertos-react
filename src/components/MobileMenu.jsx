@@ -1,17 +1,17 @@
 // src/components/MobileMenu.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Menu, X, LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
 import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
 
 export default function MobileMenu({ handleLogout }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [usuario, setUsuario] = useState(null);
-  const { rol, aprobado } = useAuth();
+
+  // 👇 Trae todo desde el contexto global (un solo listener en la app)
+  const { user: usuario, rol, aprobado } = useAuth();
+
   const btnRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -25,31 +25,25 @@ export default function MobileMenu({ handleLogout }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [isOpen, close]);
 
-  // Auth + bloqueo scroll + coordinación de menús
+  // ✅ Bloqueo de scroll + coordinación de menús (sin auth aquí)
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setUsuario(user ? { ...user, rol, aprobado } : null);
-    });
+    if (!isOpen) return;
 
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      menuControl.openMenu("mobile");
-      setTimeout(() => panelRef.current?.focus(), 0);
-    } else {
-      document.body.style.overflow = "";
-      btnRef.current?.focus?.();
-    }
+    // Bloquear scroll del body cuando el menú está abierto
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-    const unsubscribeMenu = menuControl.subscribe((menu) => {
-      if (menu !== "mobile") setIsOpen(false);
-    });
+    // Registrar este menú en el coordinador (si existe)
+    const unsubscribeMenu =
+      (menuControl && typeof menuControl.register === "function")
+        ? menuControl.register("mobile", { close })
+        : () => {};
 
     return () => {
-      document.body.style.overflow = "";
-      unsubscribeAuth();
+      document.body.style.overflow = prevOverflow || "";
       unsubscribeMenu();
     };
-  }, [isOpen, rol, aprobado]);
+  }, [isOpen, close]);
 
   const handleLinkClick = () => setIsOpen(false);
 
@@ -80,24 +74,22 @@ export default function MobileMenu({ handleLogout }) {
   return (
     <div className={`lg:hidden relative ${isOpen ? "z-[10002]" : "z-[10000]"}`}>
       {/* Botón hamburguesa */}
-<button
-  data-debug="mm-v5"
-  ref={btnRef}
-  onClick={() => (isOpen ? close() : open())}
-  className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-soft text-black shadow-md ring-1 ring-black/10 hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-  aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
-  aria-expanded={isOpen}
-  aria-haspopup="menu"
->
-  <span className="relative block w-6 h-6" aria-hidden="true">
-    <span className={`absolute inset-x-0 top-0 h-[2px] bg-black rounded transition-transform duration-200 ${isOpen ? "translate-y-2 rotate-45" : ""}`} />
-    <span className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-black rounded transition-opacity duration-200 ${isOpen ? "opacity-0" : "opacity-100"}`} />
-    <span className={`absolute inset-x-0 bottom-0 h-[2px] bg-black rounded transition-transform duration-200 ${isOpen ? "-translate-y-2 -rotate-45" : ""}`} />
-  </span>
-  {isOpen ? "X" : "≡"}
-</button>
-
-
+      <button
+        data-debug="mm-v5"
+        ref={btnRef}
+        onClick={() => (isOpen ? close() : open())}
+        className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-soft text-black shadow-md ring-1 ring-black/10 hover:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+      >
+        <span className="relative block w-6 h-6" aria-hidden="true">
+          <span className={`absolute inset-x-0 top-0 h-[2px] bg-black rounded transition-transform duration-200 ${isOpen ? "translate-y-2 rotate-45" : ""}`} />
+          <span className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-[2px] bg-black rounded transition-opacity duration-200 ${isOpen ? "opacity-0" : "opacity-100"}`} />
+          <span className={`absolute inset-x-0 bottom-0 h-[2px] bg-black rounded transition-transform duration-200 ${isOpen ? "-translate-y-2 -rotate-45" : ""}`} />
+        </span>
+        {/* (Opcional) quité "X/≡" para evitar doble icono */}
+      </button>
 
       <AnimatePresence>
         {isOpen && (

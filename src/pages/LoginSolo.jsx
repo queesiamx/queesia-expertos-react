@@ -1,55 +1,77 @@
-// src/pages/LoginSolo.jsx
-import { useEffect } from "react";
-import { auth, db } from "../firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+// src/pages/LoginSolo.jsx  (RTC-CO)
+import React, { useEffect, useState } from "react";
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+} from "firebase/auth";
+import { auth } from "../firebase"; // ⬅️ misma ruta que uses en pages
+
+// Detecta móvil
+const isMobile =
+  typeof navigator !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 export default function LoginSolo() {
-  const navigate = useNavigate();
+  const [cargando, setCargando] = useState(false);
 
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        if (data.rol !== "experto") {
-          toast.error("Este login es exclusivo para expertos.");
-          return;
-        }
-
-        if (data.aprobado) {
-          toast.success("Bienvenido de nuevo, experto aprobado.");
-          navigate("/expert-dashboard");
-        } else {
-          toast("Tu cuenta aún no ha sido aprobada por el equipo de Queesia.");
-        }
-      } else {
-        toast("Primero completa tu registro como experto.");
-        navigate("/registro");
-      }
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      toast.error("Ocurrió un error al iniciar sesión.");
-    }
+  const afterLogin = async (firebaseUser) => {
+    const token = await firebaseUser.getIdToken();
+    localStorage.setItem("authToken", token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photo: firebaseUser.photoURL,
+      })
+    );
+    // En esta pantalla mandamos a la vista más común de usuario:
+    window.location.href = "/mis-consultas";
   };
 
   useEffect(() => {
-    handleLogin();
+    getRedirectResult(auth)
+      .then(async (res) => {
+        if (!res) return;
+        setCargando(true);
+        try {
+          await afterLogin(res.user);
+        } finally {
+          setCargando(false);
+        }
+      })
+      .catch((e) => console.error("getRedirectResult error:", e));
   }, []);
 
+  const iniciarSesion = async () => {
+    setCargando(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+      const result = await signInWithPopup(auth, provider);
+      await afterLogin(result.user);
+    } catch (e) {
+      console.error("LoginSolo error:", e);
+    } finally {
+      setCargando(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-      <p className="text-lg font-medium mb-4">Redirigiéndote al login de Google...</p>
-      <p className="text-sm text-gray-600">Si no se abre automáticamente, recarga la página.</p>
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <button
+        onClick={iniciarSesion}
+        disabled={cargando}
+        className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+      >
+        {cargando ? "Conectando..." : "Iniciar con Google"}
+      </button>
     </div>
   );
 }

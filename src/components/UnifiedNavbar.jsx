@@ -13,13 +13,7 @@ export default function UnifiedNavbar() {
   const [usuario, setUsuario] = useState(null);
   const { rol } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUsuario(user || null);
-    });
-    return () => unsubscribe();
-  }, []);
+  //const { user: usuario } = useAuth();
 
   const handleLogout = async () => {
     try {
