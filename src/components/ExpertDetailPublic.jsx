@@ -17,7 +17,7 @@ import {
 import {
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
+  
   GoogleAuthProvider,
 } from "firebase/auth";
 import toast from "react-hot-toast";
@@ -113,7 +113,7 @@ const idiomasList = toList(expert?.idiomas);
    || [];
 
    // Procesa el regreso del redirect (si el user inició sesión desde esta vista)
-  useEffect(() => {
+  /*useEffect(() => {
     getRedirectResult(auth)
       .then((res) => {
         if (res?.user) {
@@ -124,7 +124,7 @@ const idiomasList = toList(expert?.idiomas);
         }
       })
       .catch(() => {});
-  }, []);
+  }, []);*/
 
   // 🔹 Obtener datos del experto
 useEffect(() => {

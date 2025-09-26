@@ -6,7 +6,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
+  
 } from "firebase/auth";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
@@ -30,13 +30,13 @@ export default function ConsultaBox({
   const disabled = sending || texto.trim().length < 10 || remaining < 0;
 
   // Procesa regreso del redirect (solo muestra toast y deja la página lista)
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then((res) => {
-        if (res?.user) toast.success("Sesión iniciada");
-      })
-      .catch(() => {});
-  }, []);
+ // useEffect(() => {
+  //  getRedirectResult(auth)
+   //   .then((res) => {
+    //    if (res?.user) toast.success("Sesión iniciada");
+   //   })
+    //  .catch(() => {});
+ // }, []);
 
   const handleLogin = async () => {
     try {

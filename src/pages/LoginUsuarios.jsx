@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import {
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
+  
   GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "../firebase"; // ⬅️ usa la misma ruta que ya usas en pages
@@ -36,7 +36,8 @@ export default function LoginUsuarios() {
   };
 
   // Procesa retorno de redirect (móvil)
-  useEffect(() => {
+  // 🔸 Centralizado en <AuthRedirectGate />.
+  /*useEffect(() => {
     getRedirectResult(auth)
       .then(async (res) => {
         if (!res) return;
@@ -48,7 +49,7 @@ export default function LoginUsuarios() {
         }
       })
       .catch((e) => console.error("getRedirectResult error:", e));
-  }, []);
+  }, []);*/
 
   const iniciarSesion = async () => {
     setCargando(true);

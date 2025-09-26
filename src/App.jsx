@@ -1,6 +1,7 @@
 // src/App.jsx
 import { Routes, Navigate, Route } from 'react-router-dom';
 import Home from './components/Home';
+import AuthRedirectGate from "./components/AuthRedirectGate";
 import Registro from './pages/Registro';
 import { ROLES } from './constants/roles';
 import Expertos from './pages/Expertos';
@@ -46,6 +47,7 @@ function App() {
   return (
     <>
       <Toaster />
+      <AuthRedirectGate />
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Home />} />

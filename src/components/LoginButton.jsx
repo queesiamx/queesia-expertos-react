@@ -4,7 +4,7 @@ import { db, auth, googleProvider } from "../../lib/firebaseConfig";
 import {
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
+  
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { menuControl } from "../hooks/useMenuControl";
@@ -18,6 +18,7 @@ export default function LoginButton() {
   const [user, setUser] = useState(null);
   const [openMenu, setOpenMenu] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // 🔹 evita taps dobles
 
   const { rol, aprobado } = useAuth();
   const adminEmails = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
@@ -74,17 +75,25 @@ export default function LoginButton() {
   };
 
   // —— Procesa el retorno del redirect (móvil)
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (res) => {
-        if (!res) return; // no venimos de redirect
-        await afterLogin(res.user); // el rol se toma de pendingRole
-      })
-      .catch((err) => console.error("getRedirectResult error:", err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    //useEffect(() => {
+   // (async () => {
+   //   try {
+   //     const res = await getRedirectResult(auth);
+   //     if (!res?.user) return; // no venimos de redirect
+   //     setLoading(true);
+   //     await afterLogin(res.user); // el rol se toma de pendingRole
+   //   } catch (err) {
+   //     console.error("getRedirectResult error:", err);
+   //   } finally {
+   //     setLoading(false);
+  //    }
+   // })();
+ // }, []);
 
   const handleLogin = async (selectedRole) => {
+    if (loading) return;           // 🔹 evita multi-tap
+    setLoading(true);
+    setRoleMenuOpen(false);        // 🔹 cierra dropdown para que no tape toques
     try {
       if (isMobile) {
         // En móvil: redirect para evitar bloqueos de popup/cookies
@@ -104,6 +113,8 @@ export default function LoginButton() {
         console.error("Error al iniciar sesión:", error);
         alert("No se pudo iniciar sesión. Intenta de nuevo.");
       }
+    } finally {
+     setLoading(false);
     }
   };
 

@@ -4,7 +4,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
+  
 } from "firebase/auth";
 
 import { auth, db } from "../firebase";
@@ -96,7 +96,7 @@ const Login = () => {
   }, [user, loginExitoso, navigate]);
 
   // Procesa el retorno del redirect (móvil)
-  useEffect(() => {
+  /*useEffect(() => {
     getRedirectResult(auth)
       .then(async (res) => {
         if (!res) return; // no venimos de redirect
@@ -113,7 +113,7 @@ const Login = () => {
       })
       .catch((e) => console.error("getRedirectResult error:", e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []);*/
 
   const iniciarSesion = async () => {
     setCargando(true);

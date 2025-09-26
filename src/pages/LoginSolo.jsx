@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import {
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
+  
   GoogleAuthProvider,
 } from "firebase/auth";
 import { auth } from "../firebase"; // ⬅️ misma ruta que uses en pages
@@ -32,7 +32,7 @@ export default function LoginSolo() {
     window.location.href = "/mis-consultas";
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     getRedirectResult(auth)
       .then(async (res) => {
         if (!res) return;
@@ -44,7 +44,7 @@ export default function LoginSolo() {
         }
       })
       .catch((e) => console.error("getRedirectResult error:", e));
-  }, []);
+  }, []);*/
 
   const iniciarSesion = async () => {
     setCargando(true);
