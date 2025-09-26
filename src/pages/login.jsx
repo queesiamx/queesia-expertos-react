@@ -1,13 +1,7 @@
 // src/pages/login.jsx  (RTC-CO)
 import React, { useState, useEffect } from "react";
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  
-} from "firebase/auth";
-
-import { auth, db } from "../firebase";
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { auth, db } from "@/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../constants/roles";
@@ -18,7 +12,10 @@ import RedirectByRole from "../components/RedirectByRole";
 import { useAuth } from "../hooks/useAuth";
 
 // Detecta navegador móvil (Android/iOS/iPadOS)
-const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+ const isMobile =
+   typeof navigator !== "undefined" &&
+   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
 
 const Login = () => {
   const [loginExitoso, setLoginExitoso] = useState(false);
@@ -95,25 +92,19 @@ const Login = () => {
     }
   }, [user, loginExitoso, navigate]);
 
-  // Procesa el retorno del redirect (móvil)
-  /*useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (res) => {
-        if (!res) return; // no venimos de redirect
-        setCargando(true);
-        try {
-          const firebaseUser = res.user;
-          await postLoginFlow(firebaseUser);
-        } catch (err) {
-          console.error("Error post-redirect", err);
-          toast.error("No se pudo completar el inicio de sesión.");
-        } finally {
-          setCargando(false);
-        }
-      })
-      .catch((e) => console.error("getRedirectResult error:", e));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);*/
+ // Procesa el retorno del redirect (móvil)
+ useEffect(() => {
+   (async () => {
+     try {
+       const res = await getRedirectResult(auth);
+       if (!res?.user) return;
+       await postLoginFlow(res.user);
+    } catch (e) {
+       console.error(e);
+      toast.error("No se pudo completar el inicio de sesión móvil.");
+     }
+   })();
+ }, []);
 
   const iniciarSesion = async () => {
     setCargando(true);

@@ -1,5 +1,5 @@
 // src/services/analytics.js
-import { auth } from '/lib/firebaseConfig';
+import { auth } from '@/firebase';
 
 const inflight = new Set(); // evita llamadas concurrentes por StrictMode
 

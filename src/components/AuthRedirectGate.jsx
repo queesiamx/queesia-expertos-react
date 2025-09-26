@@ -1,6 +1,6 @@
 // src/components/AuthRedirectGate.jsx
 import { useEffect, useRef } from "react";
-import { auth } from "../../lib/firebaseConfig"; // OJO: ruta correcta
+import { auth } from "@/firebase"; // OJO: ruta correcta
 import { getRedirectResult, onAuthStateChanged } from "firebase/auth";
 
 const ADMIN_EMAILS = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];

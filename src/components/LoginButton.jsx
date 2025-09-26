@@ -1,18 +1,16 @@
 // src/components/LoginButton.jsx
 import React, { useEffect, useState } from "react";
-import { db, auth, googleProvider } from "../../lib/firebaseConfig";
-import {
-  signInWithPopup,
-  signInWithRedirect,
-  
-} from "firebase/auth";
+import { db, auth, googleProvider } from "@/firebase";
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
 
-// Detección simple de móvil
-const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+ // Detección simple de móvil (con guarda)
+ const isMobile =
+   typeof navigator !== "undefined" &&
+   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 export default function LoginButton() {
   const [user, setUser] = useState(null);
@@ -74,21 +72,19 @@ export default function LoginButton() {
     window.location.href = "/mis-consultas";
   };
 
-  // —— Procesa el retorno del redirect (móvil)
-    //useEffect(() => {
-   // (async () => {
-   //   try {
-   //     const res = await getRedirectResult(auth);
-   //     if (!res?.user) return; // no venimos de redirect
-   //     setLoading(true);
-   //     await afterLogin(res.user); // el rol se toma de pendingRole
-   //   } catch (err) {
-   //     console.error("getRedirectResult error:", err);
-   //   } finally {
-   //     setLoading(false);
-  //    }
-   // })();
- // }, []);
+ // Procesa el retorno del redirect (móvil)
+ useEffect(() => {
+   (async () => {
+     try {
+       const res = await getRedirectResult(auth);
+       if (!res?.user) return; // no venimos de redirect
+      await afterLogin(res.user); // el rol se toma de pendingRole
+     } catch (err) {
+       console.error("getRedirectResult error:", err);
+     }
+   })();
+ }, []);
+
 
   const handleLogin = async (selectedRole) => {
     if (loading) return;           // 🔹 evita multi-tap
