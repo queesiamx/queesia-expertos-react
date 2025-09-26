@@ -1,4 +1,4 @@
-// src/components/LoginButton.jsx  (RTC-CO)
+// src/components/LoginButton.jsx
 import React, { useEffect, useState } from "react";
 import { db, auth, googleProvider } from "../../lib/firebaseConfig";
 import {
@@ -11,7 +11,7 @@ import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
 
-// Detecta móvil
+// Detección simple de móvil
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 export default function LoginButton() {
@@ -32,7 +32,7 @@ export default function LoginButton() {
     return () => unsubscribe();
   }, []);
 
-  // —— Lógica común de post-login (popup y redirect)
+  // —— Lógica común de post-login (para popup y redirect)
   const afterLogin = async (firebaseUser, selectedRoleFromCaller) => {
     const token = await firebaseUser.getIdToken();
     localStorage.setItem("authToken", token);
@@ -46,14 +46,13 @@ export default function LoginButton() {
       })
     );
 
-    // Rol elegido (o recuperado de localStorage si venimos de redirect)
+    // Rol elegido (o recuperado si venimos de redirect)
     const pending = localStorage.getItem("pendingRole");
     const selectedRole = selectedRoleFromCaller || pending || "";
 
-    // Limpia el pendingRole si existía
     if (pending) localStorage.removeItem("pendingRole");
 
-    // — Redirecciones por rol —
+    // Redirecciones por rol
     if (selectedRole === ROLES.ADMIN || adminEmails.includes(firebaseUser.email)) {
       window.location.href = "/admin-expertos";
       return;
@@ -70,7 +69,7 @@ export default function LoginButton() {
       return;
     }
 
-    // Por defecto o USUARIO
+    // Por defecto (usuario)
     window.location.href = "/mis-consultas";
   };
 
@@ -79,8 +78,7 @@ export default function LoginButton() {
     getRedirectResult(auth)
       .then(async (res) => {
         if (!res) return; // no venimos de redirect
-        const firebaseUser = res.user;
-        await afterLogin(firebaseUser); // el rol se toma de pendingRole
+        await afterLogin(res.user); // el rol se toma de pendingRole
       })
       .catch((err) => console.error("getRedirectResult error:", err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,18 +87,23 @@ export default function LoginButton() {
   const handleLogin = async (selectedRole) => {
     try {
       if (isMobile) {
-        // Guarda el rol elegido para recuperarlo al volver del redirect
+        // En móvil: redirect para evitar bloqueos de popup/cookies
         localStorage.setItem("pendingRole", selectedRole);
         await signInWithRedirect(auth, googleProvider);
-        return; // el flujo continúa en getRedirectResult()
+        return; // continúa al volver con getRedirectResult()
       }
 
-      // Desktop: popup
+      // En desktop: popup
       const result = await signInWithPopup(auth, googleProvider);
-      const firebaseUser = result.user;
-      await afterLogin(firebaseUser, selectedRole);
+      await afterLogin(result.user, selectedRole);
     } catch (error) {
-      console.error("Error al iniciar sesión:", error?.message || error);
+      if (
+        error?.code !== "auth/cancelled-popup-request" &&
+        error?.code !== "auth/popup-closed-by-user"
+      ) {
+        console.error("Error al iniciar sesión:", error);
+        alert("No se pudo iniciar sesión. Intenta de nuevo.");
+      }
     }
   };
 
