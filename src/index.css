@@ -8,11 +8,17 @@
   /* Reset ligero dentro de la capa base */
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* Fuente por defecto en 400 en todo el sitio */
-  html, body { @apply font-normal font-sans; }
+  /* Lienzo BLANCO detrás de toda la app + tipografía por defecto */
+  html, body, #root { @apply font-normal font-sans bg-white text-slate-900 min-h-screen; }
+
+  /* Forzar esquema claro (ignora dark del sistema para el fondo) */
+  html { color-scheme: light; }
+
+  /* Evita “gaps”/rebotes en móviles */
+  body { overscroll-behavior: none; }
 
   /* ÚNICO en negritas */
-  h1 { @apply font-bold; }
+  h1 { @apply font-bold; font-size: 3.2rem; line-height: 1.1; }
 
   /* Titulares restantes sin negritas */
   h2, h3, h4, h5, h6 { @apply font-normal; }
@@ -22,10 +28,8 @@
 
   /* Controles de formulario sin bold */
   button, input, select, textarea, label { @apply font-normal; }
-
-  /* Titular genérico (tamaño) — opcional */
-  h1 { font-size: 3.2rem; line-height: 1.1; }
 }
+
 
 /* === COMPONENTES === */
 @layer components {

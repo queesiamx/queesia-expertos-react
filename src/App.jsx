@@ -45,7 +45,7 @@ const ExpertsHomeWrapper = () => (
 
 function App() {
   return (
-    <>
+    <div className="min-h-screen bg-white">
       <Toaster />
       <AuthRedirectGate />
       <Routes>
@@ -184,7 +184,7 @@ function App() {
           }
         />
       </Routes>
-    </>
+    </div>
   );
 }
 
