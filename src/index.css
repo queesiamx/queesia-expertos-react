@@ -17,6 +17,12 @@
   /* Evita “gaps”/rebotes en móviles */
   body { overscroll-behavior: none; }
 
+  /* 🔒 Blindaje extra para “esquinas negras” en dark mode del SO o .dark en HTML */
+  @media (prefers-color-scheme: dark) {
+    html, body, #root { background-color: #ffffff !important; }
+  }
+  html.dark, body.dark { background-color: #ffffff !important; }
+
   /* ÚNICO en negritas */
   h1 { @apply font-bold; font-size: 3.2rem; line-height: 1.1; }
 
@@ -29,6 +35,7 @@
   /* Controles de formulario sin bold */
   button, input, select, textarea, label { @apply font-normal; }
 }
+
 
 
 /* === COMPONENTES === */
