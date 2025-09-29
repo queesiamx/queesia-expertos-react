@@ -1,7 +1,8 @@
-import { useEffect, useState, useContext, createContext } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+// src/hooks/useAuth.jsx
+import { useEffect, useState, useContext, createContext, useMemo } from "react";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 const AuthContext = createContext();
 
@@ -12,38 +13,49 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const docRef = doc(db, 'users', firebaseUser.uid);
-        const docSnap = await getDoc(docRef);
+    // 1) Garantiza persistencia local para no “perder” sesión en recargas
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setUser(firebaseUser);
-          setRol(data.rol || null);
-          setAprobado(data.aprobado === true); // 👈 Aquí booleano explícito
+    // 2) Suscripción al estado de Auth
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (!firebaseUser) {
+          setUser(null);
+          setRol(null);
+          setAprobado(false);
+          return;
+        }
+
+        setUser(firebaseUser);
+
+        // Carga de rol/perfil
+        const ref = doc(db, "users", firebaseUser.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const data = snap.data() || {};
+          setRol(data.rol ?? null);
+          setAprobado(Boolean(data.aprobado));
         } else {
-          setUser(firebaseUser);
           setRol(null);
           setAprobado(false);
         }
-      } else {
-        setUser(null);
+      } catch (e) {
+        console.error("Auth load error:", e);
+        // Estado seguro para no bloquear UI
         setRol(null);
         setAprobado(false);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, rol, aprobado, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Evita re-renders inútiles y también hace más feliz al HMR de Vite
+  const value = useMemo(() => ({ user, rol, aprobado, loading }), [user, rol, aprobado, loading]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

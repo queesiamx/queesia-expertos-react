@@ -1,53 +1,44 @@
-// src/App.jsx
-import { Routes, Navigate, Route } from 'react-router-dom';
-import Home from './components/Home';
-import AuthRedirectGate from "./components/AuthRedirectGate";
-import Registro from './pages/Registro';
-import { ROLES } from './constants/roles';
-import Expertos from './pages/Expertos';
-import AdminExpertos from './pages/AdminExpertos';
-import ExpertDetailPublic from './components/ExpertDetailPublic';
-import Terminos from './pages/Terminos';
-import Privacidad from './pages/Privacidad';
+import { Routes, Navigate, Route } from "react-router-dom";
+import Home from "./components/Home";
+import Registro from "./pages/Registro";
+import { ROLES } from "./constants/roles";
+import Expertos from "./pages/Expertos";
+import AdminExpertos from "./pages/AdminExpertos";
+import ExpertDetailPublic from "./components/ExpertDetailPublic";
+import Terminos from "./pages/Terminos";
+import Privacidad from "./pages/Privacidad";
 import Login from "./pages/login";
 import LoginUsuarios from "./pages/LoginUsuarios";
 
 import ExpertDashboard from "./pages/ExpertDashboard";
-import PagoExitoso from './pages/PagoExitoso';
-import PagoCancelado from './pages/PagoCancelado';
+import PagoExitoso from "./pages/PagoExitoso";
+import PagoCancelado from "./pages/PagoCancelado";
 
-import AdminConsultas from './pages/AdminConsultas';
+import AdminConsultas from "./pages/AdminConsultas";
 import ConsultasRecibidas from "./pages/consultasRecibidas";
-import ResponderConsulta from './pages/ResponderConsulta';
-import AdminSolicitudes from './pages/AdminSolicitudes';
+import ResponderConsulta from "./pages/ResponderConsulta";
+import AdminSolicitudes from "./pages/AdminSolicitudes";
 import ConsultasAprobadas from "./pages/ConsultasAprobadas";
-import AdminPorValidar from './pages/AdminPorValidar';
-import ExpertHistorialR from './pages/ExpertHistorialR';
+import AdminPorValidar from "./pages/AdminPorValidar";
+import ExpertHistorialR from "./pages/ExpertHistorialR";
 
 import ProtectedRoute from "./auth/ProtectedRoute";
 import MisConsultas from "./pages/MisConsultas";
 import MisValoraciones from "./pages/MisValoraciones.jsx";
-
-// 🔥 nuevas páginas
 import MisCompras from "./pages/MisCompras.jsx";
 import Perfil from "./pages/Perfil.jsx";
+import MisContenidos from "./pages/MisContenidos";
+import VistaDetalleContenido from "./pages/VistaDetalleContenido";
 
-import MisContenidos from './pages/MisContenidos';
-import VistaDetalleContenido from './pages/VistaDetalleContenido';
-import { Toaster } from "react-hot-toast";
+export default function App() {
+  const ExpertsHomeWrapper = () => (
+    <main className="experts-home">
+      <Expertos />
+    </main>
+  );
 
-// En App.jsx, cerca de los imports
-const ExpertsHomeWrapper = () => (
-  <main className="experts-home">
-    <Expertos />
-  </main>
-);
-
-function App() {
   return (
     <div className="min-h-screen bg-white">
-      <Toaster />
-      <AuthRedirectGate />
       <Routes>
         {/* Públicas */}
         <Route path="/" element={<Home />} />
@@ -55,13 +46,15 @@ function App() {
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/expertos" element={<ExpertsHomeWrapper />} />
-        <Route path="/dashboard" element={<Navigate to="/expert-dashboard" replace />} />
-        <Route path="/mis-servicios" element={<Navigate to="/expert-dashboard#servicios" replace />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-usuario" element={<LoginUsuarios />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/pago-cancelado" element={<PagoCancelado />} />
+
+        {/* Alias comodín para ir al dashboard según rol */}
+        <Route path="/dashboard" element={<Navigate to="/expert-dashboard" replace />} />
+        <Route path="/mis-servicios" element={<Navigate to="/expert-dashboard#servicios" replace />} />
 
         {/* Usuario */}
         <Route
@@ -88,7 +81,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Perfil: pública; la página muestra aviso si no hay sesión */}
+        {/* Perfil puede ser pública; la página misma valida sesión si la requiere */}
         <Route path="/perfil" element={<Perfil />} />
 
         {/* Experto */}
@@ -132,7 +125,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* (Opcional) contenidos del experto */}
         <Route
           path="/mis-contenidos"
           element={
@@ -187,5 +179,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
