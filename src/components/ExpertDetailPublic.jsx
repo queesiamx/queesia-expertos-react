@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { db, auth } from "../firebase";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -54,6 +54,18 @@ export default function ExpertDetailPublic() {
 
   const resolvedExpertId = expert?.id ?? expertoId; // usa el del doc si ya cargó
   
+ // === Normaliza el RESUMEN: prioriza 'experiencia' de Firestore ===
+  const resumen = useMemo(() => {
+    const pick = [
+      expert?.experiencia,   // ← tu campo en Firestore
+      expert?.resumen,
+      expert?.summary,
+      expert?.sobreMi,
+      expert?.acercaDe,
+      expert?.bio,
+    ].find(v => typeof v === "string" && v.trim());
+    return (pick || "").trim();
+  }, [expert]);
 
   // Modal compra/registro
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -468,29 +480,14 @@ useEffect(() => {
   {/* === Columna izquierda (3/5) === */}
   <section className="lg:col-span-3 space-y-6">
 
-    {/* === Sobre mí === */}
+     {/* === Resumen (único) === */}
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
-      <h2 className="text-lg font-semibold">Sobre mí</h2>
-       <p className="mt-2 text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-      {expert?.sobreMi || expert?.acercaDe || expert?.bio || ""}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-900" />
+        <h2 className="text-lg font-semibold">Resumen</h2>
+      </div>
+     <p className="mt-1 text-sm text-slate-700 leading-relaxed whitespace-pre-line">        {resumen || "El experto aún no ha agregado su resumen."}
       </p>
-    </div>
-
-    {/* === Experiencia === */}
-    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
-      <h2 className="text-lg font-semibold">Experiencia</h2>
-      <ul className="mt-3 space-y-3">
-        {experienciaList.map((item, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <div className="h-8 w-8 rounded-lg bg-slate-100 ring-1 ring-black/5 grid place-items-center text-slate-400">🏢</div>
-            <div>
-              <p className="font-medium">{item?.titulo}</p>
-              <p className="text-sm text-slate-600">{item?.periodo} • {item?.empresa}</p>
-              <p className="text-sm text-slate-600 mt-1">{item?.descripcion}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
 
     {/* === Contenidos disponibles — CARRUSEL === */}
@@ -562,7 +559,7 @@ useEffect(() => {
                   const precioNum = Number(c.precio);
                   const hasPrice = Number.isFinite(precioNum) && precioNum >= 0;
                   const isFree =
-+   Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
+                  Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
 
                   // consideramos “gratis” si el contenido lo marca
                   // o si es una consulta, o no hay precio válido               
