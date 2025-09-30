@@ -125,161 +125,196 @@ const limpiarExpertosIncompletos = async () => {
   
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow max-w-3xl mx-auto font-sans">
-      <button
-        onClick={onClose}
-        className="absolute top-2 right-2 text-gray-500 hover:text-black"
-      >
-        ✖
-      </button>
-
-      <div className="text-center space-y-2">
-        {expert.fotoPerfilURL && (
-          <img
-            src={expert.fotoPerfilURL}
-            alt={`Foto de perfil de ${expert.nombre}`}
-            className="w-32 h-32 object-cover rounded-full border mx-auto"
-          />
-        )}
-        <h1 className="text-2xl font-bold text-default font-montserrat">{expert.nombre}</h1>
-        <p className="text-primary font-semibold">{expert.especialidad}</p>
-      </div>
-
-      {expert.experiencia && (
-        <div className="mt-4">
-          <h2 className="flex items-center text-lg font-semibold text-default-soft mb-1">
-            <FileText className="w-4 h-4 mr-2 text-gray-500" /> Experiencia
-          </h2>
-          <p className="text-default-soft whitespace-pre-line">{expert.experiencia}</p>
-        </div>
-      )}
-
-      {Array.isArray(expert.educacion) && expert.educacion.length > 0 && (
-        <div>
-          <h2 className="flex items-center text-lg font-semibold text-default-soft mb-1">
-            <GraduationCap className="w-4 h-4 mr-2 text-indigo-500" /> Educación
-          </h2>
-          <ul className="list-disc list-inside text-default-soft">
-            {expert.educacion.map((e, i) => (
-              <li key={i}>{e}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {Array.isArray(expert.certificaciones) && expert.certificaciones.length > 0 && (
-        <div>
-          <h2 className="flex items-center text-lg font-semibold text-default-soft mb-1">
-            <CheckCircle className="w-4 h-4 mr-2 text-emerald-500" /> Certificaciones
-          </h2>
-          <ul className="list-disc list-inside text-default-soft">
-            {expert.certificaciones.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {Array.isArray(expert.servicios) && expert.servicios.length > 0 && (
-        <div>
-          <h2 className="flex items-center text-lg font-semibold text-default-soft mb-2">
-            <BookOpen className="w-4 h-4 mr-2 text-orange-500" /> Servicios
-          </h2>
-          <div className="grid gap-4">
-            {expert.servicios.map((serv, i) => (
-              <div key={i} className="bg-gray-100 border border-gray-300 rounded-lg p-4 shadow-sm">
-                <p className="flex items-center font-bold text-default mb-1">
-                  {getIconByTipo(serv.tipo)}
-                  <span className="font-bold text-default">
-                    {serv.tipo ? `${serv.tipo} '` : 'Servicio '}
-                    {serv.titulo || 'Sin título'}
-                    {"'"}
+    <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-0">
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Columna principal */}
+        <article className="md:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-6 md:p-8">
+          {/* Header */}
+          <div className="flex items-start gap-4">
+            {expert.fotoPerfilURL ? (
+              <img
+                src={expert.fotoPerfilURL}
+                alt={`Foto de ${expert.nombre}`}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover ring-2 ring-white shadow"
+              />
+            ) : (
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-slate-200 ring-2 ring-white shadow" />
+            )}
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl md:text-2xl font-extrabold tracking-snugger text-default">
+                  {expert.nombre}
+                </h1>
+                {expert.aprobado && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                    VERIFICADO
                   </span>
-                </p>
-                {serv.descripcion && (
-                  <p className="italic text-gray-700 ml-6 mt-1">{serv.descripcion}</p>
                 )}
-                <p className="flex items-center mt-2">
-                  <span className="inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
-                    {serv.precio
-                      ? new Intl.NumberFormat('es-MX', {
-                          style: 'currency',
-                          currency: 'MXN',
-                        }).format(parseFloat(serv.precio))
-                      : 'Precio no especificado'}
-                  </span>
-                </p>
               </div>
-            ))}
+              <p className="text-blue-700 font-medium">{expert.especialidad}</p>
+            </div>
           </div>
-        </div>
-      )}
 
-      <section className="mt-6 text-sm text-default-soft space-y-1">
-        {expert.email && (
-          <p className="flex items-center">
-            <Mail className="w-4 h-4 mr-2 text-gray-500" />
-            <strong>Correo:</strong> {expert.email}
-          </p>
-        )}
-        {expert.telefono && (
-          <p className="flex items-center">
-            <Phone className="w-4 h-4 mr-2 text-gray-500" />
-            <strong>Teléfono:</strong> {expert.telefono}
-          </p>
-        )}
-        {expert.redes && (
-          <p className="flex items-center">
-            <Globe className="w-4 h-4 mr-2 text-gray-500" />
-            <strong>Redes:</strong> {expert.redes}
-          </p>
-        )}
-      </section>
+          {/* Resumen / Experiencia */}
+          {expert.experiencia && (
+            <section className="mt-6">
+              <h2 className="flex items-center text-sm font-semibold text-slate-600 mb-1">
+                <FileText className="w-4 h-4 mr-2 text-slate-400" /> RESUMEN
+              </h2>
+              <p className="text-default-soft leading-relaxed whitespace-pre-line">
+                {expert.experiencia}
+              </p>
+            </section>
+          )}
 
-      {expert.linkedin && (
-        <a
-          href={expert.linkedin}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-4 text-blue-600 underline"
-        >
-          Ver perfil profesional
-        </a>
-      )}
+          {/* Educación */}
+          {Array.isArray(expert.educacion) && expert.educacion.length > 0 && (
+            <section className="mt-6">
+              <h2 className="flex items-center text-sm font-semibold text-slate-600 mb-1">
+                <GraduationCap className="w-4 h-4 mr-2 text-indigo-500" /> EDUCACIÓN
+              </h2>
+              <ul className="list-disc list-inside text-default-soft space-y-1">
+                {expert.educacion.map((e, i) => (
+                  <li key={i}>{e}</li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      <div className="mt-6 space-x-2">
-        <button
-          onClick={() => cambiarAprobacion(!expert.aprobado)}
-          className={`px-4 py-2 rounded text-white ${
-            expert.aprobado
-              ? 'bg-yellow-600 hover:bg-yellow-700'
-              : 'bg-green-600 hover:bg-green-700'
-          }`}
-        >
-          {expert.aprobado ? 'Rechazar' : 'Aprobar'}
-        </button>
+          {/* Certificaciones */}
+          {Array.isArray(expert.certificaciones) && expert.certificaciones.length > 0 && (
+            <section className="mt-6">
+              <h2 className="flex items-center text-sm font-semibold text-slate-600 mb-1">
+                <CheckCircle className="w-4 h-4 mr-2 text-emerald-500" /> CERTIFICACIONES
+              </h2>
+              <ul className="flex flex-wrap gap-2">
+                {expert.certificaciones.map((c, i) => (
+                  <li
+                    key={i}
+                    className="px-2.5 h-7 inline-flex items-center rounded-full text-xs border border-slate-200 bg-slate-50 text-slate-700"
+                  >
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-        <button
-          onClick={eliminar}
-          className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
-        >
-          Eliminar
-        </button>
+          {/* Servicios */}
+          {Array.isArray(expert.servicios) && expert.servicios.length > 0 && (
+            <section className="mt-6">
+              <h2 className="flex items-center text-sm font-semibold text-slate-600 mb-2">
+                <BookOpen className="w-4 h-4 mr-2 text-orange-500" /> SERVICIOS OFRECIDOS
+              </h2>
+              <div className="grid gap-3">
+                {expert.servicios.map((serv, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="flex items-center gap-2 font-semibold text-default">
+                        {getIconByTipo(serv.tipo)}
+                        <span>
+                          {(serv.tipo || 'Servicio')}{' '}
+                          <span className="font-bold">“{serv.titulo || 'Sin título'}”</span>
+                        </span>
+                      </p>
+                      <span className="inline-flex items-center px-3 h-7 rounded-full text-sm bg-blue-600 text-white">
+                        {serv.precio
+                          ? new Intl.NumberFormat('es-MX', {
+                              style: 'currency',
+                              currency: 'MXN',
+                            }).format(parseFloat(serv.precio))
+                          : 'Precio no especificado'}
+                      </span>
+                    </div>
+                    {serv.descripcion && (
+                      <p className="mt-2 text-sm text-slate-600">{serv.descripcion}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
-        {adminEmails.includes(expert.email) && (
+          {/* Volver al listado */}
           <button
-            onClick={limpiarExpertosIncompletos}
-            className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white mt-4"
+            onClick={onClose}
+            className="mt-8 text-sm text-blue-600 hover:text-blue-700 underline"
           >
-            Limpiar expertos incompletos
+            ← Volver al listado
           </button>
-        )}
-        <button
-          onClick={onClose}
-          className="text-sm text-blue-600 underline mt-4 block"
-        >
-          ← Volver al listado
-        </button>
+        </article>
+
+        {/* Sidebar: Moderación + Contacto */}
+        <aside className="space-y-4">
+          {/* Moderación */}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Moderación</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => cambiarAprobacion(!expert.aprobado)}
+                className={`px-4 h-10 rounded-lg text-white ${
+                  expert.aprobado
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                {expert.aprobado ? 'Rechazar' : 'Aprobar'}
+              </button>
+              <button
+                onClick={eliminar}
+                className="px-4 h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                Eliminar
+              </button>
+              {adminEmails.includes(expert.email) && (
+                <button
+                  onClick={limpiarExpertosIncompletos}
+                  className="px-4 h-10 rounded-lg bg-slate-700 hover:bg-slate-800 text-white"
+                >
+                  Limpiar incompletos
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Contacto */}
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Contacto</h3>
+            <ul className="text-sm space-y-2 text-slate-700">
+              {expert.email && (
+                <li className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-slate-400" />
+                <span className="truncate">{expert.email}</span>
+                </li>
+              )}
+              {expert.telefono && (
+                <li className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-slate-400" />
+                  <span>{expert.telefono}</span>
+                </li>
+              )}
+              {expert.redes && (
+                <li className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-slate-400" />
+                  <span className="truncate">{expert.redes}</span>
+                </li>
+              )}
+            </ul>
+            {expert.linkedin && (
+              <a
+                href={expert.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center justify-center w-full h-10 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
+              >
+                Ver perfil profesional
+              </a>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

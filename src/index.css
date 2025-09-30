@@ -111,3 +111,18 @@ html, body, #root { overflow-x: hidden; }
 }
 .legacy-btn:hover { border-color: #646cff; }
 .legacy-btn:focus, .legacy-btn:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
+/* === Expert Dashboard – tokens de estilo (solo utilidades) === */
+@layer components {
+  .card-ui        { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
+  .card-soft      { @apply bg-white rounded-xl  border border-slate-200 shadow-sm; }
+  .stat-pill      { @apply card-ui p-4; }
+  .btn-soft       { @apply h-9 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium; }
+  .btn-primary    { @apply h-9 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium; }
+  .chip-soft      { @apply inline-flex items-center h-6 px-2.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700; }
+  .chip-green     { @apply chip-soft bg-emerald-100 text-emerald-700; }
+  .chip-amber     { @apply chip-soft bg-amber-100  text-amber-700; }
+  .chip-blue      { @apply chip-soft bg-blue-100   text-blue-700; }
+}
+
+/* Fondo de la app para pantallas tipo dashboard */
+html, body, #root { background-color: #f7fafc; }

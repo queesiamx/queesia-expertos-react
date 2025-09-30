@@ -183,118 +183,166 @@ const ExpertDashboard = () => {
     <>
       <UnifiedNavbar />
 
-      <div className="p-6 max-w-4xl mx-auto font-sans">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Panel de Experto</h1>
-        </div>
+       {/* fondo claro como el mock */}
+      <div className="min-h-screen bg-[#f7fafc] font-sans">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          {/* Cabecera + acciones */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h1 className="text-[22px] md:text-3xl font-extrabold tracking-tight text-slate-900">
+              Panel de Experto
+            </h1>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowModal(true)}
+                className="h-10 px-4 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-sm"
+              >
+                Cargar contenidos
+              </button>
+              <button
+                onClick={() => setEditMode(true)}
+                className="h-10 px-4 rounded-xl bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+              >
+                Editar perfil
+              </button>
+            </div>
+          </div>
 
-        {!expert ? (
-          <p className="text-gray-600">Cargando información...</p>
-        ) : editMode ? (
-          <ExpertProfileEditor
-            expert={expert}
-            contenidos={contenidos}
-            onSave={handleSave}
-            onCancel={() => setEditMode(false)}
-            onUpdateContenido={cargarContenidos}
-          />
-        ) : (
-          <>
-            <ExpertProfileCard expert={expert} />
+          {/* Métricas superiores */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 shadow-sm">
+              <div className="text-xs text-slate-500">Servicios publicados</div>
+              <div className="mt-1 text-2xl font-bold text-slate-900">{contenidos.length}</div>
+            </div>
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 shadow-sm">
+              <div className="text-xs text-slate-500">Consultas en revisión</div>
+              <div className="mt-1 text-2xl font-bold text-slate-900">—</div>
+            </div>
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 shadow-sm">
+              <div className="text-xs text-slate-500">Ventas del mes</div>
+              <div className="mt-1 text-2xl font-bold text-slate-900">—</div>
+            </div>
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 shadow-sm">
+              <div className="text-xs text-slate-500">Visitas a tu perfil</div>
+              <div className="mt-1 text-2xl font-bold text-slate-900">—</div>
+            </div>
+          </div>
 
-            <button
-              onClick={() => setEditMode(true)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              ✏️ Editar perfil
-            </button>
-
-            <button
-              onClick={() => setShowModal(true)}
-              className="mt-4 ml-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-            >
-              📤 Cargar contenidos
-            </button>
+          {!expert ? (
+            <p className="text-gray-600">Cargando información...</p>
+          ) : editMode ? (
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-5 md:p-6 shadow-sm mb-6">
+              <ExpertProfileEditor
+                expert={expert}
+                onCancel={() => setEditMode(false)}
+                onSave={handleSave}
+              />
+            </div>
+          ) : (
+            <>
+              {/* Tarjeta de perfil */}
+              <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-5 md:p-6 shadow-sm mb-6">
+                <ExpertProfileCard expert={expert} />
+              </div>
 
             <h2
               id="servicios"
               ref={serviciosRef}
-              className="text-xl font-semibold mt-8 mb-4 scroll-mt-24"
-            >
+              className="text-xl font-semibold mt-2 mb-4 scroll-mt-24 text-slate-900"
+             >
               📚 Servicios
             </h2>
 
             {contenidos.length === 0 ? (
               <p className="text-gray-600">No has subido contenidos aún.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {contenidos.map((contenido) => (
                   <div
                     key={contenido.id}
-                    className="border border-gray-200 rounded-md p-4 shadow bg-white"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">
-                        {contenido.tipoContenido === "manual" && "📕 Manual"}
-                        {contenido.tipoContenido === "consulta" && "📨 Consulta"}
-
-                        {` "${contenido.titulo}"`}
-
-                      </h3>
-                      <div className="flex items-center gap-2">
+                    className="bg-white ring-1 ring-slate-200 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-md transition"
+                   >
+                            {/* Header de la tarjeta: badge por tipo + título + acciones */}
+                    <div className="flex items-start md:items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={
+                            contenido.tipoContenido === "consulta"
+                              ? "px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-amber-100 text-amber-700"
+                              : contenido.tipoContenido === "curso"
+                              ? "px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-blue-100 text-blue-700"
+                              : "px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-violet-100 text-violet-700"
+                          }>
+                            {contenido.tipoContenido ?? "servicio"}
+                          </span>
+                          {contenido.precio ? (
+                            <span className="px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                              ${Number(contenido.precio).toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                              gratuito
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="mt-2 text-base md:text-lg font-semibold text-slate-900 truncate">
+                          {contenido.titulo}
+                        </h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {contenido.descripcion}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {contenido.tipoContenido === "curso" && (
                           <button
                             onClick={() => handleAgregarFecha(contenido)}
-                            className="text-green-600 hover:text-green-800"
+                            className="h-9 px-3 rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100 text-sm"
                             title="Agregar fecha disponible"
                           >
-                            📅
+                            Agregar fecha
                           </button>
                         )}
+                        <a
+                          href={contenido.archivoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex h-9 px-3 items-center justify-center rounded-lg bg-white
+                                     text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm"
+                        >
+                          Ver archivo
+                        </a>
                         <button
                           onClick={() => handleDeleteContenido(contenido.id, contenido.public_id)}
-                          className="text-red-500 hover:text-red-700"
+                                    className="inline-flex h-9 px-3 items-center justify-center rounded-lg bg-white
+                                     text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50 text-sm"
+
                           title="Eliminar contenido"
                         >
-                          🗑️
+                          Eliminar
                         </button>
                       </div>
                     </div>
-                    <p className="text-gray-700 text-sm mt-1">
-                      {contenido.descripcion}
-                    </p>
-                    {contenido.tipoContenido === 'consulta' ? (
-                      <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm">
-                        Sujeto a aplicación de costos
-                      </span>
-                    ) : contenido.precio ? (
-                      <span className="bg-blue-600 text-white px-3 py-1 rounded">
-                        ${Number(contenido.precio).toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded">Contenido gratuito</span>
-                    )}
-                    <div className="mt-2">
-                      <a
-                        href={contenido.archivoUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline text-sm"
-                      >
-                        Ver archivo
-                      </a>
-                    </div>
+
+                    {/* Etiqueta especial para consulta */}
+  {contenido.tipoContenido === "consulta" && (
+    <div className="mt-3 text-[13px] text-amber-800 bg-amber-50/60 border border-amber-200 rounded-md px-3 py-2">
+      Sujeto a aplicación de costos
+    </div>
+  )}
+
+                    {/* Fechas disponibles para curso */}
                     {contenido.fechasDisponibles?.length > 0 && (
-                      <div className="mt-2 text-sm text-gray-700">
-                        <strong>Fechas disponibles:</strong> {contenido.fechasDisponibles.join(", ")}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
+                      <div className="mt-3 text-sm text-slate-700">
+                        <span className="font-medium">Fechas disponibles: </span>
+                        {contenido.fechasDisponibles.join(", ")}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
