@@ -16,6 +16,7 @@ export default function UploadContenido({ expertoId, onCloseModal, onUploadSucce
   const [modalidad, setModalidad] = useState('en línea');
   const [plataforma, setPlataforma] = useState('');
   const [duracionHoras, setDuracionHoras] = useState('');
+  const [cupoMinimo, setCupoMinimo] = useState('');
   const [cupoMaximo, setCupoMaximo] = useState('');
   const [requierePago, setRequierePago] = useState(false);
   const [instruccionesAcceso, setInstruccionesAcceso] = useState('');
@@ -79,6 +80,24 @@ console.log('UPLOAD_PRESET ->', JSON.stringify(import.meta.env.VITE_CLOUDINARY_U
       return;
     }
 
+    // Validaciones de cupos (solo curso/manual)
+    if ((tipoContenido === 'curso' || tipoContenido === 'manual')) {
+      const minParsed = cupoMinimo === '' ? null : parseInt(cupoMinimo);
+      const maxParsed = cupoMaximo === '' ? null : parseInt(cupoMaximo);
+      if (minParsed !== null && (isNaN(minParsed) || minParsed < 0)) {
+        toast.error('El cupo mínimo debe ser un número entero ≥ 0.');
+        return;
+      }
+      if (maxParsed !== null && (isNaN(maxParsed) || maxParsed <= 0)) {
+        toast.error('El cupo máximo debe ser un número entero > 0.');
+        return;
+      }
+      if (minParsed !== null && maxParsed !== null && minParsed > maxParsed) {
+        toast.error('El cupo mínimo no puede ser mayor que el cupo máximo.');
+        return;
+      }
+    }
+
   // ✅ Validar Cloudinary antes de iniciar la subida
   if (!cloudName || !cloudinaryPreset || !cloudinaryUrl) {
     toast.error('Faltan variables de Cloudinary (VITE_CLOUDINARY_CLOUD_NAME o VITE_CLOUDINARY_UPLOAD_PRESET).');
@@ -135,7 +154,8 @@ console.log('UPLOAD_PRESET ->', JSON.stringify(import.meta.env.VITE_CLOUDINARY_U
       contenidoData.modalidad = modalidad;
       contenidoData.plataforma = plataforma;
       contenidoData.duracionHoras = parseInt(duracionHoras);
-      contenidoData.cupoMaximo = parseInt(cupoMaximo);
+      contenidoData.cupoMinimo = cupoMinimo === '' ? null : parseInt(cupoMinimo);
+      contenidoData.cupoMaximo = cupoMaximo === '' ? null : parseInt(cupoMaximo);
       contenidoData.requierePago = requierePago;
       contenidoData.urlAccesoPrivado = urlAccesoPrivado.trim();
       contenidoData.instruccionesAcceso = instruccionesAcceso;
@@ -211,7 +231,18 @@ console.log('UPLOAD_PRESET ->', JSON.stringify(import.meta.env.VITE_CLOUDINARY_U
           <label className="block mb-2">Duración (horas)</label>
           <input type="number" className="w-full border p-2 mb-4" value={duracionHoras} onChange={(e) => setDuracionHoras(e.target.value)} />
 
-          <label className="block mb-2">Cupo máximo</label>
+                <label className="block mb-2">Cupo mínimo</label>
+                <input
+                  type="number"
+                  className="w-full border p-2 mb-4"
+                  value={cupoMinimo}
+                  onChange={(e) => setCupoMinimo(e.target.value)}
+                  placeholder="0, 5, 10…"
+                  min="0"
+                />
+          
+                <label className="block mb-2">Cupo máximo</label>
+
           <input type="number" className="w-full border p-2 mb-4" value={cupoMaximo} onChange={(e) => setCupoMaximo(e.target.value)} />
 
           <label className="block mb-2">Requiere pago</label>
