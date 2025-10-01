@@ -41,6 +41,16 @@ const API_BASE =
     ? (import.meta.env.VITE_PUBLIC_URL || "https://expertos.queesia.com")
     : "";
 
+    // ==== IVA / Precios ====
+// Si tu 'precio' en Firestore es SIN IVA, deja true. Si ya incluye IVA, pon false.
+const PRECIO_BASE_SIN_IVA = true;
+// Tasa de IVA (MX): 16%
+const IVA_RATE = 0.16;
+const toNumber = (v) => Number(v ?? 0);
+const addIVA = (base, rate = IVA_RATE) => base * (1 + rate);
+const toCents = (mxn) => Math.round(mxn * 100);
+
+
 export default function ExpertDetailPublic() {
   const { id: expertoId } = useParams();
  const navigate = useNavigate();
@@ -293,7 +303,7 @@ useEffect(() => {
       const isCourse =
         Array.isArray(contenido.fechasDisponibles) &&
         contenido.fechasDisponibles.length > 0;
-      const precio = Number(contenido.precio ?? 0);
+      const precio = toNumber(contenido.precio ?? 0);
 
       if (isCourse && !fechaSeleccionada) {
         toast.error("Selecciona una fecha para el curso");
@@ -308,7 +318,9 @@ useEffect(() => {
         contenidoId: contenido.id,
         titulo: contenido.titulo || "Contenido",
         tipo: isCourse ? "curso" : "manual",
-        precio,
+        precio, // base registrado (útil para auditoría)
+        ivaRate: IVA_RATE,
+        totalConIVA,
         fechaSeleccionada: isCourse ? fechaSeleccionada : null,
         estado: import.meta.env.VITE_STRIPE_PUBLIC_KEY ? "pagando" : "porPagar",
         createdAt: serverTimestamp(),
@@ -331,7 +343,8 @@ useEffect(() => {
         body: JSON.stringify({
           compraId: ref.id,
           name: compraData.titulo,
-          amount: Math.round(precio * 100), // MXN → centavos
+           // Cobrar SIEMPRE el total con IVA en centavos
+          amount: toCents(totalConIVA), // MXN → centavos
           metadata: {
             compraId: ref.id,
             expertoId: expert.id,
@@ -340,6 +353,9 @@ useEffect(() => {
             fechaSeleccionada: compraData.fechaSeleccionada || "",
             userId: current.uid,
             userEmail: current.email || "",
+            price_base: String(precio),
+            iva_rate: String(IVA_RATE),
+            price_total_with_iva: String(totalConIVA),
           },
         }),
       });
@@ -532,19 +548,56 @@ useEffect(() => {
             .map((c) => (
 
             <article key={c.id} className="min-w-[280px] sm:min-w-[360px] snap-start rounded-2xl ring-1 ring-black/5 bg-slate-50 p-5 md:p-6 flex flex-col justify-between">
+                            
+              
               <div>
-                <a className="font-medium hover:underline" href={c.href || '#'}>{c.titulo}</a>
-                <p className="text-sm text-slate-600 mt-1">{c.descripcion}</p>
-                {(c.temarioHref || setVerTemario) && (
-                  <button
-                    type="button"
-                    onClick={() => (c.temarioHref ? window.open(c.temarioHref, "_blank") : setVerTemario?.(c.id))}
-                    className="inline-block text-xs mt-2 px-3 py-1 ring-1 ring-black/5 rounded-lg bg-white hover:bg-slate-100"
-                  >
-                    Ver temario
-                  </button>
-                )}
-              </div>
+               {(() => {
+                  // Normaliza nombres de campo para el archivo/temario
+                  const temarioHref =
+                    c.temarioHref ??
+                    c.archivoUrl ??
+                    c.urlArchivo ??
+                    c.fileUrl ??
+                    null;
+                  const linkHref = c.href ?? temarioHref ?? '#';
+
+                  return (
+                    <>
+                      <a
+                        className="font-medium hover:underline"
+                        href={temarioHref ? temarioHref : linkHref}
+                        target={temarioHref ? "_blank" : undefined}
+                        rel={temarioHref ? "noopener noreferrer" : undefined}
+                      >
+                        {c.titulo}
+                      </a>
+                      <p className="text-sm text-slate-600 mt-1">{c.descripcion}</p>
+
+                      {(temarioHref || typeof setVerTemario === 'function') && (
+                        temarioHref ? (
+                          <a
+                            href={temarioHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block text-xs mt-2 px-3 py-1 ring-1 ring-black/5 rounded-lg bg-white hover:bg-slate-100"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Ver temario
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setVerTemario?.(c.id)}
+                            className="inline-block text-xs mt-2 px-3 py-1 ring-1 ring-black/5 rounded-lg bg-white hover:bg-slate-100"
+                          >
+                            Ver temario
+                         </button>
+                        )
+                      )}
+                    </>
+                  );
+                })()}
+             </div>
               <div className="mt-4 flex items-center justify-between gap-4">
 
                 {(() => {
@@ -556,7 +609,7 @@ useEffect(() => {
                     /consulta/i.test(String(c.titulo || ""));
 
                   // precio válido solo si es número > 0
-                  const precioNum = Number(c.precio);
+                  const precioNum = toNumber(c.precio);
                   const hasPrice = Number.isFinite(precioNum) && precioNum >= 0;
                   const isFree =
                   Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
@@ -572,7 +625,13 @@ useEffect(() => {
                     {isFree ? (
                       <span className="font-semibold text-emerald-700">Gratis</span>
                     ) : hasPrice ? (
-                      <PriceTag amount={precioNum} className="mt-1" />
+                      <div className="flex items-baseline gap-2">
+                        {/* Mostrar SIEMPRE el precio base y aclarar que es + IVA */}
+                        <PriceTag amount={precioNum} className="mt-1" />
+                        <span className="text-[11px] text-slate-600" title="Se suma 16% al pagar">
+                          + IVA
+                        </span>
+                      </div>
                     ) : null}
                     <button
                       type="button"
