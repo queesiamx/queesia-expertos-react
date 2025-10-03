@@ -35,17 +35,16 @@ export default function ExpertsBrowser({
 
         {/* FILTROS */}
         <div
-          className={`rounded-2xl border border-slate-200/60 shadow-sm ${pad} mb-4
-                      bg-white text-slate-900 dark:bg-slate-900 dark:text-white`}
+          className={`filters-card ${pad} mb-4 text-slate-900`}
         >
+        
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="flex-1">
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Buscar expertos por nombre, especialidad o tecnología…"
-                className={`w-full ${controlH} rounded-xl border border-slate-200/70 px-4 outline-none
-                            bg-white/90 dark:bg-slate-800 dark:border-slate-700`}
+                className={`w-full ${controlH} rounded-xl border border-slate-200/70 px-4 outline-none bg-white`}
               />
             </div>
 
@@ -54,9 +53,8 @@ export default function ExpertsBrowser({
                 <select
                   value={specialty ?? ""}
                   onChange={(e) => setSpecialty(e.target.value || null)}
-                  className={`${controlH} rounded-xl border border-slate-200/70 px-3
-                              bg-white/90 dark:bg-slate-800 dark:border-slate-700`}
-                >
+                  className={`${controlH} rounded-xl border border-slate-200/70 px-3 bg-white`}
+                 >
                   <option value="">Todas las especialidades</option>
                   <option>Auditoría</option>
                   <option>Gobierno</option>
@@ -69,9 +67,8 @@ export default function ExpertsBrowser({
                 <select
                   value={service ?? ""}
                   onChange={(e) => setService(e.target.value || null)}
-                  className={`${controlH} rounded-xl border border-slate-200/70 px-3
-                              bg-white/90 dark:bg-slate-800 dark:border-slate-700`}
-                >
+                  className={`${controlH} rounded-xl border border-slate-200/70 px-3 bg-white`}
+                 >
                   <option value="">Todos los servicios</option>
                   <option value="consulta">Consulta</option>
                   <option value="manual">Manual</option>
@@ -81,9 +78,8 @@ export default function ExpertsBrowser({
                 <select
                   value={price ?? ""}
                   onChange={(e) => setPrice(e.target.value || null)}
-                  className={`${controlH} rounded-xl border border-slate-200/70 px-3
-                              bg-white/90 dark:bg-slate-800 dark:border-slate-700`}
-                >
+                  className={`${controlH} rounded-xl border border-slate-200/70 px-3 bg-white`}
+                 >
                   <option value="">Cualquier precio</option>
                   <option value="economico">Precio económico</option>
                 </select>
@@ -93,9 +89,8 @@ export default function ExpertsBrowser({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className={`${controlH} rounded-xl border border-slate-200/70 px-3
-                          bg-white/90 dark:bg-slate-800 dark:border-slate-700`}
-            >
+              className={`${controlH} rounded-xl border border-slate-200/70 px-3 bg-white`}
+             >
               <option value="relevancia">Más relevantes</option>
               <option value="mejor_calificados">Mejor calificados</option>
             </select>
@@ -105,23 +100,20 @@ export default function ExpertsBrowser({
             <div className="mt-2 flex flex-wrap gap-2 text-sm">
               <button
                 onClick={() => setSortBy("mejor_calificados")}
-                className={`rounded-full ${chipPad} border border-slate-200/70
-                            bg-white/70 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700`}
-              >
+                className={`rounded-full ${chipPad} border border-slate-200/70 bg-white hover:bg-white`}
+               >
                 Mejor valorados
               </button>
               <button
                 onClick={() => setPrice("economico")}
-                className={`rounded-full ${chipPad} border border-slate-200/70
-                            bg-white/70 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700`}
-              >
+                className={`rounded-full ${chipPad} border border-slate-200/70 bg-white hover:bg-white`}
+               >
                 Precio económico
               </button>
               <button
                 onClick={() => setService("consulta")}
-                className={`rounded-full ${chipPad} border border-slate-200/70
-                            bg-white/70 hover:bg-white dark:bg-slate-800 dark:hover:bg-slate-700`}
-              >
+                className={`rounded-full ${chipPad} border border-slate-200/70 bg-white hover:bg-white`}
+               >
                 Disponibles ahora
               </button>
             </div>

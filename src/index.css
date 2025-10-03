@@ -9,7 +9,10 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   /* Lienzo BLANCO detrás de toda la app + tipografía por defecto */
-  html, body, #root { @apply font-normal font-sans bg-white text-slate-900 min-h-screen; }
+  html, body, #root { 
+    @apply font-normal font-sans bg-white text-slate-900 min-h-screen;
+    background-color: #ffffff !important; /* fuerza color sólido detrás de todo */
+  }
 
   /* Forzar esquema claro (ignora dark del sistema para el fondo) */
   html { color-scheme: light; }
@@ -17,7 +20,7 @@
   /* Evita “gaps”/rebotes en móviles */
   body { overscroll-behavior: none; }
 
-  /* 🔒 Blindaje extra para “esquinas negras” en dark mode del SO o .dark en HTML */
+  /* 🔒 Blindaje extra para “esquinas negras” si el SO entra en dark o si alguien agrega .dark */
   @media (prefers-color-scheme: dark) {
     html, body, #root { background-color: #ffffff !important; }
   }
@@ -36,8 +39,6 @@
   button, input, select, textarea, label { @apply font-normal; }
 }
 
-
-
 /* === COMPONENTES === */
 @layer components {
   .btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 leading-none; }
@@ -48,10 +49,9 @@
     @apply bg-emerald-600 text-white shadow-sm
            hover:bg-emerald-700
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/60;
-  } /* <-- ESTA LLAVE FALTABA */
+  }
 
   .btn-outline { @apply ring-1 ring-black/10 bg-white hover:bg-slate-50; }
-
   .chip { @apply inline-flex items-center justify-center rounded-full px-3 py-1 text-xs; }
 
   /* Home de Expertos: hereda 400 en todo salvo H1 */
@@ -68,8 +68,21 @@
     font-style: italic;
     letter-spacing: -0.02em;
   }
-}
 
+  /* ====== Anti-esquinas negras (para el “hero” y barra de filtros) ====== */
+  /* Lienzo claro continuo debajo del hero */
+  .page-shell { @apply bg-slate-50; }
+
+  /* Card de filtros/búsqueda SIN transparencias ni blur y con radios cerrados */
+  .filters-card { 
+    @apply rounded-2xl bg-white shadow shadow-slate-200/60 ring-1 ring-black/5 overflow-hidden;
+    backdrop-filter: none !important; /* neutraliza cualquier backdrop-blur heredado */
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Si tienes un contenedor con gradiente del hero, que sea claro y sin negro */
+  .hero-soft-gradient { @apply bg-gradient-to-b from-white to-slate-50; }
+}
 
 /* === UTILIDADES === */
 @layer utilities {
@@ -79,7 +92,7 @@
   }
 }
 
-/* Extras globales sin bold */
+/* === Extras globales sin bold ni efectos raros === */
 a { color: #646cff; text-decoration: inherit; }
 a:hover { color: #535bf2; }
 .btn-icon { all: unset; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
@@ -92,6 +105,7 @@ iframe[name^="__privateStripeController"] { display: none !important; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 html, body, #root { overflow-x: hidden; }
 
+/* Tema claro por preferencia (no toca el fondo global ya forzado a #fff) */
 @media (prefers-color-scheme: light) {
   :root { color: #213547; background-color: #fff; }
   a:hover { color: #747bff; }
@@ -111,6 +125,7 @@ html, body, #root { overflow-x: hidden; }
 }
 .legacy-btn:hover { border-color: #646cff; }
 .legacy-btn:focus, .legacy-btn:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
+
 /* === Expert Dashboard – tokens de estilo (solo utilidades) === */
 @layer components {
   .card-ui        { @apply bg-white rounded-2xl border border-slate-200 shadow-sm; }
@@ -124,5 +139,6 @@ html, body, #root { overflow-x: hidden; }
   .chip-blue      { @apply chip-soft bg-blue-100   text-blue-700; }
 }
 
-/* Fondo de la app para pantallas tipo dashboard */
-html, body, #root { background-color: #f7fafc; }
+/* ===== Fondo para vistas de dashboard SIN pisar el fondo global =====
+   Aplica esta clase en el wrapper del dashboard (p.ej. <main class="dashboard-shell">) */
+.dashboard-shell { background-color: #f7fafc; }

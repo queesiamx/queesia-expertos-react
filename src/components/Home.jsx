@@ -93,9 +93,9 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
   return (
 <section
   id="filtros"
-  className="relative z-10 scroll-mt-28 bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+  className="page-shell relative z-10 scroll-mt-28 text-slate-900"
 >
-      <div className="rounded-2xl bg-white border border-slate-200 shadow-sm px-4 sm:px-6 py-4">
+      <div className="filters-card px-4 sm:px-6 py-4">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
           <label className="flex-1 relative block">
             <input
@@ -103,7 +103,7 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar expertos por nombre, especialidad o tecnología…"
               className="w-full h-11 rounded-xl bg-white text-slate-900 placeholder-slate-400 border border-slate-300 focus:border-slate-400 focus:ring-0 px-4 pr-10"
-            />
+             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
               <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
                 <path
