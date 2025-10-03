@@ -502,8 +502,9 @@ useEffect(() => {
         <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-900" />
         <h2 className="text-lg font-semibold">Resumen</h2>
       </div>
-     <p className="mt-1 text-sm text-slate-700 leading-relaxed whitespace-pre-line">        {resumen || "El experto aún no ha agregado su resumen."}
-      </p>
+    <p className="rich-text whitespace-pre-line text-slate-700 leading-relaxed">
+    {resumen || "El experto aún no ha agregado su resumen."}
+     </p>
     </div>
 
     {/* === Contenidos disponibles — CARRUSEL === */}

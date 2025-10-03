@@ -89,10 +89,10 @@ export default function ExpertProfileCard({ expert }) {
             <div className="text-[12px] font-medium text-slate-500 mb-1">
               Resumen
             </div>
-            <p className="text-sm leading-relaxed text-slate-700">
-              {expert?.experiencia ||
-                "Agrega un breve resumen de tu experiencia e impacto."}
-            </p>
+            <p className="rich-text whitespace-pre-line text-sm leading-relaxed text-slate-700">
++              {expert?.experiencia ||
++                "Agrega un breve resumen de tu experiencia e impacto."}
++           </p>
           </div>
 
           {/* Experiencia laboral */}
@@ -109,7 +109,7 @@ export default function ExpertProfileCard({ expert }) {
                   <div className="font-medium">{e?.titulo || "Puesto"}</div>
                   <div className="text-slate-500 text-xs">{e?.periodo || ""}</div>
                   {e?.detalle && (
-                    <div className="mt-1 text-[13px] leading-relaxed">
+                    <div className="rich-text whitespace-pre-line mt-1 text-[13px] leading-relaxed">
                       {e.detalle}
                     </div>
                   )}

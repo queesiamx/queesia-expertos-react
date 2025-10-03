@@ -137,6 +137,13 @@ html, body, #root { overflow-x: hidden; }
   .chip-green     { @apply chip-soft bg-emerald-100 text-emerald-700; }
   .chip-amber     { @apply chip-soft bg-amber-100  text-amber-700; }
   .chip-blue      { @apply chip-soft bg-blue-100   text-blue-700; }
+  /* Texto rico: respeta saltos de línea y justifica */
+.rich-text {
+  text-align: justify;         /* justifica */
+  text-justify: inter-word;    /* distribución por palabras */
+  hyphens: auto;               /* guiones automáticos donde aplique */
+}
+
 }
 
 /* ===== Fondo para vistas de dashboard SIN pisar el fondo global =====
