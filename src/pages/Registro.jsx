@@ -149,7 +149,33 @@ export default function Registro() {
     }
   }, []);
 
+
     const step = useRegistrationStep(); // ← dinámico con Auth+Firestore
+
+
+  // ─────────────────────────────────────────────────────────────
+  // Toast centrado para pedir validación/login (solo en paso 1).
+  // Se muestra una única vez por sesión.
+  useEffect(() => {
+    if (step !== 1) return;
+    const shown = sessionStorage.getItem("toast_validacion_shown");
+    if (shown) return;
+    toast(
+      (t) => (
+        <div className="flex flex-col gap-1">
+          <p className="font-medium">Primero valida tu correo para continuar.</p>
+          <button
+            onClick={() => { handleGoogleLogin(); toast.dismiss(t.id); }}
+            className="text-emerald-700 underline font-semibold"
+          >
+            Inicia sesión con tu cuenta de Google
+          </button>
+        </div>
+      ),
+      { icon: "🔒" }
+    );
+    sessionStorage.setItem("toast_validacion_shown", "1");
+  }, [step]);
 
   const handleChange = (e) => {
     setForm(prev => ({
@@ -282,7 +308,21 @@ export default function Registro() {
         '9SxO0lF9IKHaknc4Q'
       );
 
-      toast.success('Perfil enviado para validación, revisa tu correo.');
+            // Toast emergente + redirección al home tras ~4.5 s
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold">¡Registro enviado!</p>
+            <p className="text-sm">
+              Tu perfil pasará por una revisión rápida para verificar identidad y calidad del contenido antes de publicarse.
+            </p>
+          </div>
+        ),
+        { icon: "✅" }
+      );
+      setTimeout(() => {
+        navigate("/"); // home de expertos
+      }, 4500);
 
       setForm({
         nombre: '',
@@ -309,7 +349,23 @@ export default function Registro() {
     <>
       {typeof window !== "undefined" && <UnifiedNavbar />
 }
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 4500,
+          style: {
+            background: "#FFFBEB",       // amber-50
+            color: "#78350F",            // amber-900
+            fontSize: "16px",
+            border: "1px solid #FCD34D", // amber-300
+            borderRadius: "12px",
+            boxShadow: "0 10px 25px rgba(245,158,11,0.15)",
+          },
+          iconTheme: { primary: "#F59E0B", secondary: "#FFFFFF" }, // amber-500
+        }}
+      />
+
+
       {/* NUEVO LAYOUT (sustituye el container-base completo por esto) */}
 <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/40 text-slate-900">
   <main className="mx-auto max-w-6xl px-4">
@@ -458,10 +514,7 @@ export default function Registro() {
           </div>
         </div>
 
-        {/* Aviso */}
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ⓘ Tu perfil pasará por una revisión rápida para verificar identidad y calidad del contenido antes de publicarse.
-        </div>
+{/* Aviso movido a toast emergente en handleSubmit */}
       </section>
 
       {/* --- Aside (2/5) --- */}

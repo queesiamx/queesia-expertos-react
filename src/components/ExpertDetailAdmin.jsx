@@ -2,6 +2,7 @@ import { doc, updateDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase
 import { db, auth } from '../firebase';
 import { toast } from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
+import { ensureAbsoluteUrl } from "@/lib/url";
 import {
   BookOpen,
   GraduationCap,
@@ -70,25 +71,33 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
     }
   };
 
-  const enviarCorreoEstadoExperto = async (email, nombre, estado) => {
-    const mensaje =
-      estado === 'aprobado'
-        ? '¡Bienvenido! Ya puedes acceder y aparecer públicamente en el directorio de expertos. Gracias por formar parte de Queesia.'
-        : 'Lo sentimos, te invitamos a corregir tus datos y volver a enviar el formulario en otro momento. Cualquier duda o aclaración, escríbenos a contacto@queesia.com.';
+    const enviarCorreoEstadoExperto = async (email, nombre, estado) => {
+    const LOGIN_URL    = "https://expertos.queesia.com/login?redirect=/dashboard";
+    const REGISTRO_URL = "https://expertos.queesia.com/registro";
+    const esAprobado   = estado === "aprobado";
+    // Inyectamos la URL directo en el mensaje (texto plano seguro)
+    const mensaje = esAprobado
+      ? `¡Bienvenido! Ya puedes acceder y aparecer públicamente en el directorio de expertos.
 
+Para entrar ahora, haz clic o copia esta liga en tu navegador: ${LOGIN_URL}`
+      : `Lo sentimos, te invitamos a corregir tus datos y volver a enviar el formulario.
+
+Puedes actualizar tu información aquí: ${REGISTRO_URL}
+Si tienes dudas, escríbenos a contacto@queesia.com.`;
     const templateParams = {
       nombre,
       estado,
-      mensaje_personalizado: mensaje,
+      mensaje_personalizado: mensaje, // ← ya incluye la URL
       email,
     };
 
+
     try {
       await emailjs.send(
-        'service_vdpzkm8',       // tu SERVICE_ID
-        'template_n0pj59s',      // tu TEMPLATE_ID
+        'service_vdpzkm8',        // SERVICE_ID (igual que ya usas)
+        'template_n0pj59s',       // TEMPLATE_ID (actualízalo en EmailJS para aceptar las nuevas variables)
         templateParams,
-        '9SxO0lF9IKHaknc4Q'       // tu PUBLIC_KEY
+        '9SxO0lF9IKHaknc4Q'       // PUBLIC_KEY
       );
       console.log('Correo enviado exitosamente');
     } catch (error) {
@@ -303,16 +312,17 @@ const limpiarExpertosIncompletos = async () => {
                 </li>
               )}
             </ul>
-            {expert.linkedin && (
-              <a
-                href={expert.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center justify-center w-full h-10 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-              >
-                Ver perfil profesional
-              </a>
-            )}
+  {/* Botón: Ver perfil profesional (externo) */}
+  <a
+    href={ensureAbsoluteUrl(expert?.linkedin)}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="btn btn-outline w-full mt-2"
+    onClick={(e) => e.stopPropagation()} // por si la card tiene onClick de navegación
+  >
+    Ver perfil profesional
+  </a>
+            
           </div>
         </aside>
       </div>
