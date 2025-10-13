@@ -21,7 +21,7 @@ export default function ExpertList({
 
 const [localQuery, setLocalQuery] = useState(pQuery ?? "");
 const [localSort, setLocalSort]   = useState(pSortBy ?? "relevancia");
-const [localChip, setLocalChip]   = useState("");
+const [localChip, setLocalChip]   = useState("Todos");
 
   const navigate = useNavigate();
 
@@ -86,12 +86,12 @@ const [localChip, setLocalChip]   = useState("");
   const filtrados = useMemo(() => {
     let rows = [...expertos];
 
-    if (chip !== "Todos") {
-      rows = rows.filter((x) => Array.isArray(x.tags) && x.tags.includes(chip));
-    }
+    if (localChip !== "Todos") {
+      rows = rows.filter((x) => Array.isArray(x.tags) && x.tags.includes(localChip));
+     }
 
-    if (query.trim()) {
-      const q = query.toLowerCase();
+    if (localQuery.trim()) {
+      const q = localQuery.toLowerCase();
       rows = rows.filter((x) => {
         const nombre = (x.nombre || "").toLowerCase();
         const especialidad = (x.especialidad || "").toLowerCase();
@@ -102,7 +102,7 @@ const [localChip, setLocalChip]   = useState("");
       });
     }
 
-    switch (sort) {
+    switch (localSort) {
       case "priceAsc":
         rows.sort((a, b) => (a.precioHora || 0) - (b.precioHora || 0));
         break;
@@ -117,7 +117,7 @@ const [localChip, setLocalChip]   = useState("");
     }
 
     return rows;
-  }, [expertos, chip, query, sort]);
+  }, [expertos, localChip, localQuery, localSort]);
 
   return (
     <div className="w-full bg-transparent text-inherit">
@@ -146,8 +146,8 @@ const [localChip, setLocalChip]   = useState("");
           <div className="flex-1 max-w-xl">
             <label className="w-full relative block">
               <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={localQuery}
+                onChange={(e) => setLocalQuery(e.target.value)}
                 placeholder="Buscar por nombre, rol, habilidad…"
                 className="w-full h-11 rounded-2xl bg-[var(--card)] text-[var(--text)] placeholder-[var(--subtext)] ring-1 ring-[var(--ring)] outline-none px-4 pr-10 focus:ring-2 focus:ring-[var(--primary)]/50 transition"
               />
@@ -164,9 +164,11 @@ const [localChip, setLocalChip]   = useState("");
 
           {/* Sort */}
           <div>
+            <label htmlFor="sort" className="sr-only">Ordenar por</label>
             <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              id="sort"
+              value={localSort}
+              onChange={(e) => setLocalSort(e.target.value)}
               className="h-11 rounded-2xl bg-[var(--card)] text-[var(--text)] ring-1 ring-[var(--ring)] px-3 focus:outline-none"
             >
               <option value="top">Mejor calificados</option>
@@ -175,6 +177,7 @@ const [localChip, setLocalChip]   = useState("");
               <option value="reviews">Más reseñas</option>
             </select>
           </div>
+
         </div>
 
         {/* Chips */}
@@ -183,9 +186,9 @@ const [localChip, setLocalChip]   = useState("");
             {chips.map((t) => (
               <button
                 key={t}
-                onClick={() => setChip(t)}
+                onClick={() => setLocalChip(t)}
                 className={`px-3.5 h-9 rounded-full text-sm whitespace-nowrap border transition ${
-                  chip === t
+                  localChip === t 
                     ? "bg-[var(--primary)] text-[var(--primaryText)] border-transparent"
                     : "bg-[var(--card)]/60 text-[var(--text)] border-[var(--ring)] hover:border-[var(--primary)]/40"
                 }`}
