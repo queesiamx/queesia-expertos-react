@@ -121,12 +121,16 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
         assertCloudinaryEnv(); // lanza error claro si faltan
 
         // Elimina imagen anterior solo si hay endpoint definido
-        if (formData.fotoPerfilPublicId && DELETE_URL) {
-          await fetch(DELETE_URL, {
+      if (formData.fotoPerfilPublicId && DELETE_URL) {
+      const res = await fetch(DELETE_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ public_id: formData.fotoPerfilPublicId }),
-          }).catch(() => {});
+             });
+        if (!res.ok) {
+          console.warn("Delete image failed", await res.text());
+          // NO abortes todo el guardado solo por no poder borrar la vieja.
+        }
         }
         const data = new FormData();
         data.append("file", nuevaImagen);
