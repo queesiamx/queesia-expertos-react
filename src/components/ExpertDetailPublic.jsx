@@ -184,7 +184,14 @@ useEffect(() => {
      }
 
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setContenidos(docs);
+      // Normaliza: acepta 'fechas' o 'fechasDisponibles' del documento
+      const normalized = docs.map((d) => ({
+        ...d,
+        fechasDisponibles: Array.isArray(d.fechasDisponibles) && d.fechasDisponibles.length
+          ? d.fechasDisponibles
+          : (Array.isArray(d.fechas) ? d.fechas : []),
+      }));
+      setContenidos(normalized);
     };
     cargarContenidos();
   }, [expert]);
@@ -307,9 +314,10 @@ useEffect(() => {
         }
       }
 
-      const isCourse =
-        Array.isArray(contenido.fechasDisponibles) &&
-        contenido.fechasDisponibles.length > 0;
+      const fechasOpts = Array.isArray(contenido.fechasDisponibles) && contenido.fechasDisponibles.length
+        ? contenido.fechasDisponibles
+        : (Array.isArray(contenido.fechas) ? contenido.fechas : []);
+      const isCourse = Array.isArray(fechasOpts) && fechasOpts.length > 0;
       const precio = toNumber(contenido.precio ?? 0);
 
       if (isCourse && !fechaSeleccionada) {
@@ -728,7 +736,7 @@ useEffect(() => {
       <ExpertModal
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
-        availableDates={contenidoSeleccionado?.fechasDisponibles || []}
+        availableDates={contenidoSeleccionado?.fechasDisponibles || contenidoSeleccionado?.fechas || []}
         fechaSeleccionada={fechaSeleccionada}
         setFechaSeleccionada={setFechaSeleccionada}
         onConfirm={() =>
