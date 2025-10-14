@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
 import { sanitizePayload } from "@/utils/sanitize";
 import {
   doc,
-  updateDoc,
   collection,
   addDoc,
   query,
@@ -34,20 +34,21 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
   const [nuevaImagen, setNuevaImagen] = useState(null);
   const [previewURL, setPreviewURL] = useState("");
 
- useEffect(() => {
-   if (expert) {
-      setFormData((prev) => ({
-        ...prev,
-        ...expert,
-        certificaciones: Array.isArray(expert.certificaciones)
-          ? expert.certificaciones
-          : [],
-      }));
-      setPreviewURL(expert.fotoPerfilURL || "");
-     // Guard: no llames where(...) con undefined
-     if (expert.uid) cargarServicios(expert.uid);
-   }
- }, [expert]);
+   useEffect(() => {
+    if (!expert) return;
+    setFormData((prev) => ({
+      ...prev,
+      ...expert,
+      certificaciones: Array.isArray(expert.certificaciones)
+        ? expert.certificaciones
+        : [],
+      fotoPerfilURL: expert.fotoPerfilURL || "",
+      fotoPerfilPublicId: expert.fotoPerfilPublicId || "",
+    }));
+    setPreviewURL(expert.fotoPerfilURL || "");
+    // Evita where(..., undefined)
+    if (expert.uid) cargarServicios(expert.uid);
+  }, [expert]);
 
    const cargarServicios = async (uid) => {
    if (!uid) return; // ← evita where(..., undefined)
@@ -116,48 +117,64 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
     if (!user) return;
 
     try {
+       // --- 1) Subida a Cloudinary (opcional) con validación de ENV ---
       if (nuevaImagen) {
-        if (formData.fotoPerfilPublicId) {
+        const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+        const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+        if (!CLOUD_NAME || !UPLOAD_PRESET) {
+          toast.error(
+            "Faltan variables de Cloudinary (CLOUD_NAME/UPLOAD_PRESET)."
+          );
+          return;
+        }
+        // Elimina imagen anterior (si la hay)
+        if (formData.fotoPerfilPublicId && import.meta.env.VITE_CLOUDINARY_DELETE_URL) {
           await fetch(import.meta.env.VITE_CLOUDINARY_DELETE_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ public_id: formData.fotoPerfilPublicId }),
-          });
+          }).catch(() => {});
         }
-
         const data = new FormData();
         data.append("file", nuevaImagen);
-        data.append(
-          "upload_preset",
-          import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-        );
-
+        data.append("upload_preset", UPLOAD_PRESET);
         const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/upload`,
-          {
-            method: "POST",
-            body: data,
-          }
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+          { method: "POST", body: data }
         );
-
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(`Cloudinary upload failed: ${res.status} ${t}`);
+        }
         const imgData = await res.json();
-        formData.fotoPerfilURL = imgData.secure_url;
-        formData.fotoPerfilPublicId = imgData.public_id;
+        // Guarda URL e ID solo si existen (evita undefined)
+        if (imgData?.secure_url) {
+          formData.fotoPerfilURL = imgData.secure_url;
+        }
+        if (imgData?.public_id) {
+          formData.fotoPerfilPublicId = imgData.public_id;
+        }
       }
 
-    // --- SANITIZA Y HAZ MERGE ---
-    const payload = sanitizePayload({
-     ...formData,
-      // Garantiza arreglo válido:
-      certificaciones: Array.isArray(formData.certificaciones)
-        ? formData.certificaciones
-        : String(formData.certificaciones || "")
-            .split(",")
-            .map((c) => c.trim())
-            .filter(Boolean),
-      formularioCompleto: true,
-    });
-    await setDoc(doc(db, "experts", user.uid), payload, { merge: true });
+    // --- 2) Sanitiza y quita claves vacías/undefined ---
+      const base = {
+        ...formData,
+        certificaciones: Array.isArray(formData.certificaciones)
+          ? formData.certificaciones
+          : String(formData.certificaciones || "")
+              .split(",")
+              .map((c) => c.trim())
+              .filter(Boolean),
+        formularioCompleto: true,
+      };
+      // Remueve undefined/strings vacíos para evitar "Unsupported field value"
+      const cleaned = Object.fromEntries(
+        Object.entries(base).filter(
+          ([, v]) => !(v === undefined || v === null || (typeof v === "string" && v.trim() === ""))
+        )
+      );
+      const payload = sanitizePayload(cleaned);
+      await setDoc(doc(db, "experts", user.uid), payload, { merge: true });
 
       toast.success("Perfil actualizado");
       onSave(formData);
@@ -171,24 +188,31 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
     const user = auth.currentUser;
     if (!user) return;
 
- const serv = servicios[index] || {};
-  const raw = {
-    ...serv,
-    expertoUID: user.uid,
-    actualizado: new Date().toISOString(),
-  };
-  const data = sanitizePayload(raw);
+     const serv = servicios[index] || {};
+    const raw = {
+      ...serv,
+      expertoUID: user.uid,
+      actualizado: new Date().toISOString(),
+    };
+    const data = sanitizePayload(
+      Object.fromEntries(
+        Object.entries(raw).filter(
+          ([, v]) => !(v === undefined || v === null)
+        )
+      )
+    );
 
     try {
       if (serv.id) {
-     await setDoc(doc(db, "contenidosExpertos", serv.id), data, { merge: true });
-   } else {
-     const docRef = await addDoc(collection(db, "contenidosExpertos"), data);
-     // refleja el id en estado para siguientes guardados
-     setServicios((prev) =>
-        prev.map((s, i) => (i === index ? { ...s, id: docRef.id } : s))
-      );
-    }
+        await setDoc(doc(db, "contenidosExpertos", serv.id), data, { merge: true });
+      } else {
+        const docRef = await addDoc(collection(db, "contenidosExpertos"), data);
+        // refleja el id en estado para siguientes guardados
+        setServicios((prev) =>
+          prev.map((s, i) => (i === index ? { ...s, id: docRef.id } : s))
+        );
+      }
+      
       toast.success(`Servicio ${index + 1} guardado`);
     } catch (err) {
       console.error(err);
