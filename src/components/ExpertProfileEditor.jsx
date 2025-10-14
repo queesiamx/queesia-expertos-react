@@ -1,19 +1,50 @@
 import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
-// Si usas alias "@", deja la línea de abajo; si no, cámbiala por "../lib/env"
-import { CLOUD_NAME, UPLOAD_PRESET, DELETE_URL, assertCloudinaryEnv } from "@/lib/env";
-import { sanitizePayload } from "@/utils/sanitize";
 import {
   doc,
-  collection,
+  setDoc,
   addDoc,
+  getDocs,
   query,
   where,
-  getDocs,
-  setDoc,
+  collection,
 } from "firebase/firestore";
+// Si usas alias "@", deja la línea de abajo; si no, cámbiala por "../lib/env"
+import { CLOUD_NAME, UPLOAD_PRESET, DELETE_URL, assertCloudinaryEnv } from "../lib/env";
 import { toast } from "react-hot-toast";
 
+// Sanitizador local: elimina undefined/null y clona seguro
+const sanitizePayload = (obj) => {
+  const cleaned = Object.fromEntries(
+    Object.entries(obj ?? {}).filter(
+      ([, v]) => !(v === undefined || v === null || (typeof v === "string" && v.trim() === ""))
+    )
+  );
+  return JSON.parse(JSON.stringify(cleaned));
+};
+// Borrado "best-effort": nunca debe romper el guardado
+async function safeDeleteOldImage(publicId) {
+  try {
+     if (!publicId || !DELETE_URL) return;
+    // En desarrollo evita ruido de CORS si el server no permite localhost
+    if (import.meta.env?.DEV) {
+      console.info("skip delete-image in DEV (to avoid CORS noise)");
+      return;
+    }
+    // No awaits en el llamador: que sea fire-and-forget
+    const res = await fetch(DELETE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ public_id: publicId }),
+    });
+    if (!res.ok) {
+      // Log solo informativo; no romper flujo
+      console.info("Delete image failed", res.status, await res.text());
+    }
+  } catch (err) {
+    console.warn("Delete image error (ignorado):", err?.message || err);
+  }
+}
 export default function ExpertProfileEditor({ expert, onClose, onSave }) {
   const [formData, setFormData] = useState({
     nombre: "",
@@ -116,22 +147,11 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
     if (!user) return;
 
     try {
-        // --- 1) Subida a Cloudinary (opcional) ---
+      // --- 1) Subida a Cloudinary (opcional) ---
+      const oldPublicId = formData.fotoPerfilPublicId || null;
+      let stateForSave = { ...formData }; // ← objeto local para guardar
       if (nuevaImagen) {
         assertCloudinaryEnv(); // lanza error claro si faltan
-
-        // Elimina imagen anterior solo si hay endpoint definido
-      if (formData.fotoPerfilPublicId && DELETE_URL) {
-      const res = await fetch(DELETE_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ public_id: formData.fotoPerfilPublicId }),
-             });
-        if (!res.ok) {
-          console.warn("Delete image failed", await res.text());
-          // NO abortes todo el guardado solo por no poder borrar la vieja.
-        }
-        }
         const data = new FormData();
         data.append("file", nuevaImagen);
         data.append("upload_preset", UPLOAD_PRESET);
@@ -144,20 +164,19 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
           throw new Error(`Cloudinary upload failed: ${res.status} ${t}`);
         }
         const imgData = await res.json();
-        // Actualiza estado de forma inmutable
-        setFormData((prev) => ({
-          ...prev,
-          fotoPerfilURL: imgData?.secure_url || prev.fotoPerfilURL || "",
-          fotoPerfilPublicId: imgData?.public_id || prev.fotoPerfilPublicId || "",
-        }));
+        // Actualiza estado visual y también el objeto que vamos a guardar
+        const newURL = imgData?.secure_url || formData.fotoPerfilURL || "";
+        const newId  = imgData?.public_id  || formData.fotoPerfilPublicId || "";
+        setFormData((prev) => ({ ...prev, fotoPerfilURL: newURL, fotoPerfilPublicId: newId }));
+        setPreviewURL((prev) => newURL || prev);
+        stateForSave = { ...stateForSave, fotoPerfilURL: newURL, fotoPerfilPublicId: newId };
+        // Dispara el borrado en segundo plano (NO bloquear flujo)
+        if (oldPublicId) safeDeleteOldImage(oldPublicId);
       }
-
-    // Lee la versión más reciente del estado (por si se subió imagen)
-     const latest = (typeof formData === "object") ? { ...formData } : {};
 
       // --- 2) Sanitiza y quita claves vacías/undefined ---
       const base = {
-        ...latest,
+        ...stateForSave,
         certificaciones: Array.isArray(formData.certificaciones)
           ? formData.certificaciones
           : String(formData.certificaciones || "")
@@ -178,8 +197,12 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
       toast.success("Perfil actualizado");
       onSave(cleaned);
     } catch (err) {
-      console.error(err);
-      toast.error(err?.message || "Error al guardar perfil");
+      console.error("Submit error:", err);
+      // Mensaje más claro si viene de Cloudinary
+      const msg = (err?.message || "").includes("Cloudinary")
+        ? "Error al subir imagen (revisa tus variables de Cloudinary)."
+        : (err?.message || "Error al guardar perfil");
+      toast.error(msg);
     }
   };
 

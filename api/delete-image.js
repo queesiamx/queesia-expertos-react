@@ -1,8 +1,8 @@
 // api/delete-image.js
 const ALLOWED_ORIGINS = [
   "https://expertos.queesia.com",
-  // previsualizaciones:
-  /\.vercel\.app$/.source // permite previews si lo deseas
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
 ];
 
 function matchOrigin(origin) {

@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
+import { Toaster } from "react-hot-toast";
 import { AuthProvider } from './hooks/useAuth';
 
 createRoot(document.getElementById('root')).render(
@@ -11,6 +12,8 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <App />
+    {/* Toaster global: no se desmonta al cambiar de ruta */}
+    <Toaster position="top-center" />
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>
