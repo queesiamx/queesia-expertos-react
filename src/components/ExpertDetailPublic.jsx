@@ -289,6 +289,13 @@ useEffect(() => {
     if (buyingBusy) return; // evita doble clic
     setBuyingBusy(true);
 
+    // --- Cálculo de precio con IVA en CENTAVOS (Stripe exige enteros) ---
+    const IVA = 0.16;
+    const precioBase = Number(contenido?.precio) || 0;        // MXN
+    const subtotalCents = Math.round(precioBase * 100);       // centavos
+    const ivaCents = Math.round(subtotalCents * IVA);
+    const totalCents = subtotalCents + ivaCents;              // total con IVA (centavos)
+
     try {
       // Usa SIEMPRE auth.currentUser para que las reglas coincidan
       let current = auth.currentUser;
@@ -318,9 +325,10 @@ useEffect(() => {
         contenidoId: contenido.id,
         titulo: contenido.titulo || "Contenido",
         tipo: isCourse ? "curso" : "manual",
-        precio, // base registrado (útil para auditoría)
-        ivaRate: IVA_RATE,
-        totalConIVA,
+        precio,                        // base MXN (útil para auditoría)
+        ivaRate: IVA,                  // 0.16
+        subtotalMXN: precioBase,
+        totalMXN: totalCents / 100,
         fechaSeleccionada: isCourse ? fechaSeleccionada : null,
         estado: import.meta.env.VITE_STRIPE_PUBLIC_KEY ? "pagando" : "porPagar",
         createdAt: serverTimestamp(),
@@ -343,8 +351,9 @@ useEffect(() => {
         body: JSON.stringify({
           compraId: ref.id,
           name: compraData.titulo,
-           // Cobrar SIEMPRE el total con IVA en centavos
-          amount: toCents(totalConIVA), // MXN → centavos
+           // Cobrar SIEMPRE el total con IVA en centavos (ya calculado)
+          amount: totalCents,
+          currency: "mxn",
           metadata: {
             compraId: ref.id,
             expertoId: expert.id,
@@ -354,8 +363,10 @@ useEffect(() => {
             userId: current.uid,
             userEmail: current.email || "",
             price_base: String(precio),
-            iva_rate: String(IVA_RATE),
-            price_total_with_iva: String(totalConIVA),
+            iva_rate: String(IVA),
+            price_total_with_iva_cents: String(totalCents),
+            subtotal_cents: String(subtotalCents),
+            iva_cents: String(ivaCents),
           },
         }),
       });
@@ -611,15 +622,18 @@ useEffect(() => {
 
                   // precio válido solo si es número > 0
                   const precioNum = toNumber(c.precio);
-                  const hasPrice = Number.isFinite(precioNum) && precioNum >= 0;
+                  // Solo consideramos "con precio" si es estrictamente > 0
+                  const hasPrice = Number.isFinite(precioNum) && precioNum > 0;
                   const isFree =
-                  Boolean(c.gratis) || precioNum === 0 || /gratis/i.test(String(c.descripcion || ""));
+                    Boolean(c.gratis) ||
+                    precioNum === 0 ||
+                    /gratis/i.test(String(c.descripcion || ""));
 
                   // consideramos “gratis” si el contenido lo marca
                   // o si es una consulta, o no hay precio válido               
 
                   const cta =
-                    c.cta || (isConsulta ? "Enviar" : hasPrice ? "Comprar" : "Obtener");
+                    c.cta || (isConsulta ? "Enviar" : isFree ? "Obtener" : "Comprar");
 
                   return (
                     <>
@@ -636,7 +650,9 @@ useEffect(() => {
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => (isFree ? handleAbrirModal(c) : handleAbrirModalCompra(c))}
+                       onClick={() =>
+                      isFree ? handleAbrirModal(c) : handleAbrirModalCompra(c)
+                      }
                       className="rounded-xl bg-emerald-600 text-white px-4 py-2 font-medium shadow-sm hover:bg-emerald-700"
                     >
                       {cta}

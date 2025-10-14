@@ -30,10 +30,13 @@ const [localChip, setLocalChip]   = useState("Todos");
     const cargar = async () => {
       try {
         const expertosSnap = await getDocs(collection(db, "experts"));
-        const expertosAprobados = expertosSnap.docs
-          .map((d) => ({ id: d.id, ...d.data() }))
-          .filter((e) => e.aprobado === true);
-
+        const todos = expertosSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          // ✅ Filtro tolerante: acepta true boolean, "true" string y también ausencia del campo
+          const expertosAprobados = todos.filter(
+            (e) => e.aprobado === true || e.aprobado === "true" || typeof e.aprobado === "undefined"
+          );
+          console.debug("Expertos (total):", todos.length, " / aprobados/visibles:", expertosAprobados.length);
+ 
         const serviciosSnap = await getDocs(collection(db, "contenidosExpertos"));
         const serviciosPorExperto = {};
         serviciosSnap.docs.forEach((doc) => {
@@ -49,6 +52,7 @@ const [localChip, setLocalChip]   = useState("Todos");
         }));
 
         setExpertos(expertosConServicios);
+        console.debug("Expertos con servicios:", expertosConServicios.length);
       } catch (err) {
         console.error("Error cargando expertos:", err);
       } finally {
@@ -124,99 +128,107 @@ const [localChip, setLocalChip]   = useState("Todos");
       {/* Header sticky como en el mock */}
       {showHeader && (
   <section className="sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
-    {/* TODO EL CÓDIGO QUE YA TIENES DENTRO DEL SECTION */}
-      <section className="hidden sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]">
+    {/* contenedor decorativo opcional */}
+    <div className="hidden sticky top-0 z-30 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--overlay)/0.5] border-b border-[var(--ring)]">
+
+      {/* FILA: título + search + sort */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-3">
+        <div className="flex-1 flex items-center gap-3">
+          <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]">
+            <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12 2a10 10 0 100 20 10 10 0 000-20Zm1 14H8v-2h5v2Zm3-4H8V8h8v4Z"
+              />
+            </svg>
+          </span>
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Expertos</h1>
+          <span className="hidden sm:inline text-[13px] text-[var(--subtext)]">
+            Conecta con especialistas verificados.
+          </span>
+        </div>
+
+        {/* Search */}
+        <div className="flex-1 max-w-xl">
+          <label className="w-full relative block">
+            <input
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
+              placeholder="Buscar por nombre, rol, habilidad…"
+              className="w-full h-11 rounded-2xl bg-[var(--card)] text-[var(--text)] placeholder-[var(--subtext)] ring-1 ring-[var(--ring)] outline-none px-4 pr-10 focus:ring-2 focus:ring-[var(--primary)]/50 transition"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
               <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
                 <path
                   fill="currentColor"
-                  d="M12 2a10 10 0 100 20 10 10 0 000-20Zm1 14H8v-2h5v2Zm3-4H8V8h8v4Z"
+                  d="M10 4a6 6 0 104.472 10.03l3.749 3.75 1.414-1.415-3.75-3.748A6 6 0 0010 4Zm0 2a4 4 0 110 8 4 4 0 010-8Z"
                 />
               </svg>
             </span>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Expertos</h1>
-            <span className="hidden sm:inline text-[13px] text-[var(--subtext)]">
-              Conecta con especialistas verificados.
-            </span>
-          </div>
+          </label>
+        </div>
 
-          {/* Search */}
-          <div className="flex-1 max-w-xl">
-            <label className="w-full relative block">
-              <input
-                value={localQuery}
-                onChange={(e) => setLocalQuery(e.target.value)}
-                placeholder="Buscar por nombre, rol, habilidad…"
-                className="w-full h-11 rounded-2xl bg-[var(--card)] text-[var(--text)] placeholder-[var(--subtext)] ring-1 ring-[var(--ring)] outline-none px-4 pr-10 focus:ring-2 focus:ring-[var(--primary)]/50 transition"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M10 4a6 6 0 104.472 10.03l3.749 3.75 1.414-1.415-3.75-3.748A6 6 0 0010 4Zm0 2a4 4 0 110 8 4 4 0 010-8Z"
-                  />
-                </svg>
-              </span>
-            </label>
-          </div>
+        {/* Sort */}
+        <div>
+          <label htmlFor="sort" className="sr-only">Ordenar por</label>
+          <select
+            id="sort"
+            value={localSort}
+            onChange={(e) => setLocalSort(e.target.value)}
+            className="h-11 rounded-2xl bg-[var(--card)] text-[var(--text)] ring-1 ring-[var(--ring)] px-3 focus:outline-none"
+          >
+            <option value="top">Mejor calificados</option>
+            <option value="priceAsc">Precio: menor a mayor</option>
+            <option value="priceDesc">Precio: mayor a menor</option>
+            <option value="reviews">Más reseñas</option>
+          </select>
+        </div>
+      </div>
 
-          {/* Sort */}
-          <div>
-            <label htmlFor="sort" className="sr-only">Ordenar por</label>
-            <select
-              id="sort"
-              value={localSort}
-              onChange={(e) => setLocalSort(e.target.value)}
-              className="h-11 rounded-2xl bg-[var(--card)] text-[var(--text)] ring-1 ring-[var(--ring)] px-3 focus:outline-none"
+      {/* Chips */}
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-4 overflow-x-auto">
+        <div className="flex gap-2">
+          {chips.map((t) => (
+            <button
+              key={t}
+              onClick={() => setLocalChip(t)}
+              className={`px-3.5 h-9 rounded-full text-sm whitespace-nowrap border transition ${
+                localChip === t
+                  ? "bg-[var(--primary)] text-[var(--primaryText)] border-transparent"
+                  : "bg-[var(--card)]/60 text-[var(--text)] border-[var(--ring)] hover:border-[var(--primary)]/40"
+              }`}
             >
-              <option value="top">Mejor calificados</option>
-              <option value="priceAsc">Precio: menor a mayor</option>
-              <option value="priceDesc">Precio: mayor a menor</option>
-              <option value="reviews">Más reseñas</option>
-            </select>
-          </div>
-
-        </div>
-
-        {/* Chips */}
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 pb-4 overflow-x-auto">
-          <div className="flex gap-2">
-            {chips.map((t) => (
-              <button
-                key={t}
-                onClick={() => setLocalChip(t)}
-                className={`px-3.5 h-9 rounded-full text-sm whitespace-nowrap border transition ${
-                  localChip === t 
-                    ? "bg-[var(--primary)] text-[var(--primaryText)] border-transparent"
-                    : "bg-[var(--card)]/60 text-[var(--text)] border-[var(--ring)] hover:border-[var(--primary)]/40"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Grid de tarjetas */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cargando ? (
-            <p className="text-center text-[var(--subtext)] col-span-full">Cargando expertos…</p>
-          ) : filtrados.length === 0 ? (
-            <p className="text-center text-[var(--subtext)] col-span-full">
-              No se encontraron expertos con esos filtros.
-            </p>
-          ) : (
-            filtrados.map((exp) => <ExpertCard key={exp.id} expert={exp} />)
-          )}
-        </div>
-      </section>
+              {t}
+            </button>
+          ))}
+        </div>            {/* ← cierra .flex */}
+      </div>              {/* ← cierra wrapper de chips (FALTABA) */}
+    </div>                {/* ← cierra el div.hidden de la línea 132 */}
   </section>
 )}
-{/* CTA inferior */}
+
+{/* Grid de tarjetas + estados */}
+<section className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+  {cargando ? (
+    <p className="text-center text-slate-500">Cargando expertos…</p>
+  ) : filtrados.length === 0 ? (
+    <p className="text-center text-slate-500">
+      No se encontraron expertos con los filtros actuales.
+      Prueba limpiar búsqueda o cambiar "Filtros rápidos".
+    </p>
+  ) : (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filtrados.map((exp) => (
+        <ExpertCard key={exp.id} expert={exp} />
+      ))}
+    </div>
+  )}
+</section>
+
+
+
+
+    {/* CTA inferior */}
 {showCTA && (
   <footer className="mx-auto max-w-6xl px-4 sm:px-6 pb-12">
     <div className="rounded-[2rem] bg-[var(--surface)] ring-1 ring-[var(--ring)] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
