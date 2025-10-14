@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
+// Si usas alias "@", deja la línea de abajo; si no, cámbiala por "../lib/env"
+import { CLOUD_NAME, UPLOAD_PRESET, DELETE_URL, assertCloudinaryEnv } from "@/lib/env";
 import { sanitizePayload } from "@/utils/sanitize";
 import {
   doc,
@@ -36,12 +37,10 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
 
    useEffect(() => {
     if (!expert) return;
-    setFormData((prev) => ({
+      setFormData((prev) => ({
       ...prev,
       ...expert,
-      certificaciones: Array.isArray(expert.certificaciones)
-        ? expert.certificaciones
-        : [],
+      certificaciones: Array.isArray(expert.certificaciones) ? expert.certificaciones : [],
       fotoPerfilURL: expert.fotoPerfilURL || "",
       fotoPerfilPublicId: expert.fotoPerfilPublicId || "",
     }));
@@ -117,19 +116,13 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
     if (!user) return;
 
     try {
-       // --- 1) Subida a Cloudinary (opcional) con validación de ENV ---
+        // --- 1) Subida a Cloudinary (opcional) ---
       if (nuevaImagen) {
-        const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-        const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-        if (!CLOUD_NAME || !UPLOAD_PRESET) {
-          toast.error(
-            "Faltan variables de Cloudinary (CLOUD_NAME/UPLOAD_PRESET)."
-          );
-          return;
-        }
-        // Elimina imagen anterior (si la hay)
-        if (formData.fotoPerfilPublicId && import.meta.env.VITE_CLOUDINARY_DELETE_URL) {
-          await fetch(import.meta.env.VITE_CLOUDINARY_DELETE_URL, {
+        assertCloudinaryEnv(); // lanza error claro si faltan
+
+        // Elimina imagen anterior solo si hay endpoint definido
+        if (formData.fotoPerfilPublicId && DELETE_URL) {
+          await fetch(DELETE_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ public_id: formData.fotoPerfilPublicId }),
@@ -138,27 +131,29 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
         const data = new FormData();
         data.append("file", nuevaImagen);
         data.append("upload_preset", UPLOAD_PRESET);
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
-          { method: "POST", body: data }
-        );
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+          method: "POST",
+          body: data,
+        });
         if (!res.ok) {
           const t = await res.text();
           throw new Error(`Cloudinary upload failed: ${res.status} ${t}`);
         }
         const imgData = await res.json();
-        // Guarda URL e ID solo si existen (evita undefined)
-        if (imgData?.secure_url) {
-          formData.fotoPerfilURL = imgData.secure_url;
-        }
-        if (imgData?.public_id) {
-          formData.fotoPerfilPublicId = imgData.public_id;
-        }
+        // Actualiza estado de forma inmutable
+        setFormData((prev) => ({
+          ...prev,
+          fotoPerfilURL: imgData?.secure_url || prev.fotoPerfilURL || "",
+          fotoPerfilPublicId: imgData?.public_id || prev.fotoPerfilPublicId || "",
+        }));
       }
 
-    // --- 2) Sanitiza y quita claves vacías/undefined ---
+    // Lee la versión más reciente del estado (por si se subió imagen)
+     const latest = (typeof formData === "object") ? { ...formData } : {};
+
+      // --- 2) Sanitiza y quita claves vacías/undefined ---
       const base = {
-        ...formData,
+        ...latest,
         certificaciones: Array.isArray(formData.certificaciones)
           ? formData.certificaciones
           : String(formData.certificaciones || "")
@@ -177,10 +172,10 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
       await setDoc(doc(db, "experts", user.uid), payload, { merge: true });
 
       toast.success("Perfil actualizado");
-      onSave(formData);
+      onSave(cleaned);
     } catch (err) {
       console.error(err);
-      toast.error("Error al guardar perfil");
+      toast.error(err?.message || "Error al guardar perfil");
     }
   };
 
@@ -212,7 +207,7 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
           prev.map((s, i) => (i === index ? { ...s, id: docRef.id } : s))
         );
       }
-      
+
       toast.success(`Servicio ${index + 1} guardado`);
     } catch (err) {
       console.error(err);
