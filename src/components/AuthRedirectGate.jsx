@@ -1,11 +1,21 @@
 // src/components/AuthRedirectGate.jsx
 import { useEffect, useRef } from "react";
-import { auth } from "@/firebase"; // OJO: ruta correcta
+import { auth } from "@/firebase";
 import { getRedirectResult, onAuthStateChanged } from "firebase/auth";
 
 const ADMIN_EMAILS = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
 
-// Navegación por rol
+/** 🧹 Limpia llaves de sesión usadas por Firebase Redirect */
+function clearFirebaseRedirectKeys() {
+  const keys = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i) || "";
+    if (k.toLowerCase().includes("firebase:redirect")) keys.push(k);
+  }
+  keys.forEach((k) => sessionStorage.removeItem(k));
+}
+
+/** Navegación por rol */
 function goByRole(user, pendingRole) {
   const email = user?.email || "";
   const isAdmin = ADMIN_EMAILS.includes(email) || pendingRole === "ADMIN";
@@ -16,13 +26,14 @@ function goByRole(user, pendingRole) {
     return;
   }
   if (isExpert) {
-    // Si el experto no está aprobado, tu lógica en Dashboard lo manda a /registro
+    // Si el experto no está aprobado, tu lógica de dashboard lo llevará a /registro
     window.location.replace("/expert-dashboard");
     return;
   }
   window.location.replace("/mis-consultas");
 }
 
+/** Cachea datos mínimos para el resto de la app */
 async function cacheUser(user) {
   const token = await user.getIdToken();
   localStorage.setItem("authToken", token);
@@ -41,14 +52,14 @@ export default function AuthRedirectGate() {
   const ran = useRef(false);
 
   useEffect(() => {
-    if (ran.current) return; // evita dobles
+    if (ran.current) return; // evita ejecución doble por HMR/stric mode
     ran.current = true;
 
     (async () => {
       try {
         console.log("[AuthRedirectGate] mounted. URL:", window.location.href);
 
-        // 1) Intento normal con getRedirectResult
+        // 1) Intento principal: procesar retorno de signInWithRedirect
         const res = await getRedirectResult(auth).catch((e) => {
           console.error("[AuthRedirectGate] getRedirectResult error:", e);
           return null;
@@ -60,12 +71,12 @@ export default function AuthRedirectGate() {
           if (pendingRole) localStorage.removeItem("pendingRole");
 
           await cacheUser(res.user);
+          clearFirebaseRedirectKeys();
           goByRole(res.user, pendingRole);
           return;
         }
 
-        // 2) Fallback: a veces el user ya está firmado pero result == null
-        //    Esperamos un pequeño tiempo y miramos currentUser / onAuthStateChanged.
+        // 2) Fallback: Safari/iOS a veces da result == null pero el user ya está
         setTimeout(() => {
           const fallbackUser = auth.currentUser;
           if (fallbackUser) {
@@ -73,9 +84,14 @@ export default function AuthRedirectGate() {
             const pendingRole = localStorage.getItem("pendingRole") || "";
             if (pendingRole) localStorage.removeItem("pendingRole");
 
-            cacheUser(fallbackUser).then(() => goByRole(fallbackUser, pendingRole));
+            cacheUser(fallbackUser)
+              .then(() => {
+                clearFirebaseRedirectKeys();
+                goByRole(fallbackUser, pendingRole);
+              })
+              .catch((e) => console.error("[AuthRedirectGate] cacheUser fallback error:", e));
           } else {
-            // Último recurso: nos suscribimos brevemente
+            // 3) Último recurso: suscribirse brevemente a onAuthStateChanged
             const unsub = onAuthStateChanged(auth, async (u) => {
               if (!u) return;
               console.log("[AuthRedirectGate] onAuthStateChanged user:", u.email);
@@ -83,10 +99,16 @@ export default function AuthRedirectGate() {
               const pendingRole = localStorage.getItem("pendingRole") || "";
               if (pendingRole) localStorage.removeItem("pendingRole");
 
-              await cacheUser(u);
-              goByRole(u, pendingRole);
+              try {
+                await cacheUser(u);
+              } catch (e) {
+                console.error("[AuthRedirectGate] cacheUser onAuth error:", e);
+              } finally {
+                clearFirebaseRedirectKeys();
+                goByRole(u, pendingRole);
+              }
             });
-            // Se auto-limpia cuando naveguemos
+            // Autolimpieza de seguridad
             setTimeout(() => unsub?.(), 5000);
           }
         }, 150);
@@ -102,5 +124,6 @@ export default function AuthRedirectGate() {
     })();
   }, []);
 
-  return null; // no renderiza
+  // No renderiza UI: solo actúa como “puerta” de retorno de redirect
+  return null;
 }

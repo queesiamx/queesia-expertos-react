@@ -13,6 +13,14 @@ const isMobile =
   typeof navigator !== "undefined" &&
   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
+  function isReturningFromFirebaseRedirect() {
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i) || "";
+    if (k.toLowerCase().includes("firebase:redirect")) return true;
+  }
+  return false;
+}
+
 export default function LoginSolo() {
   const [cargando, setCargando] = useState(false);
 
@@ -50,8 +58,8 @@ export default function LoginSolo() {
     setCargando(true);
     const provider = new GoogleAuthProvider();
     try {
-      if (isMobile) {
-        await signInWithRedirect(auth, provider);
+      if (isMobile && !isReturningFromFirebaseRedirect()) {
+        await signInWithRedirect(auth, new GoogleAuthProvider());
         return;
       }
       const result = await signInWithPopup(auth, provider);

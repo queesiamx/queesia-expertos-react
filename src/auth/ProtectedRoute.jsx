@@ -1,8 +1,9 @@
+// src/auth/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
 
-// Detecta si venimos de signInWithRedirect (flujo móvil)
+/** Detecta si venimos de signInWithRedirect (flujo móvil) */
 function isReturningFromRedirect() {
   for (let i = 0; i < sessionStorage.length; i++) {
     const k = sessionStorage.key(i) || "";
@@ -14,20 +15,22 @@ function isReturningFromRedirect() {
 export default function ProtectedRoute({ children, roleRequired }) {
   const { user, rol, aprobado, loading } = useAuth();
 
-  // Mientras carga auth o volvemos del redirect, NO redirijas
+  // ⏳ Mientras carga auth o regresamos del redirect, no muevas la ruta
   if (loading || isReturningFromRedirect()) {
-    return <p className="text-center mt-10">Cargando...</p>;
+    return <div className="p-8 text-center">Cargando…</div>;
   }
 
-  // Sin sesión → a login (ajusta si prefieres "/")
-  if (!user) return <Navigate to="/login" replace />;
+  // 🔒 Sin sesión → a login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  // Sesión pero rol distinto al requerido
-  if (roleRequired && rol !== roleRequired) {
+  // 🎭 Si se requiere un rol específico y no coincide, redirige a su dashboard por rol
+  if (roleRequired && rol && rol !== roleRequired) {
     return <Navigate to={`/${rol}/dashboard`} replace />;
   }
 
-  // Si exige EXPERTO y no está aprobado
+  // ✅ Si exige EXPERTO y no está aprobado aún
   if (roleRequired === ROLES.EXPERTO && !aprobado) {
     return (
       <div className="text-center mt-10 text-red-600 px-4">
@@ -37,5 +40,6 @@ export default function ProtectedRoute({ children, roleRequired }) {
     );
   }
 
+  // ✅ Acceso concedido
   return children;
 }

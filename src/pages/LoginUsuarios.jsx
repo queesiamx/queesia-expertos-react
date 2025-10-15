@@ -15,6 +15,16 @@ const isMobile =
   typeof navigator !== "undefined" &&
   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
+  // ⛔️ Evita relanzar signInWithRedirect si ya venimos de un redirect de Firebase
+function isReturningFromFirebaseRedirect() {
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i) || "";
+    if (k.toLowerCase().includes("firebase:redirect")) return true;
+  }
+  return false;
+}
+
+
 export default function LoginUsuarios() {
   const [cargando, setCargando] = useState(false);
 
@@ -55,9 +65,10 @@ export default function LoginUsuarios() {
     setCargando(true);
     const provider = new GoogleAuthProvider();
     try {
-      if (isMobile) {
-        await signInWithRedirect(auth, provider);
-        return; // volverá por getRedirectResult()
+      // Móvil: usa redirect SOLO si no venimos ya de un redirect
+      if (isMobile && !isReturningFromFirebaseRedirect()) {
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+        return; // continuará en getRedirectResult()
       }
       const result = await signInWithPopup(auth, provider);
       await afterLogin(result.user);
