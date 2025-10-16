@@ -1,11 +1,11 @@
-// src/components/AuthRedirectGate.jsx
+// src/components/AuthRedirectGate.jsx  (#RTC_CO)
 import { useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { auth } from "@/firebase";
 import { getRedirectResult, onAuthStateChanged } from "firebase/auth";
+import { pathByRole } from "@/auth/startLogin";
 
-const ADMIN_EMAILS = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
-
-/** 🧹 Limpia llaves de sesión usadas por Firebase Redirect */
+// Limpia llaves de redirect en sessionStorage (evita falsos positivos iOS/Safari)
 function clearFirebaseRedirectKeys() {
   const keys = [];
   for (let i = 0; i < sessionStorage.length; i++) {
@@ -15,25 +15,16 @@ function clearFirebaseRedirectKeys() {
   keys.forEach((k) => sessionStorage.removeItem(k));
 }
 
-/** Navegación por rol */
-function goByRole(user, pendingRole) {
-  const email = user?.email || "";
-  const isAdmin = ADMIN_EMAILS.includes(email) || pendingRole === "ADMIN";
-  const isExpert = pendingRole === "EXPERTO";
-
-  if (isAdmin) {
-    window.location.replace("/admin-expertos");
-    return;
+function hasFirebaseRedirectKeys() {
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i) || "";
+    if (k.toLowerCase().includes("firebase:redirect")) return true;
   }
-  if (isExpert) {
-    // Si el experto no está aprobado, tu lógica de dashboard lo llevará a /registro
-    window.location.replace("/expert-dashboard");
-    return;
-  }
-  window.location.replace("/mis-consultas");
+  return false;
 }
 
-/** Cachea datos mínimos para el resto de la app */
+
+// Cache mínimo (por compatibilidad con el resto de tu app)
 async function cacheUser(user) {
   const token = await user.getIdToken();
   localStorage.setItem("authToken", token);
@@ -50,80 +41,72 @@ async function cacheUser(user) {
 
 export default function AuthRedirectGate() {
   const ran = useRef(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (ran.current) return; // evita ejecución doble por HMR/stric mode
+    if (ran.current) return;
     ran.current = true;
 
     (async () => {
-      try {
-        console.log("[AuthRedirectGate] mounted. URL:", window.location.href);
+      // ✅ Solo procesa cuando REALMENTE venimos del redirect y estamos en rutas de login
+      const onLoginRoute = location.pathname.startsWith("/login") || location.pathname.startsWith("/auth");
+      if (!onLoginRoute && !hasFirebaseRedirectKeys()) return;
 
-        // 1) Intento principal: procesar retorno de signInWithRedirect
+
+      try {
+        // 1) Intento principal: retorno de signInWithRedirect
         const res = await getRedirectResult(auth).catch((e) => {
-          console.error("[AuthRedirectGate] getRedirectResult error:", e);
+          console.error("[ARG] getRedirectResult error:", e);
           return null;
         });
 
         if (res?.user) {
-          console.log("[AuthRedirectGate] result.user:", res.user?.email);
-          const pendingRole = localStorage.getItem("pendingRole") || "";
-          if (pendingRole) localStorage.removeItem("pendingRole");
+          const pendingRole = localStorage.getItem("pendingRole") || "USUARIO";
+          localStorage.removeItem("pendingRole");
 
           await cacheUser(res.user);
           clearFirebaseRedirectKeys();
-          goByRole(res.user, pendingRole);
+          navigate(pathByRole(res.user, pendingRole), { replace: true });
           return;
         }
 
-        // 2) Fallback: Safari/iOS a veces da result == null pero el user ya está
+        // 2) Fallback rápido
         setTimeout(() => {
-          const fallbackUser = auth.currentUser;
-          if (fallbackUser) {
-            console.log("[AuthRedirectGate] fallback currentUser:", fallbackUser.email);
-            const pendingRole = localStorage.getItem("pendingRole") || "";
-            if (pendingRole) localStorage.removeItem("pendingRole");
+          const u = auth.currentUser;
+          if (u) {
+            const pendingRole = localStorage.getItem("pendingRole") || "USUARIO";
+            localStorage.removeItem("pendingRole");
 
-            cacheUser(fallbackUser)
-              .then(() => {
-                clearFirebaseRedirectKeys();
-                goByRole(fallbackUser, pendingRole);
-              })
-              .catch((e) => console.error("[AuthRedirectGate] cacheUser fallback error:", e));
+              cacheUser(u).then(() => {
+              clearFirebaseRedirectKeys();
+              navigate(pathByRole(u, pendingRole), { replace: true });
+            });
           } else {
-            // 3) Último recurso: suscribirse brevemente a onAuthStateChanged
-            const unsub = onAuthStateChanged(auth, async (u) => {
-              if (!u) return;
-              console.log("[AuthRedirectGate] onAuthStateChanged user:", u.email);
+            // 3) Último recurso: breve suscripción
+            const unsub = onAuthStateChanged(auth, async (user) => {
+              if (!user) return;
               unsub?.();
-              const pendingRole = localStorage.getItem("pendingRole") || "";
-              if (pendingRole) localStorage.removeItem("pendingRole");
+
+              const pendingRole = localStorage.getItem("pendingRole") || "USUARIO";
+              localStorage.removeItem("pendingRole");
 
               try {
-                await cacheUser(u);
-              } catch (e) {
-                console.error("[AuthRedirectGate] cacheUser onAuth error:", e);
-              } finally {
-                clearFirebaseRedirectKeys();
-                goByRole(u, pendingRole);
-              }
+                await cacheUser(user);
+              } catch {}
+              clearFirebaseRedirectKeys();
+              navigate(pathByRole(user, pendingRole), { replace: true });
             });
-            // Autolimpieza de seguridad
+
+            // Autolimpieza por si nada ocurre
             setTimeout(() => unsub?.(), 5000);
           }
         }, 150);
       } catch (e) {
-        console.error("[AuthRedirectGate] fatal error:", e);
-      } finally {
-        // Cierra overlays/menús si existieran (evita que parezca “no cargó”)
-        try {
-          const ev = new CustomEvent("close-all-overlays");
-          window.dispatchEvent(ev);
-        } catch {}
+        console.error("[ARG] fatal error:", e);
       }
     })();
   }, []);
 
-  // No renderiza UI: solo actúa como “puerta” de retorno de redirect
   return null;
 }

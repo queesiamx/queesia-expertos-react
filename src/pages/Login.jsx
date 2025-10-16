@@ -7,21 +7,31 @@ import {
 } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ROLES } from "../constants/roles";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 
 // Detecta navegador móvil
 const isMobile =
-  typeof navigator !== "undefined" &&
-  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+// 🧹 Limpia llaves de redirect de Firebase en sessionStorage
+function clearFirebaseRedirectKeys() {
+  const keys = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const k = sessionStorage.key(i) || "";
+    if (k.toLowerCase().includes("firebase:redirect")) keys.push(k);
+  }
+  keys.forEach((k) => sessionStorage.removeItem(k));
+}
 
 export default function Login() {
   const [loginExitoso, setLoginExitoso] = useState(false);
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth(); // sesión global
+  const [params] = useSearchParams();
 
   // Lógica post-login (se usa tanto con popup como con redirect)
   const postLoginFlow = async (firebaseUser) => {
@@ -67,7 +77,7 @@ export default function Login() {
         return;
       } else {
         toast("Tu cuenta fue registrada. Completa tu perfil para continuar.");
-        navigate("/registro");
+        window.location.replace("/post-auth"); // el puente decidirá y te puede llevar a /registro
         return;
       }
     }
@@ -83,12 +93,20 @@ export default function Login() {
     setLoginExitoso(true);
   };
 
-  // Redirección solo cuando YA hay user y se completó postLoginFlow
+  // Redirección SOLO cuando YA hay user y se completó postLoginFlow
   useEffect(() => {
     if (user && loginExitoso) {
-      navigate("/dashboard", { replace: true }); // o deja que tu layout redirija por rol
+      window.location.replace("/post-auth"); // deja que /post-auth decida el destino por rol
     }
-  }, [user, loginExitoso, navigate]);
+  }, [user, loginExitoso]);
+
+  // Montaje: limpia llaves y si YA hay sesión real, salta a /post-auth
+  useEffect(() => {
+    clearFirebaseRedirectKeys();
+    if (auth.currentUser) {
+      window.location.replace("/post-auth");
+    }
+  }, []);
 
   // Procesa retorno de signInWithRedirect (móvil)
   useEffect(() => {
@@ -97,6 +115,7 @@ export default function Login() {
         const res = await getRedirectResult(auth);
         if (!res?.user) return;
         await postLoginFlow(res.user);
+        window.location.replace("/post-auth");
       } catch (e) {
         console.error(e);
         toast.error("No se pudo completar el inicio de sesión móvil.");
@@ -107,13 +126,22 @@ export default function Login() {
   const iniciarSesion = async () => {
     setCargando(true);
     const provider = new GoogleAuthProvider();
+
+    // Guarda el rol solicitado (si vino por query)
+    const roleParam = (params.get("role") || "").toUpperCase(); // admin|experto|usuario
+    if (roleParam) localStorage.setItem("pendingRole", roleParam);
+
     try {
       if (isMobile) {
-        await signInWithRedirect(auth, provider);
+        // Móvil → primero ir al puente y luego lanzar redirect
+        navigate("/post-auth", { replace: true });
+        setTimeout(() => signInWithRedirect(auth, provider), 0);
         return; // volverá por getRedirectResult()
       }
+      // Desktop → popup
       const result = await signInWithPopup(auth, provider);
       await postLoginFlow(result.user);
+      window.location.replace("/post-auth");
     } catch (error) {
       console.error("Error con Google Login", error);
       if (error.code !== "auth/popup-closed-by-user") {
@@ -127,9 +155,7 @@ export default function Login() {
   return (
     <main className="min-h-screen bg-white flex flex-col items-center justify-center px-4 py-10">
       <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
-          Soy experto 🧐
-        </h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Soy experto 🧐</h2>
 
         {!user ? (
           <button
@@ -140,9 +166,7 @@ export default function Login() {
             {cargando ? "Conectando..." : "Conectar con Google"}
           </button>
         ) : (
-          <p className="text-sm text-gray-600 mt-4">
-            Ya has iniciado sesión. Redirigiéndote al panel...
-          </p>
+          <p className="text-sm text-gray-600 mt-4">Ya has iniciado sesión. Entrando…</p>
         )}
       </div>
     </main>

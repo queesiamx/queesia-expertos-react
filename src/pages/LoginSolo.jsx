@@ -1,19 +1,14 @@
-// src/pages/LoginSolo.jsx  (RTC-CO)
 import React, { useEffect, useState } from "react";
-import {
-  signInWithPopup,
-  signInWithRedirect,
-  
-  GoogleAuthProvider,
-} from "firebase/auth";
-import { auth } from "../firebase"; // ⬅️ misma ruta que uses en pages
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { signInWithPopup, signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../firebase";
 
 // Detecta móvil
 const isMobile =
-  typeof navigator !== "undefined" &&
-  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-  function isReturningFromFirebaseRedirect() {
+// Evita relanzar redirect si ya venimos de uno
+function isReturningFromFirebaseRedirect() {
   for (let i = 0; i < sessionStorage.length; i++) {
     const k = sessionStorage.key(i) || "";
     if (k.toLowerCase().includes("firebase:redirect")) return true;
@@ -23,47 +18,44 @@ const isMobile =
 
 export default function LoginSolo() {
   const [cargando, setCargando] = useState(false);
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const provider = new GoogleAuthProvider();
 
-  const afterLogin = async (firebaseUser) => {
-    const token = await firebaseUser.getIdToken();
-    localStorage.setItem("authToken", token);
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        uid: firebaseUser.uid,
-        name: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photo: firebaseUser.photoURL,
-      })
-    );
-    // En esta pantalla mandamos a la vista más común de usuario:
-    window.location.href = "/mis-consultas";
-  };
-
-  /*useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (res) => {
-        if (!res) return;
-        setCargando(true);
-        try {
-          await afterLogin(res.user);
-        } finally {
-          setCargando(false);
-        }
-      })
-      .catch((e) => console.error("getRedirectResult error:", e));
-  }, []);*/
+  // Si YA hay sesión real, salta al puente
+  useEffect(() => {
+    if (auth.currentUser) {
+      window.location.replace("/post-auth");
+    }
+  }, []);
 
   const iniciarSesion = async () => {
     setCargando(true);
-    const provider = new GoogleAuthProvider();
+
+    // Guarda pendingRole si vino por query (default USUARIO)
+    const roleParam = (params.get("role") || "USUARIO").toUpperCase();
+    localStorage.setItem("pendingRole", roleParam);
+
     try {
       if (isMobile && !isReturningFromFirebaseRedirect()) {
-        await signInWithRedirect(auth, new GoogleAuthProvider());
+        navigate("/post-auth", { replace: true });
+        setTimeout(() => signInWithRedirect(auth, provider), 0);
         return;
       }
       const result = await signInWithPopup(auth, provider);
-      await afterLogin(result.user);
+      // cache mínimo opcional
+      const token = await result.user.getIdToken();
+      localStorage.setItem("authToken", token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          uid: result.user.uid,
+          name: result.user.displayName,
+          email: result.user.email,
+          photo: result.user.photoURL,
+        })
+      );
+      window.location.replace("/post-auth");
     } catch (e) {
       console.error("LoginSolo error:", e);
     } finally {

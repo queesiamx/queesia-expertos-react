@@ -1,8 +1,8 @@
 // src/pages/MisConsultas.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { auth, db } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { db } from "../firebase";
+import { useAuth } from "@/hooks/useAuth";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import toast from "react-hot-toast";
 
@@ -58,37 +58,38 @@ const preview = (txt = "", n = 140) =>
 
 export default function MisConsultas() {
   const [consultas, setConsultas] = useState([]);
-  const [usuario, setUsuario] = useState(null);
+  const { user: usuario, loading } = useAuth();
   const [cargando, setCargando] = useState(true);
   const [collapsed, setCollapsed] = useState({}); // { [id]: true|false }
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setUsuario(null);
-        setConsultas([]);
-        setCargando(false);
-        return;
-      }
-      setUsuario(user);
+      useEffect(() => {
+    if (loading) return;
+    if (!usuario) {
+      setConsultas([]);
+      setCargando(false);
+      return;
+    }
+    setCargando(true);
+    (async () => {
       try {
-        const col = collection(db, "consultasModeradas");
-
+        const colRef = collection(db, "consultasModeradas");
         let items = [];
-        // Intento por usuarioId
+
+        // 1) Buscar por usuarioId
         try {
-          const qUid = query(col, where("usuarioId", "==", user.uid));
+          const qUid = query(colRef, where("usuarioId", "==", usuario.uid));
           const snapUid = await getDocs(qUid);
           items = snapUid.docs.map((d) => ({ id: d.id, ...d.data() }));
         } catch {}
 
-        // Fallback por correo
+        // 2) Fallback por correo
         if (!items.length) {
-          const qMail = query(col, where("correo", "==", user.email));
+          const qMail = query(colRef, where("correo", "==", usuario.email));
           const snapMail = await getDocs(qMail);
           items = snapMail.docs.map((d) => ({ id: d.id, ...d.data() }));
         }
 
+        // 3) Normalización y orden
         const normalizados = items.map((x) => ({
           id: x.id,
           estado: x.estado || "pendiente",
@@ -97,16 +98,16 @@ export default function MisConsultas() {
           respuesta: x.respuesta || "",
           precio: x.precio,
           expertoNombre: x.expertoNombre,
-          expertoAvatar: x.expertoAvatar || x.fotoPerfilURL, // por si lo guardas así
-          fechaRespuesta: x.fechaRespuesta?.toMillis ? x.fechaRespuesta.toMillis() : x.fechaRespuesta,
+          expertoAvatar: x.expertoAvatar || x.fotoPerfilURL,
+          fechaRespuesta: x.fechaRespuesta?.toMillis
+            ? x.fechaRespuesta.toMillis()
+            : x.fechaRespuesta,
         }));
-
         normalizados.sort((a, b) => (b.fechaRespuesta || 0) - (a.fechaRespuesta || 0));
         setConsultas(normalizados);
 
-        // Por defecto: colapsadas
-        const initial = {};
-        normalizados.forEach((c) => (initial[c.id] = true));
+        // 4) Colapsadas por defecto
+        const initial = Object.fromEntries(normalizados.map((c) => [c.id, true]));
         setCollapsed(initial);
       } catch (e) {
         console.error(e);
@@ -114,9 +115,8 @@ export default function MisConsultas() {
       } finally {
         setCargando(false);
       }
-    });
-    return () => unsub();
-  }, []);
+    })();
+  }, [usuario, loading]);
 
   const manejarPago = async (consultaId) => {
     if (!usuario?.email) {

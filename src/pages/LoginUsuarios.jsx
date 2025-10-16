@@ -1,21 +1,15 @@
-// src/pages/LoginUsuarios.jsx  (RTC-CO)
 import React, { useEffect, useState } from "react";
-import {
-  signInWithPopup,
-  signInWithRedirect,
-  
-  GoogleAuthProvider,
-} from "firebase/auth";
-import { auth } from "../firebase"; // ⬅️ usa la misma ruta que ya usas en pages
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { signInWithPopup, signInWithRedirect, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { auth } from "../firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import Footer from "../components/Footer";
 
-// Detecta móvil (Android/iOS/iPadOS)
+// Detecta móvil
 const isMobile =
-  typeof navigator !== "undefined" &&
-  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-  // ⛔️ Evita relanzar signInWithRedirect si ya venimos de un redirect de Firebase
+// Evita relanzar redirect si ya venimos de uno
 function isReturningFromFirebaseRedirect() {
   for (let i = 0; i < sessionStorage.length; i++) {
     const k = sessionStorage.key(i) || "";
@@ -24,56 +18,52 @@ function isReturningFromFirebaseRedirect() {
   return false;
 }
 
-
 export default function LoginUsuarios() {
   const [cargando, setCargando] = useState(false);
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const provider = new GoogleAuthProvider();
 
-  // Lógica común post-login para usuarios
-  const afterLogin = async (firebaseUser) => {
-    const token = await firebaseUser.getIdToken();
-    localStorage.setItem("authToken", token);
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        uid: firebaseUser.uid,
-        name: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photo: firebaseUser.photoURL,
-      })
-    );
-    // Como es login de USUARIO, manda a sus vistas:
-    window.location.href = "/mis-consultas";
-  };
-
-  // Procesa retorno de redirect (móvil)
-  // 🔸 Centralizado en <AuthRedirectGate />.
-  /*useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (res) => {
-        if (!res) return;
-        setCargando(true);
-        try {
-          await afterLogin(res.user);
-        } finally {
-          setCargando(false);
-        }
-      })
-      .catch((e) => console.error("getRedirectResult error:", e));
-  }, []);*/
+  // Si YA hay sesión real, salta al puente
+  useEffect(() => {
+    if (auth.currentUser) {
+      window.location.replace("/post-auth");
+    }
+  }, []);
 
   const iniciarSesion = async () => {
     setCargando(true);
-    const provider = new GoogleAuthProvider();
     try {
-      // Móvil: usa redirect SOLO si no venimos ya de un redirect
+      await setPersistence(auth, browserLocalPersistence);
+
+      // Guarda rol solicitado (default USUARIO)
+      const roleParam = (params.get("role") || "USUARIO").toUpperCase();
+      localStorage.setItem("pendingRole", roleParam);
+
+      // Móvil: redirect (pero evita relanzar si ya vienes de uno)
       if (isMobile && !isReturningFromFirebaseRedirect()) {
-        await signInWithRedirect(auth, new GoogleAuthProvider());
-        return; // continuará en getRedirectResult()
+        navigate("/post-auth", { replace: true });
+        setTimeout(() => signInWithRedirect(auth, provider), 0);
+        return;
       }
-      const result = await signInWithPopup(auth, provider);
-      await afterLogin(result.user);
+
+      // Desktop: popup
+      const res = await signInWithPopup(auth, provider);
+      const u = res.user;
+      const token = await u.getIdToken();
+      localStorage.setItem("authToken", token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          uid: u.uid,
+          name: u.displayName,
+          email: u.email,
+          photo: u.photoURL,
+        })
+      );
+      window.location.replace("/post-auth");
     } catch (e) {
-      console.error("LoginUsuarios error:", e);
+      console.error("[LoginUsuarios] error:", e);
     } finally {
       setCargando(false);
     }

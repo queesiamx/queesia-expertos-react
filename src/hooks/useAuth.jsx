@@ -23,6 +23,13 @@ export function AuthProvider({ children }) {
           setUser(null);
           setRol(null);
           setAprobado(false);
+        // 🧹 Limpia cualquier rastro de sesión previa
+          try {
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("user");
+            localStorage.removeItem("pendingRole");
+          } catch {}
+          
           return;
         }
 

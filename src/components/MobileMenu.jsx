@@ -4,6 +4,7 @@ import { LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
+import { startLogin } from "@/auth/startLogin";
 import { ROLES } from "../constants/roles";
 
 export default function MobileMenu({ handleLogout }) {
@@ -145,7 +146,7 @@ export default function MobileMenu({ handleLogout }) {
                 {/* Inicio de sesión con selector de rol */}
                 {!usuario ? (
                   <div className="px-1">
-                    <button
+                  <button
                       className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
                       type="button"
                       aria-haspopup="true"
@@ -155,27 +156,32 @@ export default function MobileMenu({ handleLogout }) {
                       <ChevronDown className="w-4 h-4" />
                     </button>
                     <div className="mt-1 mb-1">
-                      <a
-                        href="/login?role=admin"
-                        onClick={handleLinkClick}
-                        className="block px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                      {/* Login directo: ADMIN */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); startLogin("ADMIN"); close(); }}
+                        className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                        aria-label="Iniciar sesión como admin"
                       >
                         ⭐ Soy admin
-                      </a>
-                      <a
-                        href="/login?role=experto"
-                        onClick={handleLinkClick}
-                        className="block px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                      </button>
+                      {/* Login directo: EXPERTO */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); startLogin("EXPERTO"); close(); }}
+                        className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                        aria-label="Iniciar sesión como experto"
                       >
                         👨‍💼 Soy experto
-                      </a>
-                      <a
-                        href="/login?role=usuario"
-                        onClick={handleLinkClick}
-                        className="block px-6 py-2 text-xs hover:bg-gray-100 rounded"
+                      </button>
+                      {/* Login directo: USUARIO */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); startLogin("USUARIO"); close(); }}
+                        className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"                        aria-label="Iniciar sesión como usuario"
                       >
                         🙋 Soy usuario
-                      </a>
+                      </button>
                     </div>
                   </div>
                 ) : (

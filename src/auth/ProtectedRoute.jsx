@@ -2,36 +2,79 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../constants/roles";
+import { useEffect, useMemo } from "react";
 
-/** Detecta si venimos de signInWithRedirect (flujo móvil) */
+// Detecta si venimos de signInWithRedirect (flujo móvil)
 function isReturningFromRedirect() {
+  let hasKey = false;
   for (let i = 0; i < sessionStorage.length; i++) {
     const k = sessionStorage.key(i) || "";
-    if (k.toLowerCase().includes("firebase:redirect")) return true;
+    if (k.toLowerCase().includes("firebase:redirect")) hasKey = true;
   }
-  return false;
+  if (!hasKey) return false;
+  const ref = (document.referrer || "").toLowerCase();
+  const fromGoogle = ref.includes("accounts.google.com");
+  const onLogin = location.pathname.startsWith("/login");
+  return hasKey && (fromGoogle || onLogin);
 }
 
 export default function ProtectedRoute({ children, roleRequired }) {
   const { user, rol, aprobado, loading } = useAuth();
 
-  // ⏳ Mientras carga auth o regresamos del redirect, no muevas la ruta
-  if (loading || isReturningFromRedirect()) {
-    return <div className="p-8 text-center">Cargando…</div>;
+   // 🧹 Safety: si quedaron llaves de redirect “pegadas”, límpialas y continúa
+  useEffect(() => {
+    if (!isReturningFromRedirect()) return;
+    const t = setTimeout(() => {
+      try {
+        const toDel = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const k = sessionStorage.key(i) || "";
+          if (k.toLowerCase().includes("firebase:redirect")) toDel.push(k);
+        }
+        toDel.forEach((k) => sessionStorage.removeItem(k));
+      } catch {}
+    }, 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Consolidamos banderas para evitar re-cálculos ruidosos
+  const flags = useMemo(() => {
+    return {
+      fromRedirect: isReturningFromRedirect(),
+      hasUser: Boolean(user),
+      hasRole: rol != null,
+      roleOk: !roleRequired || rol === roleRequired,
+      approvedOk:
+        roleRequired !== ROLES.EXPERTO ? true : Boolean(aprobado),
+    };
+  }, [user, rol, aprobado, roleRequired]);
+
+  // 🔒 REGRA #1: Nunca navegues si todavía está cargando, venimos de redirect,
+  // o aún no tenemos el rol (rol == null mientras Firestore resuelve).
+  if (loading || flags.fromRedirect || (flags.hasUser && !flags.hasRole)) {
+    return <p className="text-center mt-10">Cargando...</p>;
   }
 
-  // 🔒 Sin sesión → a login
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  // 🔑 No autenticado → lleva a la home (o a /login-solo si lo prefieres).
+  // Evitamos mandar a /login para no iniciar otro flujo automáticamente.
+  if (!flags.hasUser) {
+    return <Navigate to="/" replace />;
   }
 
-  // 🎭 Si se requiere un rol específico y no coincide, redirige a su dashboard por rol
-  if (roleRequired && rol && rol !== roleRequired) {
-    return <Navigate to={`/${rol}/dashboard`} replace />;
+  // 👮 Rol no cumple → manda al dashboard de su rol real (si ya lo tenemos)
+  if (!flags.roleOk && flags.hasRole) {
+    // Si todavía no sabemos el rol, ya lo manejó la regla #1 (loading view)
+    const target =
+      rol === ROLES.EXPERTO
+        ? "/expert-dashboard"
+        : rol === ROLES.ADMIN
+        ? "/admin-expertos"
+        : "/mis-consultas";
+    return <Navigate to={target} replace />;
   }
 
-  // ✅ Si exige EXPERTO y no está aprobado aún
-  if (roleRequired === ROLES.EXPERTO && !aprobado) {
+  // 🧀 Experto no aprobado
+  if (roleRequired === ROLES.EXPERTO && !flags.approvedOk) {
     return (
       <div className="text-center mt-10 text-red-600 px-4">
         Tu perfil aún no ha sido aprobado por el equipo de Queesia.
@@ -40,6 +83,6 @@ export default function ProtectedRoute({ children, roleRequired }) {
     );
   }
 
-  // ✅ Acceso concedido
+  // ✅ Todo bien
   return children;
 }

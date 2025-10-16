@@ -1,4 +1,6 @@
-import { Routes, Navigate, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import AuthRedirectGate from "./components/AuthRedirectGate";
+import AuthBridge from "./pages/AuthBridge"; // 👈
 import Home from "./components/Home";
 import Registro from "./pages/Registro";
 import { ROLES } from "./constants/roles";
@@ -7,7 +9,8 @@ import AdminExpertos from "./pages/AdminExpertos";
 import ExpertDetailPublic from "./components/ExpertDetailPublic";
 import Terminos from "./pages/Terminos";
 import Privacidad from "./pages/Privacidad";
-import Login from "./pages/login";
+import Login from "./pages/Login";
+import LoginSolo from "./pages/LoginSolo";
 import LoginUsuarios from "./pages/LoginUsuarios";
 
 import ExpertDashboard from "./pages/ExpertDashboard";
@@ -15,7 +18,7 @@ import PagoExitoso from "./pages/PagoExitoso";
 import PagoCancelado from "./pages/PagoCancelado";
 
 import AdminConsultas from "./pages/AdminConsultas";
-import ConsultasRecibidas from "./pages/consultasRecibidas";
+import ConsultasRecibidas from "./pages/ConsultasRecibidas";
 import ResponderConsulta from "./pages/ResponderConsulta";
 import AdminSolicitudes from "./pages/AdminSolicitudes";
 import ConsultasAprobadas from "./pages/ConsultasAprobadas";
@@ -39,9 +42,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* 👇 Procesa getRedirectResult apenas regreses del login */}
+      <AuthRedirectGate />
       <Routes>
         {/* Públicas */}
+        
         <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<AuthBridge />} />      {/* si ya creaste /auth, déjalo */}
+        
         <Route path="/registro" element={<Registro />} />
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/privacidad" element={<Privacidad />} />
@@ -49,6 +57,7 @@ export default function App() {
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-usuario" element={<LoginUsuarios />} />
+        <Route path="/login-solo" element={<LoginSolo />} />
         <Route path="/pago-exitoso" element={<PagoExitoso />} />
         <Route path="/pago-cancelado" element={<PagoCancelado />} />
 
@@ -175,7 +184,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      
     </div>
   );
 }
