@@ -1,7 +1,7 @@
 // src/components/UnifiedNavbar.jsx
 import React, { useEffect, useState } from "react";
 // 👇 Estás ya en src/components, así que importa directo:
-import LoginAccordion from "./LoginAccordion";
+//import LoginAccordion from "./LoginAccordion";
 import { Link, useNavigate } from "react-router-dom";
 import { signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "../firebase";
@@ -33,7 +33,7 @@ export default function UnifiedNavbar() {
 
   return (
     <header className="sticky top-0 z-[9999] w-full
-      bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70
+      bg-white/90 backdrop-white supports-[backdrop-filter]:bg-white/70
       border-b border-slate-200 shadow-sm">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
@@ -230,7 +230,7 @@ export default function UnifiedNavbar() {
                 </>
               ) : (
                 <>
-                  <LoginAccordion open onClose={() => setMobileOpen(false)} />
+                  
                   <Link
                     to="/registro"
                     onClick={() => setMobileOpen(false)}
