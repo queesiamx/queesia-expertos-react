@@ -23,7 +23,6 @@ function hasFirebaseRedirectKeys() {
   return false;
 }
 
-
 // Cache mínimo (por compatibilidad con el resto de tu app)
 async function cacheUser(user) {
   const token = await user.getIdToken();
