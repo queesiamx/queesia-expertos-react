@@ -1,5 +1,7 @@
 // src/components/UserMenu.jsx
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { pathByRole } from "@/auth/startLogin";
 import { Menu } from "lucide-react";
 import { ROLES } from "../constants/roles";
 import { useAuth } from "../hooks/useAuth";
@@ -11,6 +13,7 @@ export default function UserMenu({ usuario, handleLogout }) {
   const menuRef = useRef(null);
   const btnRef = useRef(null);
   const [errorFoto, setErrorFoto] = useState(false);
+  const navigate = useNavigate();
 
   // Sincroniza datos del usuario con rol/aprobado del hook
   useEffect(() => {
@@ -173,11 +176,32 @@ const inicial = (
           className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-[9999] overflow-hidden"
           role="menu"
         >
-          <div className="px-4 py-2 border-b text-sm text-gray-700 truncate">
-            {userData.displayName || userData.email}
+          {/* Header con nombre y correo */}
+          <div className="px-4 py-3 border-b">
+            <div className="text-sm font-semibold text-gray-900 truncate">
+              {userData.displayName || userData.email}
+            </div>
+            {userData.displayName && userData.email && (
+              <div className="text-xs text-gray-600 truncate">{userData.email}</div>
+            )}
           </div>
 
           <nav className="py-1">
+            {/* Ir a mi panel (dinámico por rol) */}
+            <button
+              onClick={() => {
+                const roleKey = rol || userData?.rol || "USUARIO";
+                const path = pathByRole(userData, roleKey);
+                navigate(path, { replace: false });
+                setIsOpen(false);
+              }}
+              className="w-full text-left block px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+              role="menuitem"
+            >
+              📂 Ir a mi panel
+            </button>
+
+            
             {opciones.map((op, idx) => (
               <a
                 key={`${op.href}-${idx}`}
