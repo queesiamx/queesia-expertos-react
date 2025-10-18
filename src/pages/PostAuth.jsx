@@ -1,21 +1,23 @@
-// src/pages/PostAuth.jsx  (#RTC_CO)
-import { useEffect, useRef } from "react";
+// src/pages/PostAuth.jsx
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/firebase";
-import { useAuth } from "../hooks/useAuth";
-import { ROLES } from "../constants/roles";
+import { useAuth } from "@/hooks/useAuth";
 
 const ADMIN_EMAILS = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
+const ROLES = { EXPERTO: "EXPERTO", USUARIO: "USUARIO", ADMIN: "ADMIN" };
 
-function pickDest({ user, rol, aprobado, pendingRole }) {
+function pickDest({ user, rol, aprobado, pendingRole, intent }) {
   const email = user?.email || "";
   const pr = (pendingRole || "").toUpperCase();
-
   const isAdmin = ADMIN_EMAILS.includes(email) || pr === "ADMIN";
   const isExpert = pr === "EXPERTO" || rol === ROLES.EXPERTO;
 
   if (isAdmin) return "/admin-expertos";
-  if (isExpert) return aprobado === false ? "/registro" : "/expert-dashboard";
+  if (isExpert) {
+    if (intent === "register") return "/registro";
+    return aprobado === false ? "/" : "/expert-dashboard";
+  }
   return "/mis-consultas";
 }
 
@@ -28,44 +30,29 @@ export default function PostAuth() {
     if (once.current) return;
 
     const pendingRole = localStorage.getItem("pendingRole") || "";
-    if (pendingRole) localStorage.removeItem("pendingRole");
+    const intent = localStorage.getItem("authIntent") || "login";
 
-    const go = (u, r = rol, a = aprobado) => {
+    const finish = (u) => {
+      if (once.current) return;
       once.current = true;
-      const dest = pickDest({ user: u, rol: r, aprobado: a, pendingRole });
+      localStorage.removeItem("pendingRole");
+      localStorage.removeItem("authIntent");
+      const dest = pickDest({ user: u, rol, aprobado, pendingRole, intent });
       nav(dest, { replace: true });
     };
 
-    // 1) Si el contexto ya está listo → decide y navega
-    if (!loading && user) {
-      go(user);
-      return;
-    }
+    if (!loading && user) return finish(user);
 
-    // 2) Si el contexto dice que no hay usuario, intenta fallback a currentUser
     if (!loading && !user) {
       const cu = auth.currentUser;
-      if (cu) {
-        go(cu);
-        return;
-      }
-      // No hay sesión real → a login
+      if (cu) return finish(cu);
       nav("/login", { replace: true });
       return;
     }
 
-    // 3) Aún cargando: espera un poco y aplica fallbacks para no quedar en loop
-    const t1 = setTimeout(() => {
-      const cu = auth.currentUser;
-      if (cu) {
-        go(cu);
-      }
-    }, 600);
-
-    // 4) Timeout duro: si a los 4s no baja loading ni hay currentUser → envía a login
+    const t1 = setTimeout(() => auth.currentUser && finish(auth.currentUser), 800);
     const t2 = setTimeout(() => {
-      const cu = auth.currentUser;
-      if (cu) go(cu);
+      if (auth.currentUser) finish(auth.currentUser);
       else nav("/login", { replace: true });
     }, 4000);
 
@@ -77,7 +64,7 @@ export default function PostAuth() {
 
   return (
     <main className="min-h-screen grid place-items-center p-8">
-      <div className="flex items-center gap-3 text-gray-600" role="status" aria-live="polite">
+      <div className="flex items-center gap-3 text-gray-600">
         <span className="animate-spin inline-block w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full" />
         <span>Entrando a tu cuenta…</span>
       </div>

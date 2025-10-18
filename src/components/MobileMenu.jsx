@@ -6,12 +6,23 @@ import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
 import { startLogin } from "@/auth/startLogin";
 import { ROLES } from "../constants/roles";
+import { useNavigate } from "react-router-dom";
+
+const pathByRole = {
+  ADMIN: "/admin",
+  EXPERTO: "/dashboard-experto",
+  USUARIO: "/mi-panel",
+};
+
 
 export default function MobileMenu({ handleLogout }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showPicker, setShowPicker] = useState(false); // 👈 toggle del selector
+
 
   // 👇 Trae todo desde el contexto global (un solo listener en la app)
-  const { user: usuario, rol, aprobado } = useAuth();
+  const { user: usuario, rol, aprobado, authReady } = useAuth();
+  const navigate = useNavigate();
 
   const btnRef = useRef(null);
   const panelRef = useRef(null);
@@ -51,7 +62,7 @@ export default function MobileMenu({ handleLogout }) {
   // Opciones por rol
   const opciones = [
     { label: "Catálogo", href: "https://queesia.com/#catalogo" },
-    { label: "Quesos de éxito", href: "https://queesia.com/casos" },
+    { label: "Casos de éxito", href: "https://queesia.com/casos" },
     { label: "Expertos", href: "https://expertos.queesia.com", external: true },
     { label: "Acerca de 🧀", href: "https://queesia.com/nosotros" },
     { label: "Contacto", href: "https://queesia.com/contacto" },
@@ -110,7 +121,7 @@ export default function MobileMenu({ handleLogout }) {
               aria-label="Menú principal"
               tabIndex={-1}
               ref={panelRef}
-              className="absolute right-0 mt-2 w-60 bg-white text-black rounded-xl shadow-xl ring-1 ring-black/10 z-[10001] flex flex-col text-left py-2 outline-none"
+              className="absolute right-0 mt-2 w-60 max-h-[75vh] overflow-y-auto bg-white text-black rounded-xl shadow-xl ring-1 ring-black/10 z-[10001] flex flex-col text-left py-2 outline-none"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -143,52 +154,62 @@ export default function MobileMenu({ handleLogout }) {
 
                 <hr className="my-2" />
 
-                {/* Inicio de sesión con selector de rol */}
-                {!usuario ? (
-                  <div className="px-1">
+              {/* Estados de sesión */}
+              {!authReady ? (
+                <div className="px-4 py-2 text-xs text-gray-600">Cargando sesión…</div>
+              ) : !usuario ? (
+                <div className="px-1">
                   <button
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
-                      type="button"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                    >
-                      <span>Iniciar sesión</span>
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                    <div className="mt-1 mb-1">
-                      {/* Login directo: ADMIN */}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
+                    type="button"
+                    aria-haspopup="true"
+                    aria-expanded={showPicker}
+                    onClick={() => setShowPicker(v => !v)}  // 👈 toggle
+                  >
+                    <span>Iniciar sesión</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showPicker ? "rotate-180" : ""}`} />
+                  </button>
+                  {showPicker && (
+                    <div className="mt-1 mb-1 rounded-lg border border-gray-100">
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); startLogin("ADMIN"); close(); }}
+                        onClick={async (e) => { e.preventDefault(); setShowPicker(false); close(); await startLogin("USUARIO"); }}
                         className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
-                        aria-label="Iniciar sesión como admin"
                       >
-                        ⭐ Soy admin
+                        🙋 Continuar como Usuario
                       </button>
-                      {/* Login directo: EXPERTO */}
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); startLogin("EXPERTO"); close(); }}
+                        onClick={async (e) => { e.preventDefault(); setShowPicker(false); close(); await startLogin("EXPERTO"); }}
                         className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
-                        aria-label="Iniciar sesión como experto"
                       >
-                        👨‍💼 Soy experto
+                        👨‍💼 Continuar como Experto
                       </button>
-                      {/* Login directo: USUARIO */}
                       <button
                         type="button"
-                        onClick={(e) => { e.preventDefault(); startLogin("USUARIO"); close(); }}
-                        className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"                        aria-label="Iniciar sesión como usuario"
+                        onClick={async (e) => { e.preventDefault(); setShowPicker(false); close(); await startLogin("ADMIN"); }}
+                        className="w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
                       >
-                        🙋 Soy usuario
+                        ⭐ Continuar como Admin
                       </button>
                     </div>
-                  </div>
+                  )}
+                </div>
                 ) : (
                   <div className="px-4 py-2">
                     <span className="block text-xs text-gray-600 truncate mb-2">
                       {usuario.email}
                     </span>
+                    <button
+                    onClick={() => {
+                      const to = pathByRole[(rol || "USUARIO").toUpperCase()] || "/mi-panel";
+                      setIsOpen(false);
+                      navigate(to);
+                    }}
+                    className="mb-2 w-full rounded-xl border px-4 py-2"
+                  >
+                    Mi panel
+                  </button>
                     <button
                       onClick={() => {
                         handleLogout();

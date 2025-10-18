@@ -1,70 +1,37 @@
-// src/hooks/useAuth.jsx
-import { useEffect, useState, useContext, createContext, useMemo } from "react";
-import { onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+//src/hooks/useAuth.js (NEW) ***
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-const AuthContext = createContext();
+const AuthCtx = createContext({ user: null, rol: null, authReady: false });
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [rol, setRol] = useState(null);
-  const [aprobado, setAprobado] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    // 1) Garantiza persistencia local para no “perder” sesión en recargas
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
-
-    // 2) Suscripción al estado de Auth
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        if (!firebaseUser) {
-          setUser(null);
+    const off = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        try {
+          // Ajusta colección/campo según tu esquema
+          const snap = await getDoc(doc(db, 'users', u.uid));
+          setRol(snap.exists() ? (snap.data()?.rol ?? null) : null);
+        } catch {
           setRol(null);
-          setAprobado(false);
-        // 🧹 Limpia cualquier rastro de sesión previa
-          try {
-            localStorage.removeItem("authToken");
-            localStorage.removeItem("user");
-            localStorage.removeItem("pendingRole");
-          } catch {}
-          
-          return;
         }
-
-        setUser(firebaseUser);
-
-        // Carga de rol/perfil
-        const ref = doc(db, "users", firebaseUser.uid);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const data = snap.data() || {};
-          setRol(data.rol ?? null);
-          setAprobado(Boolean(data.aprobado));
-        } else {
-          setRol(null);
-          setAprobado(false);
-        }
-      } catch (e) {
-        console.error("Auth load error:", e);
-        // Estado seguro para no bloquear UI
+      } else {
         setRol(null);
-        setAprobado(false);
-      } finally {
-        setLoading(false);
       }
+      setAuthReady(true);
     });
-
-    return () => unsubscribe();
+    return () => off();
   }, []);
 
-  // Evita re-renders inútiles y también hace más feliz al HMR de Vite
-  const value = useMemo(() => ({ user, rol, aprobado, loading }), [user, rol, aprobado, loading]);
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const value = useMemo(() => ({ user, rol, authReady }), [user, rol, authReady]);
+  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthCtx);

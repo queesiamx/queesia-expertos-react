@@ -2,7 +2,13 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  getRedirectResult,
+} from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBqOk-lc5Ar-qc6fmbkJ19gYwDNsnoMmOk",
@@ -14,12 +20,23 @@ const firebaseConfig = {
   measurementId: "G-MPCKFKN50L"
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// ✅ EXPORTACIONES CORRECTAS
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
-const googleProvider = new GoogleAuthProvider();
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
-export { app, db, auth, storage, googleProvider };
+// 🔐 Persistencia entre recargas/redirect (clave para móvil)
+setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+// 🔁 Resolver el redirect una sola vez (opcional)
+export async function resolveRedirectOnce() {
+  try {
+    const res = await getRedirectResult(auth);
+    return res?.user ?? null;
+  } catch (e) {
+    console.warn('getRedirectResult error', e);
+    return null;
+  }
+}
