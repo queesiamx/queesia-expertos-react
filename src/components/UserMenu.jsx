@@ -1,7 +1,7 @@
 // src/components/UserMenu.jsx
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { pathByRole } from "@/auth/startLogin";
+import { pathByRole } from "@/auth/pathByRole";
 import { Menu } from "lucide-react";
 import { ROLES } from "../constants/roles";
 import { useAuth } from "../hooks/useAuth";
