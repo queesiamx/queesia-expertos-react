@@ -1,26 +1,211 @@
-import React from "react";
+// src/components/LoginButton.jsx
+import React, { useEffect, useState } from "react";
+import { db, auth, googleProvider } from "@/firebase";
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { menuControl } from "../hooks/useMenuControl";
+import { useAuth } from "../hooks/useAuth";
+import { ROLES } from "../constants/roles";
 
-/**
- * Botón “tonto” de login:
- * - NO abre selectores, NO hace redirect/popup.
- * - Solo ejecuta onClick (el contenedor decide qué hacer).
- */
-export default function LoginButton({ onClick, className = "", children = "Iniciar sesión" }) {
+ // Detección simple de móvil (con guarda)
+ const isMobile =
+   typeof navigator !== "undefined" &&
+   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+export default function LoginButton() {
+  const [user, setUser] = useState(null);
+  const [openMenu, setOpenMenu] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(false); // 🔹 evita taps dobles
+
+  const { rol, aprobado } = useAuth();
+  const adminEmails = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) setUser(JSON.parse(userData));
+
+    const unsubscribe = menuControl.subscribe((menu) => {
+      if (menu !== "avatar") setOpenMenu(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // —— Lógica común de post-login (para popup y redirect)
+  const afterLogin = async (firebaseUser, selectedRoleFromCaller) => {
+    const token = await firebaseUser.getIdToken();
+    localStorage.setItem("authToken", token);
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        uid: firebaseUser.uid,
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photo: firebaseUser.photoURL,
+      })
+    );
+
+    // Rol elegido (o recuperado si venimos de redirect)
+    const pending = sessionStorage.getItem("pendingRole");
+    const selectedRole = selectedRoleFromCaller || pending || "";
+
+    if (pending) sessionStorage.removeItem("pendingRole");
+
+    // Redirecciones por rol
+    if (selectedRole === ROLES.ADMIN || adminEmails.includes(firebaseUser.email)) {
+      window.location.href = "/admin-expertos";
+      return;
+    }
+
+    if (selectedRole === ROLES.EXPERTO) {
+      const expertRef = doc(db, "experts", firebaseUser.uid);
+      const expertSnap = await getDoc(expertRef);
+      if (expertSnap.exists() && expertSnap.data().aprobado) {
+        window.location.href = "/expert-dashboard";
+      } else {
+        window.location.href = "/registro";
+      }
+      return;
+    }
+
+    // Por defecto (usuario)
+    window.location.href = "/mis-consultas";
+  };
+
+ // Procesa el retorno del redirect (móvil)
+ useEffect(() => {
+   (async () => {
+     try {
+       const res = await getRedirectResult(auth);
+       if (!res?.user) return; // no venimos de redirect
+      await afterLogin(res.user); // el rol se toma de pendingRole
+     } catch (err) {
+       console.error("getRedirectResult error:", err);
+     }
+   })();
+ }, []);
+
+
+  const handleLogin = async (selectedRole) => {
+    if (loading) return;           // 🔹 evita multi-tap
+    setLoading(true);
+    setRoleMenuOpen(false);        // 🔹 cierra dropdown para que no tape toques
+    try {
+        if (isMobile) {
+        // En móvil: redirect para evitar bloqueos de popup/cookies
+        sessionStorage.setItem("pendingRole", selectedRole);
+        // En móvil: redirect para evitar bloqueos de popup/cookies        sessionStorage.setItem("pendingRole", selectedRole);
+        await signInWithRedirect(auth, googleProvider);
+        return; // continúa al volver con getRedirectResult()
+      }
+
+      // En desktop: popup
+      const result = await signInWithPopup(auth, googleProvider);
+      await afterLogin(result.user, selectedRole);
+    } catch (error) {
+      if (
+        error?.code !== "auth/cancelled-popup-request" &&
+        error?.code !== "auth/popup-closed-by-user"
+      ) {
+        console.error("Error al iniciar sesión:", error);
+        alert("No se pudo iniciar sesión. Intenta de nuevo.");
+      }
+    } finally {
+     setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
+  const toggleMenu = () => {
+    const newState = !openMenu;
+    setOpenMenu(newState);
+    if (newState) menuControl.openMenu("avatar");
+  };
+
+  if (user) {
+    return (
+      <div className="relative">
+        <img
+          src={user.photo}
+          alt={user.name}
+          className="w-10 h-10 rounded-full border border-white shadow hover:ring-2 hover:ring-primary transition duration-300 cursor-pointer"
+          title={user.name}
+          onClick={toggleMenu}
+        />
+        {openMenu && (
+          <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
+            <div className="px-4 py-2 text-sm text-gray-800 truncate border-b">
+              {user.name?.split(" ")[0]}
+            </div>
+
+            {rol === ROLES.ADMIN && (
+              <a href="/admin-expertos" className="block px-4 py-2 text-sm hover:bg-gray-100">
+                Panel de admin
+              </a>
+            )}
+            {rol === ROLES.EXPERTO && aprobado && (
+              <a href="/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-100">
+                Mi dashboard
+              </a>
+            )}
+            {rol === ROLES.USUARIO && (
+              <a href="/mis-consultas" className="block px-4 py-2 text-sm hover:bg-gray-100">
+                Mis consultas
+              </a>
+            )}
+
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 hover:bg-slate-50 text-slate-800 ${className}`}
-      aria-label="Iniciar sesión"
-    >
-      {/* Google icon */}
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true">
-        <path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3C33.9 31.7 29.4 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 3l5.7-5.7C34.4 5.1 29.5 3 24 3 12.3 3 3 12.3 3 24s9.3 21 21 21c10.5 0 19.5-7.6 21-18 .1-1 .1-2 .1-3 0-1.1-.1-2.1-.3-3.5z"/>
-        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.9 16.6 19 13 24 13c3 0 5.7 1.1 7.8 3l5.7-5.7C34.4 5.1 29.5 3 24 3 15.5 3 8.2 7.8 6.3 14.7z"/>
-        <path fill="#4CAF50" d="M24 45c5.3 0 10.1-2 13.7-5.3l-6.3-5.2C29.3 36.2 26.9 37 24 37c-5.3 0-9.8-3.3-11.6-8l-6.7 5.2C8.5 41.7 15.7 45 24 45z"/>
-        <path fill="#1976D2" d="M45 24c0-1-.1-2.1-.3-3.5H24v8h11.3c-1.1 3.1-3.5 5.5-6.6 6.5l6.3 5.2C38.8 37.9 45 31.8 45 24z"/>
-      </svg>
-     {children}
-    </button>
+    <div className="relative">
+      <button
+        onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+        className="flex items-center justify-center gap-2 bg-black text-white text-sm font-medium px-3 py-2 rounded-xl shadow hover:bg-gray-800 transition duration-300 border border-transparent hover:border-white"
+      >
+        <img
+          src="https://www.svgrepo.com/show/475656/google-color.svg"
+          alt="Google"
+          className="w-5 h-5 md:w-4 md:h-4"
+        />
+        <span className="hidden md:inline">Iniciar sesión</span>
+      </button>
+
+      {roleMenuOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
+          <button
+            onClick={() => handleLogin(ROLES.ADMIN)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          >
+            🛠 Soy admin
+          </button>
+          <button
+            onClick={() => handleLogin(ROLES.EXPERTO)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          >
+            👨‍💼 Soy experto
+          </button>
+          <button
+            onClick={() => handleLogin(ROLES.USUARIO)}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+          >
+            🙋 Soy usuario
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

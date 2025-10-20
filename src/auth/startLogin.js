@@ -1,54 +1,48 @@
 // src/auth/startLogin.js
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 import {
 GoogleAuthProvider,
 signInWithPopup,
 signInWithRedirect,
+browserLocalPersistence,
+setPersistence,
 } from "firebase/auth";
+import { normalizeRole } from "@/constants/roles";
 
-export const ADMIN_EMAILS = [
-  "queesiamx@gmail.com",
-  "queesiamx.employee@gmail.com",
-];
 
-export function pathByRole(user, pendingRole = "USUARIO") {
-const email = user?.email || "";
-const pr = String(pendingRole || "USUARIO").toUpperCase();
-const isAdmin = ADMIN_EMAILS.includes(email) || pr === "ADMIN";
-const isExpert = pr === "EXPERTO";
-if (isAdmin) return "/admin-expertos";
-if (isExpert) return "/expert-dashboard";
-return "/mis-consultas";
-}
-
-export async function startLogin(selectedRole = "USUARIO", intent = "login") {
-// Flags para post-redirect
-localStorage.setItem("pendingRole", String(selectedRole).toUpperCase());
-localStorage.setItem("authIntent", intent);
-localStorage.setItem("authRedirectPending", "1");
-
-// Proveedor Google; forzamos selector de cuenta
 const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
 
-const isMobile =
-typeof navigator !== "undefined" &&
-/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-if (isMobile) {
-try {
+function isMobile() {
+if (typeof navigator === "undefined") return false;
+const ua = navigator.userAgent || "";
+return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
+
+
+/**
+* Inicia login con selección de rol. No navega; el ruteo lo hará AuthRedirectGate (redirect) o el caller (popup).
+*/
+export async function startLogin(selectedRole = "usuario", intent = "login") {
+const role = normalizeRole(selectedRole);
+// Limpia banderas anteriores
+sessionStorage.removeItem("pendingRole");
+sessionStorage.removeItem("loginIntent");
+sessionStorage.setItem("pendingRole", role);
+sessionStorage.setItem("loginIntent", intent);
+
+
+await setPersistence(auth, browserLocalPersistence);
+
+
+if (isMobile()) {
+// En móvil usamos redirect; AuthRedirectGate procesará el resultado.
 await signInWithRedirect(auth, provider);
-} catch (e) {
-console.error("[startLogin redirect]", e);
-}
-return;
+return null;
 }
 
-try {
-await signInWithPopup(auth, provider);
-} catch (e) {
-if (e?.code !== "auth/popup-closed-by-user") {
-console.error("[startLogin popup]", e);
-}
-}
+
+// Desktop: popup.
+const cred = await signInWithPopup(auth, provider);
+return cred;
 }

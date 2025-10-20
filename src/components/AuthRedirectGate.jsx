@@ -1,36 +1,44 @@
 // src/components/AuthRedirectGate.jsx
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/firebase";
 import { getRedirectResult } from "firebase/auth";
+import { pathByRole } from "@/auth/pathByRole";
+import { normalizeRole } from "@/constants/roles";
+
 
 export default function AuthRedirectGate() {
-  const nav = useNavigate();
-  const once = useRef(false);
+const navigate = useNavigate();
 
-  useEffect(() => {
-    if (once.current) return;
-    once.current = true;
 
-    (async () => {
-      try {
-        // Sólo si marcamos que había redirect pendiente
-        if (localStorage.getItem("authRedirectPending") === "1") {
-          const res = await getRedirectResult(auth);
-          // borra el flag pase lo que pase
-          localStorage.removeItem("authRedirectPending");
+useEffect(() => {
+let mounted = true;
+(async () => {
+try {
+const res = await getRedirectResult(auth);
+const pendingRole = normalizeRole(sessionStorage.getItem("pendingRole"));
+sessionStorage.removeItem("pendingRole");
+sessionStorage.removeItem("loginIntent");
 
-          if (res?.user) {
-            // Delega la navegación de destino a PostAuth
-            nav("/post-auth", { replace: true });
-          }
-        }
-      } catch (e) {
-        console.warn("[AuthRedirectGate] getRedirectResult:", e);
-        localStorage.removeItem("authRedirectPending");
-      }
-    })();
-  }, [nav]);
 
-  return null;
+if (!mounted) return;
+
+
+if (res && res.user) {
+const target = pathByRole(res.user, pendingRole);
+navigate(target, { replace: true });
+return;
+}
+// No hubo redirect para procesar: no hacemos nada disruptivo
+} catch (_) {
+// Silencioso: evita loops por errores del SDK
+}
+})();
+return () => {
+mounted = false;
+};
+}, [navigate]);
+
+
+return null; // no UI
 }
