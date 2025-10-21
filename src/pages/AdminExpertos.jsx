@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db, auth } from "@/firebase";
 import ExpertDetailAdmin from '../components/ExpertDetailAdmin';
+import { exportExpertosAprobadosCSV } from "@/utils/exportExpertsCsv";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import { Toaster } from 'react-hot-toast';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -229,7 +230,7 @@ return (
               {totalCursos}
             </span>
           </div>
-        </div>
+         </div>
      </div>
     </div>
 
@@ -240,15 +241,18 @@ return (
         Panel de Administración de Expertos
       </h1>
 
-      {/* Métricas rápidas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      
+             {/* KPIs alineados */}
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
           <div className="text-sm text-slate-500">Expertos activos</div>
           <div className="mt-1 text-2xl font-bold text-default">{expertos.length}</div>
         </div>
         <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
           <div className="text-sm text-slate-500">Pendientes por revisar</div>
-          <div className="mt-1 text-2xl font-bold text-default">{expertos.filter(e => !e.aprobado).length}</div>
+          <div className="mt-1 text-2xl font-bold text-default">
+            {expertos.filter(e => !e.aprobado).length}
+          </div>
         </div>
         <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
           <div className="text-sm text-slate-500">Consultas abiertas</div>
@@ -259,8 +263,17 @@ return (
           <div className="mt-1 text-2xl font-bold text-default">—</div>
         </div>
       </div>
+      {/* Botón debajo de los KPIs */}
+      <div className="mb-6">
+        <button
+          onClick={exportExpertosAprobadosCSV}
+          className="px-4 py-2 rounded-2xl font-semibold shadow bg-indigo-600 text-white hover:bg-indigo-700 transition"
+        >
+          Exportar expertos (CSV)
+        </button>
+      </div>
 
-     
+
       {cargando ? (
          <p className="text-default-soft">Cargando expertos...</p>
        ) : seleccionado ? (
