@@ -30,6 +30,13 @@ export const googleProvider = new GoogleAuthProvider();
 // 🔐 Persistencia entre recargas/redirect (clave para móvil)
 setPersistence(auth, browserLocalPersistence).catch(console.error);
 
+if (import.meta.env.DEV) {
+  // @ts-ignore
+  window.__auth = auth;
+  console.log("[firebase] loaded");
+}
+
+
 // 🔁 Resolver el redirect una sola vez (opcional)
 export async function resolveRedirectOnce() {
   try {

@@ -4,7 +4,7 @@ import { collection, getDocs } from "firebase/firestore";
 // arriba, junto con tus imports
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp  } from "firebase/firestore";
 
-import { db } from "../firebase";
+import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertCard from "../components/ExpertCard";
 import Footer from "../components/Footer"; // <-- ajusta la ruta si difiere

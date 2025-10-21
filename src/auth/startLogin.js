@@ -1,36 +1,41 @@
 // src/auth/startLogin.js
-import { auth } from "@/firebase";
-import { GoogleAuthProvider, signInWithPopup, signInWithRedirect } from "firebase/auth";
+import { auth, googleProvider } from "@/firebase";
+import { signInWithRedirect, signInWithPopup } from "firebase/auth";
 
-function setPendingRole(role, intent) {
-  const r = String(role || "usuario").toLowerCase();
-  try { sessionStorage.setItem("pendingRole", r); sessionStorage.setItem("loginIntent", intent || "login"); } catch {}
-  try { localStorage.setItem("pendingRole", r); localStorage.setItem("loginIntent", intent || "login"); } catch {}
-}
+let logging = false;
 
-function isMobileLike() {
-  const ua = navigator.userAgent || "";
-  return /Mobi|Android|iPhone|iPad|iPod/i.test(ua) || window.innerWidth < 640;
-}
+const isMobile =
+  typeof navigator !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-export async function startLogin(selectedRole = "usuario", intent = "login") {
-  const provider = new GoogleAuthProvider();
-  setPendingRole(selectedRole, intent);
+export async function startLogin(role = "usuario") {
+  if (logging) return;           // evita doble click
+  logging = true;
 
-  // 👉 En móvil (o viewport pequeño): redirect directo y listo
-  if (isMobileLike()) {
-    await signInWithRedirect(auth, provider);
-    return null;
-  }
-
-  // 👉 Desktop: intenta popup y si lo bloquean, redirect
   try {
-    const res = await signInWithPopup(auth, provider);
-    return res;
-  } catch {
-    await signInWithRedirect(auth, provider);
-    return null;
+    // guarda intención/rol antes de salir
+    localStorage.setItem("pendingRole", role);
+    sessionStorage.setItem("pendingRole", role);
+
+    console.log("[login] start", { role, isMobile });
+
+    if (isMobile) {
+      await signInWithRedirect(auth, googleProvider);
+      return;
+    }
+
+    // Desktop: intenta popup; si falla por bloqueo, cae a redirect
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      const code = e?.code || "";
+      console.warn("[login] popup fail, fallback to redirect:", code);
+      await signInWithRedirect(auth, googleProvider);
+    }
+  } catch (e) {
+    console.error("[login] error", e);
+  } finally {
+    // pequeño delay para no “desbloquear” antes del redirect
+    setTimeout(() => { logging = false; }, 1500);
   }
 }
-// al final del archivo, después del export
-if (import.meta.env.DEV) window.__startLogin = startLogin;

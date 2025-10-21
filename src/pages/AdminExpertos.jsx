@@ -1,7 +1,7 @@
 // src/pages/AdminExpertos.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from "@/firebase";
 import ExpertDetailAdmin from '../components/ExpertDetailAdmin';
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import { Toaster } from 'react-hot-toast';
@@ -103,14 +103,6 @@ export default function AdminExpertos() {
     setSeleccionado(null);
   };
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      navigate('/');
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-    }
-  };
 
   if (!verificado) {
     return <p className="p-8 font-sans text-default">Verificando acceso...</p>;
@@ -133,7 +125,7 @@ return (
     <div className="absolute inset-x-0 top-0 h-24 bg-transparent pointer-events-none" />
 
       <Toaster position="top-right" />
-      <UnifiedNavbar onLogout={handleLogout} />
+      <UnifiedNavbar />
 
     {/* barra de chips fija bajo el navbar */}
     <div className="sticky top-[64px] z-40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-slate-200/60">

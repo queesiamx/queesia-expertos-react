@@ -3,7 +3,7 @@ import { useEffect, useState, useContext, createContext, useMemo } from "react";
 import { normalizeRole } from "@/constants/roles";
 import { onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, db } from "@/firebase";
 
 const AuthContext = createContext();
 
@@ -19,6 +19,8 @@ export function AuthProvider({ children }) {
 
     // 2) Suscripción al estado de Auth
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("[auth] onAuthStateChanged:", firebaseUser?.uid || null); // ✅
+
       try {
         if (!firebaseUser) {
           setUser(null);

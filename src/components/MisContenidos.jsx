@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
-import { app } from '../firebase';
+import { app } from "@/firebase";
 import { getAuth } from 'firebase/auth';
 
 export default function MisContenidos({ expertoId }) {

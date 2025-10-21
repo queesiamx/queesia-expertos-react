@@ -1,7 +1,7 @@
 // src/pages/MisContenidos.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from 'firebase/auth';
 import UnifiedNavbar from "../components/UnifiedNavbar";
 

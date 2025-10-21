@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { db, auth, googleProvider } from "@/firebase";
 import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { handleLogout } from "@/auth/logout";
 import { doc, getDoc } from "firebase/firestore";
 import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";

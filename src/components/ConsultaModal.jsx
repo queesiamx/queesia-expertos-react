@@ -1,8 +1,7 @@
 // components/ConsultaModal.jsx
 import React, { useState } from "react";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
-import { auth } from "../firebase"; // para tomar el experto actual
+import { db, auth } from "@/firebase"; // para tomar el experto actual
 import toast from "react-hot-toast";
 
 export default function ConsultaModal({ consulta, onClose }) {

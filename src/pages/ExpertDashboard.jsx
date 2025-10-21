@@ -1,6 +1,6 @@
 // src/pages/ExpertDashboard.jsx
 import { useNavigate, useLocation } from "react-router-dom";
-import { auth, db } from "../firebase";
+import { auth, db } from "@/firebase";
 import {
   onAuthStateChanged,
   signOut

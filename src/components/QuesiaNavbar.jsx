@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 import MobileMenu from "./MobileMenu";
 import LoginButton from "./LoginButton";
 import UserMenu from "./UserMenu";

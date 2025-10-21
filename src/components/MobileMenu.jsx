@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { menuControl } from "../hooks/useMenuControl";
+import { handleLogout } from "@/auth/logout";
 import { useAuth } from "../hooks/useAuth";
 import { pathByRole } from "@/auth/pathByRole";
 import { ROLES } from "../constants/roles";
@@ -186,11 +187,11 @@ export default function MobileMenu({ handleLogout }) {
                     <span className="block text-xs text-gray-600 truncate mb-2">
                       {usuario.email}
                     </span>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        close();
-                      }}
+                       <button
+                         onClick={() => {
+                           handleLogout();
+                           close();
+                         }}
                       className="mt-1 w-full flex items-center gap-2 text-sm text-red-600 hover:bg-gray-100 transition px-2 py-1 rounded"
                     >
                       <LogOut className="w-4 h-4" />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { app } from '../firebase';
+import { app } from "@/firebase";
 import BotonPagarContenido from '../components/BotonPagarContenido';
 
 export default function VistaPublicaContenidos({ expertoId }) {

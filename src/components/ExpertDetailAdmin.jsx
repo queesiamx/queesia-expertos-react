@@ -1,5 +1,5 @@
 import { doc, updateDoc, deleteDoc, getDoc, getDocs, collection } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from "@/firebase";
 import { toast } from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
 import { ensureAbsoluteUrl } from "@/lib/url";

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "@/firebase";
 
 export default function RutaExpertoPrivada({ children, usuario }) {
   const [verificando, setVerificando] = useState(true);

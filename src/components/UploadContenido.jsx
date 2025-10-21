@@ -1,7 +1,7 @@
 // src/components/UploadContenido.jsx
 import { useState } from 'react';
 import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore';
-import { app } from '../firebase';
+import { app } from "@/firebase";
 import { v4 as uuidv4 } from 'uuid';
 import toast from 'react-hot-toast';
 

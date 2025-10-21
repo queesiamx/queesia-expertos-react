@@ -1,7 +1,7 @@
 // src/pages/MisValoraciones.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import UnifiedNavbar from "../components/UnifiedNavbar";
-import { auth, db } from "../firebase";
+import { auth, db } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";

@@ -7,7 +7,7 @@ import {
   deleteDoc,
   doc,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import toast, { Toaster } from 'react-hot-toast';
 import { unparse } from 'papaparse';

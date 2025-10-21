@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { signInWithPopup, signInWithRedirect, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 
 // Detecta móvil
 const isMobile =

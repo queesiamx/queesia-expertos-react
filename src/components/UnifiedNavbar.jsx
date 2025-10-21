@@ -2,10 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 import { useAuth } from "../hooks/useAuth";
 import { pathByRole } from "@/auth/pathByRole";
 import LoginButton from "./LoginButton";
+import { handleLogout } from "@/auth/logout";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
 import toast from "react-hot-toast";
@@ -19,16 +20,6 @@ export default function UnifiedNavbar() {
   const navigate = useNavigate();
   //const { user: usuario } = useAuth();
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast.success("Sesión cerrada correctamente.");
-      navigate("/");
-    } catch (err) {
-      console.error(err);
-      toast.error("Error al cerrar sesión.");
-    }
-  };
 
   return (
     <header className="sticky top-0 z-[9999] w-full
@@ -142,7 +133,7 @@ export default function UnifiedNavbar() {
           {user ? (
             <>
               <a href={dashHref} className="text-sm underline">Mi panel</a>
-              <UserMenu usuario={user} handleLogout={handleLogout} />
+              <UserMenu usuario={user} />
             </>
           ) : (
             <>
@@ -159,7 +150,7 @@ export default function UnifiedNavbar() {
 
         {/* Menú móvil */}
         <div className="md:hidden">
-          <MobileMenu handleLogout={handleLogout} />
+          <MobileMenu />
         </div>
       </div>
     </header>

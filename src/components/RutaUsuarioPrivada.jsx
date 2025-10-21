@@ -1,7 +1,7 @@
 // src/components/RutaUsuarioPrivada.jsx
 import React, { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 import { Navigate } from "react-router-dom";
 
 export default function RutaUsuarioPrivada({ children }) {

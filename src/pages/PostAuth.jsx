@@ -3,21 +3,20 @@ import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/firebase";
 import { useAuth } from "@/hooks/useAuth";
+import { ROLES, normalizeRole } from "@/constants/roles";
 
-const ADMIN_EMAILS = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
-const ROLES = { EXPERTO: "EXPERTO", USUARIO: "USUARIO", ADMIN: "ADMIN" };
+const ADMIN_EMAILS = ["queesiamx@gmail.com","queesiamx.employee@gmail.com"];
 
 function pickDest({ user, rol, aprobado, pendingRole, intent }) {
   const email = user?.email || "";
-  const pr = (pendingRole || "").toUpperCase();
-  const isAdmin = ADMIN_EMAILS.includes(email) || pr === "ADMIN";
-  const isExpert = pr === "EXPERTO" || rol === ROLES.EXPERTO;
+  const pr = normalizeRole(pendingRole);
+  const r  = normalizeRole(rol);
 
-  if (isAdmin) return "/admin-expertos";
-  if (isExpert) {
-    if (intent === "register") return "/registro";
-    return aprobado === false ? "/" : "/expert-dashboard";
-  }
+  const isAdmin  = ADMIN_EMAILS.includes(email) || pr === ROLES.ADMIN || r === ROLES.ADMIN;
+  const isExpert = pr === ROLES.EXPERTO || r === ROLES.EXPERTO;
+
+  if (isAdmin)  return "/admin-expertos";
+  if (isExpert) return intent === "register" ? "/registro" : (aprobado === false ? "/" : "/expert-dashboard");
   return "/mis-consultas";
 }
 

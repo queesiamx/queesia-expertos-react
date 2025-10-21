@@ -1,7 +1,7 @@
 // src/pages/ConsultasAprobadas.jsx
 import React, { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db, auth } from "../firebase";
+import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 

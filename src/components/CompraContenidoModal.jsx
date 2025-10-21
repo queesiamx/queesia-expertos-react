@@ -1,7 +1,7 @@
 // src/components/CompraContenidoModal.jsx
 import { useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, db } from "@/firebase";
 import { toast } from "react-hot-toast";
 
 export default function CompraContenidoModal({ open, onClose, experto, content, tipo }) {

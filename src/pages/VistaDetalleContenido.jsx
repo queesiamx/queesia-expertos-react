@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db, auth } from "@/firebase";
 import { onAuthStateChanged } from 'firebase/auth';
 import UnifiedNavbar from "../components/UnifiedNavbar";
 

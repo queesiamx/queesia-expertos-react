@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { signInWithPopup, signInWithRedirect, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import Footer from "../components/Footer";
 

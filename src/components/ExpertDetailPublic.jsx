@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
-import { db, auth } from "../firebase";
+import { db, auth } from "@/firebase";
 import { useAuth } from "../hooks/useAuth";
 import {
   doc,

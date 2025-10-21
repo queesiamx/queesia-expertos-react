@@ -1,7 +1,7 @@
 // src/pages/AdminSolicitudes.jsx
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, updateDoc, doc, query, where, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from "@/firebase";
 import toast from 'react-hot-toast';
 
 export default function AdminSolicitudes() {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { db } from "../firebase";
+import { db } from "@/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import ExpertCard from "./ExpertCard";
 import { useNavigate } from "react-router-dom";

@@ -5,7 +5,7 @@ import {
   updateDoc,
   doc
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import emailjs from '@emailjs/browser';
 import toast, { Toaster } from 'react-hot-toast';

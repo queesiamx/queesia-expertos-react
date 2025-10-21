@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db } from "@/firebase";
 import { onAuthStateChanged } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import UnifiedNavbar from "../components/UnifiedNavbar";

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/firebase";   // ajusta si no usas alias
-import { auth } from "@/firebase";
+
+import { auth, db } from "@/firebase";
 import {
   GoogleAuthProvider,
   signInWithPopup,

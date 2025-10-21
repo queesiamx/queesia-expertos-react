@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { auth, db } from "../firebase"; // ⚠️ ajusta la ruta si tu archivo es otro
+import { auth, db } from "@/firebase"; // ⚠️ ajusta la ruta si tu archivo es otro
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
 import UnifiedNavbar from "../components/UnifiedNavbar";
