@@ -5,7 +5,7 @@ import { pathByRole } from "@/auth/pathByRole";
 import { Menu } from "lucide-react";
 import { ROLES } from "../constants/roles";
 import { useAuth } from "../hooks/useAuth";
-import { auth } from "@/firebase";
+//import { auth } from "@/firebase";
 import { handleLogout } from "@/auth/logout";
 
 export default function UserMenu({ usuario }) {
@@ -220,10 +220,10 @@ const inicial = (
 
           <div className="border-t">
             <button
-              onClick={() => {
-                handleLogout();
-                close();
-              }}
+               onClick={async () => {
+                 await handleLogout();
+                 setIsOpen(false);
+               }}
               className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100"
               role="menuitem"
             >

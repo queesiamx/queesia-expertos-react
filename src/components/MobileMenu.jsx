@@ -9,7 +9,7 @@ import { pathByRole } from "@/auth/pathByRole";
 import { ROLES } from "../constants/roles";
 import { startLogin } from "@/auth/startLogin";
 
-export default function MobileMenu({ handleLogout }) {
+export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
   // 👇 Trae todo desde el contexto global (un solo listener en la app)
@@ -187,11 +187,11 @@ export default function MobileMenu({ handleLogout }) {
                     <span className="block text-xs text-gray-600 truncate mb-2">
                       {usuario.email}
                     </span>
-                       <button
-                         onClick={() => {
-                           handleLogout();
-                           close();
-                         }}
+                        <button
+                       onClick={async () => {
+                         await handleLogout();   // el import de "@/auth/logout"
+                         close();
+                       }}
                       className="mt-1 w-full flex items-center gap-2 text-sm text-red-600 hover:bg-gray-100 transition px-2 py-1 rounded"
                     >
                       <LogOut className="w-4 h-4" />

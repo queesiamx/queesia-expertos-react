@@ -1,41 +1,40 @@
 // src/auth/startLogin.js
-import { auth, googleProvider } from "@/firebase";
-import { signInWithRedirect, signInWithPopup } from "firebase/auth";
-
-let logging = false;
+import { auth } from "@/firebase";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+} from "firebase/auth";
+import { normalizeRole } from "@/constants/roles";
 
 const isMobile =
   typeof navigator !== "undefined" &&
   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-export async function startLogin(role = "usuario") {
-  if (logging) return;           // evita doble click
-  logging = true;
-
+export async function startLogin(roleLike = "usuario") {
+  const role = normalizeRole(roleLike);
   try {
-    // guarda intención/rol antes de salir
-    localStorage.setItem("pendingRole", role);
-    sessionStorage.setItem("pendingRole", role);
+    // Guarda intención de rol para el redirect y también para popup
+    try {
+      localStorage.setItem("pendingRole", role);
+      localStorage.setItem("loginIntent", "login");
+      sessionStorage.setItem("pendingRole", role);
+      sessionStorage.setItem("loginIntent", "login");
+    } catch {}
 
-    console.log("[login] start", { role, isMobile });
+    const provider = new GoogleAuthProvider();
+    // fuerza selector de cuenta (evita “reciclar” sesión anterior)
+    provider.setCustomParameters({ prompt: "select_account" });
 
     if (isMobile) {
-      await signInWithRedirect(auth, googleProvider);
+      // ✅ móvil: redirect
+      await signInWithRedirect(auth, provider);
       return;
     }
-
-    // Desktop: intenta popup; si falla por bloqueo, cae a redirect
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (e) {
-      const code = e?.code || "";
-      console.warn("[login] popup fail, fallback to redirect:", code);
-      await signInWithRedirect(auth, googleProvider);
-    }
+    // ✅ desktop: popup
+    await signInWithPopup(auth, provider);
   } catch (e) {
-    console.error("[login] error", e);
-  } finally {
-    // pequeño delay para no “desbloquear” antes del redirect
-    setTimeout(() => { logging = false; }, 1500);
+    // Errores comunes de popup: user closed popup / cancelled
+    console.warn("[login] error:", e?.code || e);
   }
 }
