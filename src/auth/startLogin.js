@@ -5,11 +5,16 @@ import {
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
+ import { auth, googleProvider } from "@/firebase";
+ import { signInWithRedirect } from "firebase/auth";
 import { normalizeRole } from "@/constants/roles";
 
-const isMobile =
-  typeof navigator !== "undefined" &&
-  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+//const isMobile =
+  //typeof navigator !== "undefined" &&
+  //Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+   // Temporal: siempre redirect (diagnóstico móvil)
+// Si luego quieres restaurar popup en desktop, reactivamos el bloque anterior.
+
 
 export async function startLogin(roleLike = "usuario") {
   const role = normalizeRole(roleLike);
@@ -33,8 +38,14 @@ export async function startLogin(roleLike = "usuario") {
     }
     // ✅ desktop: popup
     await signInWithPopup(auth, provider);
-  } catch (e) {
+
+     // Usamos el provider centralizado
+     googleProvider.setCustomParameters({ prompt: "select_account" });
+     console.log("[login] Forzando signInWithRedirect. role:", role);
+     await signInWithRedirect(auth, googleProvider);
+ 
+    } catch (e) {
     // Errores comunes de popup: user closed popup / cancelled
-    console.warn("[login] error:", e?.code || e);
+    console.warn("[login] signInWithRedirect error:", e?.code || e);
   }
 }

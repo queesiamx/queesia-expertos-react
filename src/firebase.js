@@ -5,9 +5,8 @@ import { getStorage } from 'firebase/storage';
 import {
   getAuth,
   GoogleAuthProvider,
-  setPersistence,
-  browserLocalPersistence,
-  getRedirectResult,
+  setPersistence, 
+  indexedDBLocalPersistence,
 } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -27,23 +26,22 @@ export const storage = getStorage(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// 🔐 Persistencia entre recargas/redirect (clave para móvil)
-setPersistence(auth, browserLocalPersistence).catch(console.error);
+ // 🔐 Persistencia robusta (IndexedDB) — mejor en móvil/redirect
+ setPersistence(auth, indexedDBLocalPersistence).catch((err) => {
+   console.warn("[firebase] setPersistence fallback:", err?.message || err);
+ }); // 🔐 Persistencia robusta (IndexedDB) — mejor en móvil/redirect
+ setPersistence(auth, indexedDBLocalPersistence).catch((err) => {
+   console.warn("[firebase] setPersistence fallback:", err?.message || err);
+ });
 
 if (import.meta.env.DEV) {
   // @ts-ignore
   window.__auth = auth;
   console.log("[firebase] loaded");
 }
-
-
-// 🔁 Resolver el redirect una sola vez (opcional)
-export async function resolveRedirectOnce() {
-  try {
-    const res = await getRedirectResult(auth);
-    return res?.user ?? null;
-  } catch (e) {
-    console.warn('getRedirectResult error', e);
-    return null;
-  }
+if (import.meta.env.DEV) {
+  console.log("[firebase] loaded @", import.meta.env.VITE_SITE_URL);
 }
+
+
+// Nota: la resolución del redirect ahora vive en src/auth/resolveRedirectOnce.js
