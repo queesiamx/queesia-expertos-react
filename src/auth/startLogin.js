@@ -1,13 +1,9 @@
 // src/auth/startLogin.js
-import { auth } from "@/firebase";
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-} from "firebase/auth";
+ // Fuente única de verdad: auth inicializado y el provider vienen de tu módulo firebase
  import { auth, googleProvider } from "@/firebase";
+ // Solo una vez este import de la SDK
  import { signInWithRedirect } from "firebase/auth";
-import { normalizeRole } from "@/constants/roles";
+ import { normalizeRole } from "@/constants/roles";
 
 //const isMobile =
   //typeof navigator !== "undefined" &&
