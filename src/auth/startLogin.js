@@ -15,26 +15,7 @@
 export async function startLogin(roleLike = "usuario") {
   const role = normalizeRole(roleLike);
   try {
-    // Guarda intención de rol para el redirect y también para popup
-    try {
-      localStorage.setItem("pendingRole", role);
-      localStorage.setItem("loginIntent", "login");
-      sessionStorage.setItem("pendingRole", role);
-      sessionStorage.setItem("loginIntent", "login");
-    } catch {}
-
-    const provider = new GoogleAuthProvider();
-    // fuerza selector de cuenta (evita “reciclar” sesión anterior)
-    provider.setCustomParameters({ prompt: "select_account" });
-
-    if (isMobile) {
-      // ✅ móvil: redirect
-      await signInWithRedirect(auth, provider);
-      return;
-    }
-    // ✅ desktop: popup
-    await signInWithPopup(auth, provider);
-
+    
      // Usamos el provider centralizado
      googleProvider.setCustomParameters({ prompt: "select_account" });
      console.log("[login] Forzando signInWithRedirect. role:", role);
