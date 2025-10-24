@@ -75,6 +75,21 @@ export default function MobileMenu() {
     ...(usuario ? [{ label: "Mi Perfil", href: "/perfil" }] : []),
   ];
 
+ // Helper para iniciar sesión desde móviles de manera robusta
+  const beginLogin = async (role) => {
+    try {
+      // Persistimos el rol también aquí por si algún caller no lo hizo.
+      try {
+        sessionStorage.setItem("pendingRole", role);
+        localStorage.setItem("pendingRole", role);
+      } catch {}
+      close();
+      await startLogin(role);
+    } catch (e) {
+      console.warn("[mobile-menu] login failed:", e?.code || e);
+    }
+  };
+
   return (
     <div className={`lg:hidden relative ${isOpen ? "z-[10002]" : "z-[10000]"}`}>
       {/* Botón hamburguesa */}
@@ -160,22 +175,22 @@ export default function MobileMenu() {
                     </button>
                     <div className="mt-1 mb-1">
                       <button
-                        type="button"
-                        onClick={() => { startLogin(ROLES.ADMIN); close(); }}
+                    type="button"
+                    onClick={() => beginLogin(ROLES.ADMIN)}
                         className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
                       >
                         ⭐ Soy admin
                       </button>
                       <button
-                        type="button"
-                        onClick={() => { startLogin(ROLES.EXPERTO); close(); }}
+                    type="button"
+                    onClick={() => beginLogin(ROLES.EXPERTO)}
                         className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
                       >
                         👨‍💼 Soy experto
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => { startLogin(ROLES.USUARIO); close(); }}
+                  <button
+                    type="button"
+                    onClick={() => beginLogin(ROLES.USUARIO)}
                         className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
                       >
                         🙋 Soy usuario

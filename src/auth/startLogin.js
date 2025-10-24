@@ -13,16 +13,23 @@
 
 
 export async function startLogin(roleLike = "usuario") {
+ // Normaliza y persiste de forma defensiva el rol/intent antes del redirect.
   const role = normalizeRole(roleLike);
   try {
-    
-     // Usamos el provider centralizado
-     googleProvider.setCustomParameters({ prompt: "select_account" });
-     console.log("[login] Forzando signInWithRedirect. role:", role);
-     await signInWithRedirect(auth, googleProvider);
- 
-    } catch (e) {
-    // Errores comunes de popup: user closed popup / cancelled
+    try {
+      sessionStorage.setItem("pendingRole", role);
+      localStorage.setItem("pendingRole", role);
+      sessionStorage.setItem("loginIntent", "signin");
+      localStorage.setItem("loginIntent", "signin");
+    } catch {}
+
+    // Usamos el provider centralizado
+    googleProvider.setCustomParameters({ prompt: "select_account" });
+    console.log("[login] signInWithRedirect → role:", role);
+    await signInWithRedirect(auth, googleProvider);
+    // Nota: la navegación se hará fuera (Google → /auth → PostAuth).
+  } catch (e) {
     console.warn("[login] signInWithRedirect error:", e?.code || e);
+    throw e;
   }
 }

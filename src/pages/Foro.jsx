@@ -35,7 +35,7 @@ export default function Foro() {
       <p className="text-gray-600 max-w-prose">
         Estamos afinando los últimos detalles del{" "}
         <span className="font-medium">Foro de Queesia</span> para que puedas
-+        debatir, preguntar y compartir conocimiento con la comunidad.
+        debatir, preguntar y compartir conocimiento con la comunidad.
       </p>
     </div>
   );

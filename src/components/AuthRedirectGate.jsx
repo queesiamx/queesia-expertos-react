@@ -14,55 +14,56 @@ function getPendingRole(fallback) {
   return normalizeRole(v || fallback || "usuario");
 }
 
-function clearPendingRole() {
-  try {
-    localStorage.removeItem("pendingRole");
-    localStorage.removeItem("loginIntent");
-  } catch {}
-  try {
-    sessionStorage.removeItem("pendingRole");
-    sessionStorage.removeItem("loginIntent");
-  } catch {}
-}
-
+/**
+ * Componente que resuelve el retorno de signInWithRedirect y redirige según rol.
+ * Seguro en SSR y en clientes que bloquean 3rd-party cookies.
+ */
 export default function AuthRedirectGate({ children }) {
-  const { initializing, signedIn, rol } = useAuth();
-  const [processing, setProcessing] = useState(true);
+  const nav = useNavigate();
   const ran = useRef(false);
-  const navigate = useNavigate();
+  const [processing, setProcessing] = useState(true);
+  const { user, rol, loading } = useAuth(); // loading = inicializando listener
 
   useEffect(() => {
-    if (ran.current) return;
+   if (ran.current) return;
     ran.current = true;
-
     (async () => {
       try {
-        const res = await getRedirectResult(auth); // resultado del redirect
-        const pendingRole = getPendingRole(rol || "usuario");
+        // 1) Intenta resolver el redirect si lo hay
+        console.log("[auth-gate] resolving redirect…");
+        const res = await getRedirectResult(auth);
+        const u = res?.user || auth.currentUser || null;
 
-        if (res?.user) {
-          await ensureUserDoc(res.user, pendingRole);
-          clearPendingRole();
-          navigate(pathByRole(pendingRole), { replace: true });
+        if (u) {
+          const pr = getPendingRole(rol);
+          await ensureUserDoc(u, pr);
+         // dejar una “miga” para PostAuth en caso de navegación manual
+          try { localStorage.setItem("pendingRole", pr); } catch {}
+          const dest = pathByRole(pr);
+          console.log("[auth-gate] signed in →", u.email, "→", dest);
+          nav(dest, { replace: true });
           return;
-        }
-      } catch (err) {
-        console.error("AuthRedirectGate error:", err);
+       }
+
+        console.log("[auth-gate] no redirect result & no currentUser");
+      } catch (e) {
+       console.warn("[auth-gate] getRedirectResult error:", e?.code || e);
       } finally {
         setProcessing(false);
       }
     })();
-  }, [navigate, rol]);
+  }, [nav, rol]);
 
+  // Si ya hay sesión por el listener (p. ej., persistence restaurada), deriva.
   useEffect(() => {
-    if (!processing && !initializing && signedIn) {
-      const pr = getPendingRole(rol || "usuario");
-      clearPendingRole();
-      navigate(pathByRole(pr), { replace: true });
+    if (!processing && !loading && user) {
+      const pr = getPendingRole(rol);
+      const dest = pathByRole(pr);
+      nav(dest, { replace: true });
     }
-  }, [processing, initializing, signedIn, rol, navigate]);
+  }, [processing, loading, user, rol, nav]);
 
-  if (processing || initializing) {
+  if (processing || loading) {
     return (
       <div className="p-6 text-center font-medium text-gray-700">
         Entrando a su cuenta…
@@ -70,5 +71,5 @@ export default function AuthRedirectGate({ children }) {
     );
   }
 
-  return children;
+  return children ?? null;
 }
