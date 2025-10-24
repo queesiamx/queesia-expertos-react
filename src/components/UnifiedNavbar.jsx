@@ -1,6 +1,6 @@
 // src/components/UnifiedNavbar.jsx
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, NavLink } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/firebase";
 import { useAuth } from "../hooks/useAuth";
@@ -106,12 +106,17 @@ export default function UnifiedNavbar() {
 
   </div>
 </div>
-                <a
-              href="https://foro.queesia.com"
-              className="text-slate-700 hover:text-slate-900 transition-colors"
-            >
-              Foro
-            </a>
+
+       <NavLink
+          to="/foro"
+          className={({ isActive }) =>
+            `px-3 py-2 rounded-xl transition ${
+              isActive ? "bg-gray-900 text-white" : "hover:bg-gray-100"
+            }`
+          }
+        >
+          Foro
+        </NavLink>
 
           <a
             href="https://queesia.com/nosotros/"
@@ -126,6 +131,16 @@ export default function UnifiedNavbar() {
           >
             Contacto
           </a>
+         <NavLink
+          to="/blog"
+          className={({ isActive }) =>
+            `px-3 py-2 rounded-xl transition ${
+              isActive ? "bg-gray-900 text-white" : "hover:bg-gray-100"
+            }`
+          }
+        >
+          Blog
+        </NavLink>
         </nav>
 
         {/* Lado derecho (login / CTA) */}

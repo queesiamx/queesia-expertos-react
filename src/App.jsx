@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Blog from "@/pages/Blog";
+import Foro from "@/pages/Foro";
 import AuthRedirectGate from "./components/AuthRedirectGate";
 import PostAuth from "@/pages/PostAuth";
 import AuthBridge from "./pages/AuthBridge"; // 👈
@@ -49,6 +51,8 @@ export default function App() {
         {/* Públicas */}
         
         <Route path="/" element={<Home />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/foro" element={<Foro />} />
         <Route path="/auth" element={<AuthBridge />} />      {/* si ya creaste /auth, déjalo */}
         <Route path="/post-auth" element={<PostAuth />} />
         <Route path="/registro" element={<Registro />} />

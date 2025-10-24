@@ -149,3 +149,26 @@ html, body, #root { overflow-x: hidden; }
 /* ===== Fondo para vistas de dashboard SIN pisar el fondo global =====
    Aplica esta clase en el wrapper del dashboard (p.ej. <main class="dashboard-shell">) */
 .dashboard-shell { background-color: #f7fafc; }
+/* Animaciones extra para engranes */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes spin-fast {
+  to { transform: rotate(360deg); }
+}
+
+/* Reutilizamos la keyframe 'spin' de Tailwind para consistencia;
+   añadimos utilidades complementarias sin tocar tailwind.config. */
+.animate-spin-reverse {
+  animation: spin 6s linear infinite reverse;
+}
+.animate-spin-fast {
+  animation: spin 1.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin,
+  .animate-spin-reverse,
+  .animate-spin-fast {
+    animation: none !important;
+  }
+}
