@@ -8,8 +8,8 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './hooks/useAuth';
 import { resolveRedirectOnce } from '@/auth/resolveRedirectOnce';
 
- // Ejecutar lo antes posible para “recibir” la sesión del redirect
- void resolveRedirectOnce();
+// Ejecuta la resolución de redirect ANTES de montar (fire-and-forget)
+resolveRedirectOnce();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

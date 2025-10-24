@@ -1,7 +1,7 @@
 // src/hooks/useAuth.jsx
-import { useEffect, useState, useContext, createContext, useMemo } from "react";
+import { useEffect, useState, useContext, createContext, useMemo, useRef } from "react";
 import { normalizeRole } from "@/constants/roles";
-import { onAuthStateChanged, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
 
@@ -12,39 +12,41 @@ export function AuthProvider({ children }) {
   const [rol, setRol] = useState(null);
   const [aprobado, setAprobado] = useState(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
 
+
+  // Suscripción al estado de Auth
   useEffect(() => {
-    // 1) Garantiza persistencia local para no “perder” sesión en recargas
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
-
-    // 2) Suscripción al estado de Auth
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("[auth] onAuthStateChanged:", firebaseUser?.uid || null); // ✅
-
+      console.log("[auth] onAuthStateChanged:", firebaseUser?.uid || null);
       try {
         if (!firebaseUser) {
           setUser(null);
           setRol(null);
           setAprobado(false);
-          return;
+          return; // loading baja en finally
         }
 
+        // Opcional: hidratar token en algunos navegadores
+        try { await firebaseUser.getIdToken(false); } catch {}
+       if (!mountedRef.current) return;
         setUser(firebaseUser);
 
-        // Carga de rol/perfil
+        // Carga de perfil (rol/aprobado)
         const ref = doc(db, "users", firebaseUser.uid);
         const snap = await getDoc(ref);
-          if (snap.exists()) {
+        if (snap.exists()) {
           const data = snap.data() || {};
           setRol(normalizeRole(data.rol ?? null));
           setAprobado(Boolean(data.aprobado));
         } else {
-          setRol(null);
+          // Fallback con el rol elegido antes de loguear
+          const pendingRole = (sessionStorage.getItem("pendingRole") || "USUARIO").toUpperCase();
+          setRol(normalizeRole(pendingRole));
           setAprobado(false);
         }
       } catch (e) {
         console.error("Auth load error:", e);
-        // Estado seguro para no bloquear UI
         setRol(null);
         setAprobado(false);
       } finally {
@@ -52,11 +54,23 @@ export function AuthProvider({ children }) {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      mountedRef.current = false;
+      unsubscribe();
+    };
   }, []);
 
   // Evita re-renders inútiles y también hace más feliz al HMR de Vite
-  const value = useMemo(() => ({ user, rol, aprobado, loading }), [user, rol, aprobado, loading]);
+  const value = useMemo(
+    () => ({
+      user,
+      rol,
+      aprobado,
+      loading,
+      signedIn: Boolean(user),
+    }),
+    [user, rol, aprobado, loading]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
