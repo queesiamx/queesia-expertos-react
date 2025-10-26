@@ -4,9 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { pathByRole } from "@/auth/pathByRole";
 import { Menu } from "lucide-react";
 import { ROLES } from "../constants/roles";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "@/auth/context/AuthContext";
+
 //import { auth } from "@/firebase";
-import { handleLogout } from "@/auth/logout";
+import { logout } from "@/auth/logout";
 
 export default function UserMenu({ usuario }) {
 
@@ -16,7 +17,7 @@ export default function UserMenu({ usuario }) {
   const menuRef = useRef(null);
   const btnRef = useRef(null);
   const [errorFoto, setErrorFoto] = useState(false);
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
 
   // Sincroniza datos del usuario con rol/aprobado del hook
   useEffect(() => {
@@ -219,7 +220,7 @@ const inicial = (
           <div className="border-t">
             <button
                onClick={async () => {
-                 await handleLogout();
+                 await logout();
                  setIsOpen(false);
                }}
               className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100"

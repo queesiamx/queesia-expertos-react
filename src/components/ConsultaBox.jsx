@@ -8,7 +8,7 @@ import {
   signInWithRedirect,
   
 } from "firebase/auth";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/auth/context/AuthContext";
 import toast from "react-hot-toast";
 
 // Detecta móvil

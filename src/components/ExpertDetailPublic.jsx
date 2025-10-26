@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { db, auth } from "@/firebase";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "@/auth/context/AuthContext";
 import {
   doc,
   getDoc,

@@ -1,20 +1,16 @@
 // src/components/UnifiedNavbar.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate, NavLink } from "react-router-dom";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/firebase";
-import { useAuth } from "../hooks/useAuth";
 import { pathByRole } from "@/auth/pathByRole";
-import LoginButton from "./LoginButton";
-import { handleLogout } from "@/auth/logout";
+import { useAuth } from "@/auth/context/AuthContext";
+import { logout } from "@/auth/logout";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
 import toast from "react-hot-toast";
 
 export default function UnifiedNavbar() {
-  const [usuario, setUsuario] = useState(null);
-  const { user, rol } = useAuth();
-  const dashHref = user ? pathByRole(user, rol) : null;
+  const { user, rol, aprobado } = useAuth();
+  const dashHref = user && rol ? pathByRole(user, rol) : null;
 
 
   const navigate = useNavigate();
@@ -152,7 +148,9 @@ export default function UnifiedNavbar() {
             </>
           ) : (
             <>
-              <LoginButton />
+               <a href="/login" className="inline-flex items-center px-3 py-2 rounded-lg border">
+                Iniciar sesión
+              </a>
               <Link
                 to="/registro"
                 className="btn btn-lg btn-expert">

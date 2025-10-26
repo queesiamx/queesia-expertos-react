@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/auth/context/AuthContext";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import toast from "react-hot-toast";
 

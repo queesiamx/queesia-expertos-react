@@ -1,22 +1,23 @@
 // src/components/MobileMenu.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { menuControl } from "../hooks/useMenuControl";
-import { handleLogout } from "@/auth/logout";
-import { useAuth } from "../hooks/useAuth";
-import { pathByRole } from "@/auth/pathByRole";
-import { clearRoleCache } from "@/auth/roleCache";
-import { ROLES } from "../constants/roles";
-import { startLogin } from "@/auth/startLogin";
+ import { logout } from "@/auth/logout";
+ import { useAuth } from "@/auth/context/AuthContext";
+ import { pathByRole } from "@/auth/pathByRole";
+ import { ROLES } from "../constants/roles";
+
+
 
 export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
   // 👇 Trae todo desde el contexto global (un solo listener en la app)
-  const { user: usuario, rol, aprobado } = useAuth();
-  const dashHref = usuario && rol ? pathByRole(usuario, rol) : null;
+ const { user: usuario, rol, aprobado } = useAuth();
+ const dashHref = usuario && rol ? pathByRole(usuario, rol) : null;
+
 
   const btnRef = useRef(null);
   const panelRef = useRef(null);
@@ -39,10 +40,6 @@ export default function MobileMenu() {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // 🔹 Si no hay sesión, al abrir el menú limpiamos cualquier rol cacheado
-    if (!usuario) {
-      clearRoleCache();
-    }
 
     // Registrar este menú en el coordinador (si existe)
     const unsubscribeMenu =
@@ -54,7 +51,7 @@ export default function MobileMenu() {
       document.body.style.overflow = prevOverflow || "";
       unsubscribeMenu();
     };
-  }, [isOpen, close, usuario ]);
+  }, [isOpen, close]);
 
   const handleLinkClick = () => setIsOpen(false);
   const isInternal = (href) => typeof href === "string" && href.startsWith("/");
@@ -83,17 +80,7 @@ export default function MobileMenu() {
     ...(usuario ? [{ label: "Mi Perfil", href: "/perfil" }] : []),
   ];
 
-  // Helper para iniciar sesión (startLogin ya maneja persistencia y popup/redirect)
-  const beginLogin = async (role) => {
-  try {
-    close(); // Cerrar menú primero
-   // 🔹 Asegura que antes de cada login no quede rol previo
-    clearRoleCache();
-    await startLogin(role);
-  } catch (e) {
-    console.error("[mobile-menu] Error en login:", e);
-  }
-};
+  // (sin helper de login: el CTA solo navega a /login)
 
   return (
     <div className={`lg:hidden relative ${isOpen ? "z-[10002]" : "z-[10000]"}`}>
@@ -193,57 +180,27 @@ export default function MobileMenu() {
 
                 <hr className="my-2" />
 
-                {/* Inicio de sesión con selector de rol */}
+                {/* CTA de sesión simple */}
                 {!usuario ? (
-                  <div className="px-1">
-                    <button
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-gray-100"
-                      type="button"
-                      aria-haspopup="true"
-                      aria-expanded="false"
+                  <div className="px-4 py-2">
+                    <a
+                      href="/login"
+                      onClick={handleLinkClick}
+                      className="block w-full text-center px-4 py-2 rounded-lg border hover:bg-gray-50 transition"
                     >
-                      <span>Iniciar sesión</span>
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                    <div className="mt-1 mb-1">
-                      <button
-                    type="button"
-                     onClick={() => beginLogin(ROLES.ADMIN)}
-
-                        className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
-                      >
-                        ⭐ Soy admin
-                      </button>
-                      <button
-                    type="button"
-                    onClick={() => beginLogin(ROLES.EXPERTO)}
-                        className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
-                      >
-                        👨‍💼 Soy experto
-                      </button>
-                  <button
-                        type="button"
-                        onClick={() => beginLogin(ROLES.USUARIO)}
-                        className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
-                      >
-                        🙋 Soy usuario
-                      </button>
-                    </div>
+                      Iniciar sesión
+                    </a>
                   </div>
-                ) : (
+               ) : (
                   <div className="px-4 py-2">
                     <span className="block text-xs text-gray-600 truncate mb-2">
                       {usuario.email}
                     </span>
-                        <button
-                       onClick={async () => {
-                         await handleLogout();   // el import de "@/auth/logout"
-                         close();
-                       }}
-                      className="mt-1 w-full flex items-center gap-2 text-sm text-red-600 hover:bg-gray-100 transition px-2 py-1 rounded"
+                    <button
+                      onClick={() => { logout(); close(); }}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-gray-50 transition"
                     >
-                      <LogOut className="w-4 h-4" />
-                      Cerrar sesión
+                      <LogOut className="w-4 h-4" /> Cerrar sesión
                     </button>
                   </div>
                 )}

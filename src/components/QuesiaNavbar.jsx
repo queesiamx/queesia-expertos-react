@@ -4,7 +4,7 @@ import { auth } from "@/firebase";
 import MobileMenu from "./MobileMenu";
 import LoginButton from "./LoginButton";
 import UserMenu from "./UserMenu";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "@/auth/context/AuthContext";
 
 export default function QuesiaNavbar() {
   const [usuario, setUsuario] = useState(null);

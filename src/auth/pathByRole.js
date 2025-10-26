@@ -1,18 +1,15 @@
 // src/auth/pathByRole.js
-import { ROLES, normalizeRole } from "@/constants/roles";
+import { ROLES } from "@/constants/roles";
 
-export function pathByRole(_user, roleLike) {
-  const role = normalizeRole(roleLike);
+/** Devuelve la ruta inicial según rol y aprobación */
+export function pathByRole(role, aprobado) {
   switch (role) {
     case ROLES.ADMIN:
       return "/admin-expertos";
     case ROLES.EXPERTO:
-      // 🔁 Unificado con tu RedirectByRole: aquí debe ser "/dashboard"
-      return "/dashboard";
-    case ROLES.USUARIO:
-      return "/mis-consultas";
+      // 👇 Usa /expert-dashboard según tu captura
+      return aprobado ? "/dashboard" : "/espera-aprobacion";
     default:
-      // Si aún no hay rol válido, quédate en home hasta resolver
-      return "/";
+      return "/mis-consultas";
   }
 }
