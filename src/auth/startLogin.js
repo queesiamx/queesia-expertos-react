@@ -5,9 +5,7 @@ import { signInWithRedirect, signInWithPopup } from "firebase/auth";
 
 let logging = false;
 
-const isMobile =
-  typeof navigator !== "undefined" &&
-  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+// (opcional) puedes borrar por completo isMobile si usas siempre redirect
 
 export async function startLogin(role = "usuario") {
   if (logging) return;           // evita doble click
@@ -21,21 +19,9 @@ export async function startLogin(role = "usuario") {
     try { sessionStorage.setItem("pendingRole", role); } catch {}
     try { localStorage.setItem("loginIntent", "google"); } catch {}
 
-    console.log("[login] start", { role, isMobile });
-
-    if (isMobile) {
-      // ✅ móvil → redirect directo (sin popup)
-      await signInWithRedirect(auth, googleProvider);
-    } else {
-      // desktop → intenta popup y cae a redirect si el navegador lo bloquea
-     try {
-        await signInWithPopup(auth, googleProvider);
-      } catch (e) {
-        const code = e?.code || "";
-        console.warn("[login] popup fail, fallback to redirect:", code);
-        await signInWithRedirect(auth, googleProvider);
-      }
-    }
+    console.log("[login] start", { role, strategy: "redirect" });
+    // ✅ Web: usa siempre redirect (evita bloqueos de popup/COOP en móvil y emulación)
+    await signInWithRedirect(auth, googleProvider);
   } catch (e) {
     console.error("[login] error", e);
   } finally {
