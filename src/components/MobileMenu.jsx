@@ -1,11 +1,13 @@
 // src/components/MobileMenu.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { menuControl } from "../hooks/useMenuControl";
 import { handleLogout } from "@/auth/logout";
 import { useAuth } from "../hooks/useAuth";
 import { pathByRole } from "@/auth/pathByRole";
+import { clearRoleCache } from "@/auth/roleCache";
 import { ROLES } from "../constants/roles";
 import { startLogin } from "@/auth/startLogin";
 
@@ -14,7 +16,7 @@ export default function MobileMenu() {
 
   // 👇 Trae todo desde el contexto global (un solo listener en la app)
   const { user: usuario, rol, aprobado } = useAuth();
-  const dashHref = usuario ? pathByRole(usuario, rol) : null;
+  const dashHref = usuario && rol ? pathByRole(usuario, rol) : null;
 
   const btnRef = useRef(null);
   const panelRef = useRef(null);
@@ -37,6 +39,11 @@ export default function MobileMenu() {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    // 🔹 Si no hay sesión, al abrir el menú limpiamos cualquier rol cacheado
+    if (!usuario) {
+      clearRoleCache();
+    }
+
     // Registrar este menú en el coordinador (si existe)
     const unsubscribeMenu =
       (menuControl && typeof menuControl.register === "function")
@@ -47,9 +54,10 @@ export default function MobileMenu() {
       document.body.style.overflow = prevOverflow || "";
       unsubscribeMenu();
     };
-  }, [isOpen, close]);
+  }, [isOpen, close, usuario ]);
 
   const handleLinkClick = () => setIsOpen(false);
+  const isInternal = (href) => typeof href === "string" && href.startsWith("/");
 
   // Opciones por rol
   const opciones = [
@@ -75,20 +83,17 @@ export default function MobileMenu() {
     ...(usuario ? [{ label: "Mi Perfil", href: "/perfil" }] : []),
   ];
 
- // Helper para iniciar sesión desde móviles de manera robusta
+  // Helper para iniciar sesión (startLogin ya maneja persistencia y popup/redirect)
   const beginLogin = async (role) => {
-    try {
-      // Persistimos el rol también aquí por si algún caller no lo hizo.
-      try {
-        sessionStorage.setItem("pendingRole", role);
-        localStorage.setItem("pendingRole", role);
-      } catch {}
-      close();
-      await startLogin(role);
-    } catch (e) {
-      console.warn("[mobile-menu] login failed:", e?.code || e);
-    }
-  };
+  try {
+    close(); // Cerrar menú primero
+   // 🔹 Asegura que antes de cada login no quede rol previo
+    clearRoleCache();
+    await startLogin(role);
+  } catch (e) {
+    console.error("[mobile-menu] Error en login:", e);
+  }
+};
 
   return (
     <div className={`lg:hidden relative ${isOpen ? "z-[10002]" : "z-[10000]"}`}>
@@ -139,25 +144,52 @@ export default function MobileMenu() {
                 <div className="font-semibold">
                   quees<span className="text-primary">ia</span>
                 </div>
-                {rol && (
-                  <div className="text-xs text-gray-600 mt-0.5">Rol actual: {rol}</div>
+                {/* No mostrar “Rol actual” si no hay sesión */}
+                {usuario && rol && (
+                  <div className="text-xs text-gray-600 mt-0.5">
+                    Rol actual: {rol}
+                  </div>
                 )}
               </div>
 
               {/* Navegación */}
               <nav className="py-1 text-sm">
-                {opciones.map((op, idx) => (
-                  <a
-                    key={idx}
-                    href={op.href}
-                    target={op.external ? "_blank" : "_self"}
-                    rel={op.external ? "noopener noreferrer" : undefined}
+
+              {/* ✅ Mi panel (visible solo con sesión y rol) */}
+                {dashHref && (
+                  <Link
+                    to={dashHref}
                     onClick={handleLinkClick}
                     className="block px-4 py-2 hover:bg-gray-100 hover:text-primary transition"
                   >
-                    {op.label}
-                  </a>
-                ))}
+                    📁 Mi panel
+                  </Link>
+                )}
+
+              {opciones.map((op, idx) => {
+                  const internal = !op.external && isInternal(op.href);
+                  return internal ? (
+                    <Link
+                      key={idx}
+                      to={op.href}
+                      onClick={handleLinkClick}
+                      className="block px-4 py-2 hover:bg-gray-100 hover:text-primary transition"
+                    >
+                      {op.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={idx}
+                      href={op.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleLinkClick}
+                      className="block px-4 py-2 hover:bg-gray-100 hover:text-primary transition"
+                    >
+                      {op.label}
+                    </a>
+                  );
+                })}
 
                 <hr className="my-2" />
 
@@ -176,7 +208,8 @@ export default function MobileMenu() {
                     <div className="mt-1 mb-1">
                       <button
                     type="button"
-                    onClick={() => beginLogin(ROLES.ADMIN)}
+                     onClick={() => beginLogin(ROLES.ADMIN)}
+
                         className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
                       >
                         ⭐ Soy admin
@@ -189,8 +222,8 @@ export default function MobileMenu() {
                         👨‍💼 Soy experto
                       </button>
                   <button
-                    type="button"
-                    onClick={() => beginLogin(ROLES.USUARIO)}
+                        type="button"
+                        onClick={() => beginLogin(ROLES.USUARIO)}
                         className="block w-full text-left px-6 py-2 text-xs hover:bg-gray-100 rounded"
                       >
                         🙋 Soy usuario

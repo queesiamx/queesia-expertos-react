@@ -1,6 +1,6 @@
 // src/components/UserMenu.jsx
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { pathByRole } from "@/auth/pathByRole";
 import { Menu } from "lucide-react";
 import { ROLES } from "../constants/roles";
@@ -190,19 +190,17 @@ const inicial = (
           </div>
 
           <nav className="py-1">
-            {/* Ir a mi panel (dinámico por rol) */}
-            <button
-              onClick={() => {
-                const roleKey = rol || userData?.rol || "USUARIO";
-                const path = pathByRole(userData, roleKey);
-                navigate(path, { replace: false });
-                setIsOpen(false);
-              }}
-              className="w-full text-left block px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-              role="menuitem"
-            >
-              📂 Ir a mi panel
-            </button>
+           {/* ✅ Ir a mi panel (dinámico por rol real) */}
+            {userData && (rol || userData.rol) && (
+              <Link
+                to={pathByRole(userData, rol || userData.rol)}
+                onClick={() => setIsOpen(false)}
+                className="block px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                role="menuitem"
+              >
+                📂 Ir a mi panel
+              </Link>
+            )}
 
             
             {opciones.map((op, idx) => (

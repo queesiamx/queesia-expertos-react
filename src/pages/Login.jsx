@@ -3,7 +3,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  getRedirectResult,
 } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";

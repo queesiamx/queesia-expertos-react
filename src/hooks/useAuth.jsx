@@ -1,80 +1,91 @@
 // src/hooks/useAuth.jsx
-import { useEffect, useState, useContext, createContext, useMemo, useRef } from "react";
-import { normalizeRole } from "@/constants/roles";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { normalizeRole, isValidRole } from "@/constants/roles";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [rol, setRol] = useState(null);
-  const [aprobado, setAprobado] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [aprobado, setAprobado] = useState(null); // opcional, útil en tu flujo
+  const [initializing, setInitializing] = useState(true);
+
   const mountedRef = useRef(true);
 
-
-  // Suscripción al estado de Auth
+  // ⚡ rol cacheado para primer render (siempre en minúsculas)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("[auth] onAuthStateChanged:", firebaseUser?.uid || null);
-      try {
-        if (!firebaseUser) {
-          setUser(null);
-          setRol(null);
-          setAprobado(false);
-          return; // loading baja en finally
-        }
+    const cached = sessionStorage.getItem("cachedRole");
+    if (cached && !rol) setRol(normalizeRole(cached));
+  }, [rol]);
 
-        // Opcional: hidratar token en algunos navegadores
-        try { await firebaseUser.getIdToken(false); } catch {}
-       if (!mountedRef.current) return;
-        setUser(firebaseUser);
+  useEffect(() => {
+    mountedRef.current = true;
 
-        // Carga de perfil (rol/aprobado)
-        const ref = doc(db, "users", firebaseUser.uid);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const data = snap.data() || {};
-          setRol(normalizeRole(data.rol ?? null));
-          setAprobado(Boolean(data.aprobado));
-        } else {
-          // Fallback con el rol elegido antes de loguear
-          const pendingRole = (sessionStorage.getItem("pendingRole") || "USUARIO").toUpperCase();
-          setRol(normalizeRole(pendingRole));
-          setAprobado(false);
-        }
-      } catch (e) {
-        console.error("Auth load error:", e);
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      // 1) Asienta user inmediatamente (aunque sea null)
+      setUser(u || null);
+
+      if (!u) {
         setRol(null);
-        setAprobado(false);
+        setAprobado(null);
+        setInitializing(false);
+        return;
+      }
+
+      // 2) Recupera rol (users → experts como respaldo)
+      try {
+        let snap = await getDoc(doc(db, "users", u.uid));
+
+        if (!snap.exists()) {
+          // respaldo: algunos flujos guardan el rol/estado en experts
+          const alt = await getDoc(doc(db, "experts", u.uid));
+          if (alt.exists()) snap = alt;
+        }
+
+        const data = snap.exists() ? snap.data() : {};
+       const nextRol = normalizeRole(data?.rol);          // → "admin" | "experto" | "usuario" | null
+        const safeRol = isValidRole(nextRol) ? nextRol : null;
+        setRol(safeRol);
+        if (safeRol) sessionStorage.setItem("cachedRole", safeRol);
+        else sessionStorage.removeItem("cachedRole");
+
+        // si tu doc tiene aprobado, úsalo; si no, queda en null
+        setAprobado(
+          typeof data?.aprobado === "boolean" ? data.aprobado : null
+        );
+      } catch (e) {
+        console.warn("[useAuth] getDoc error:", e?.message || e);
+        setRol(null);                          // no asumir rol
+        sessionStorage.removeItem("cachedRole");
+        setAprobado(null);
       } finally {
-        setLoading(false);
+        if (mountedRef.current) setInitializing(false);
       }
     });
 
     return () => {
       mountedRef.current = false;
-      unsubscribe();
+      unsub();
     };
   }, []);
 
-  // Evita re-renders inútiles y también hace más feliz al HMR de Vite
   const value = useMemo(
     () => ({
       user,
       rol,
       aprobado,
-      loading,
-      signedIn: Boolean(user),
+      initializing,
+      loading: initializing,      // alias para compatibilidad con RedirectByRole
+       
+      signedIn: !!user,
     }),
-    [user, rol, aprobado, loading]
+    [user, rol, aprobado, initializing]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

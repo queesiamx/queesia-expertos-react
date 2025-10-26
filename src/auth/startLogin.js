@@ -1,55 +1,45 @@
 // src/auth/startLogin.js
- // Fuente única de verdad: auth inicializado y el provider vienen de tu módulo firebase
- import { auth, googleProvider } from "@/firebase";
- // Solo una vez este import de la SDK
- import { signInWithRedirect, signInWithPopup } from "firebase/auth";
- import { normalizeRole } from "@/constants/roles";
+import { auth, googleProvider } from "@/firebase";
+import { clearRoleCache } from "@/auth/roleCache";
+import { signInWithRedirect, signInWithPopup } from "firebase/auth";
 
-//const isMobile =
-  //typeof navigator !== "undefined" &&
-  //Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-   // Temporal: siempre redirect (diagnóstico móvil)
-// Si luego quieres restaurar popup en desktop, reactivamos el bloque anterior.
+let logging = false;
 
+const isMobile =
+  typeof navigator !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-export async function startLogin(roleLike = "usuario") {
- // Normaliza y persiste de forma defensiva el rol/intent antes del redirect.
-  const role = normalizeRole(roleLike);
+export async function startLogin(role = "usuario") {
+  if (logging) return;           // evita doble click
+  logging = true;
+
   try {
-    try {
-      sessionStorage.setItem("pendingRole", role);
-      localStorage.setItem("pendingRole", role);
-      sessionStorage.setItem("loginIntent", "signin");
-      localStorage.setItem("loginIntent", "signin");
-    } catch {}
+    // 🔹 Limpia cualquier rol cacheado de una sesión previa (clave del bug en móvil)
+    clearRoleCache();
+    // guarda intención/rol antes de salir
+    try { localStorage.setItem("pendingRole", role); } catch {}
+    try { sessionStorage.setItem("pendingRole", role); } catch {}
+    try { localStorage.setItem("loginIntent", "google"); } catch {}
 
-    // Usamos el provider centralizado
-    googleProvider.setCustomParameters({ prompt: "select_account" });
+    console.log("[login] start", { role, isMobile });
 
-    console.log("[login] signInWithRedirect → role:", role);
-
-    // --- Redirect primario
-    let redirected = false;
-    const t = setTimeout(() => {
-      // Si a los ~900ms seguimos en la misma página, probamos popup como fallback.
-      if (!redirected) {
-        console.warn("[login] redirect no despegó → probando signInWithPopup fallback");
-        signInWithPopup(auth, googleProvider)
-         .then(() => {
-            console.log("[login] popup fallback OK");
-          })
-          .catch((e) => {
-            console.warn("[login] popup fallback error:", e?.code || e);
-          });
+    if (isMobile) {
+      // ✅ móvil → redirect directo (sin popup)
+      await signInWithRedirect(auth, googleProvider);
+    } else {
+      // desktop → intenta popup y cae a redirect si el navegador lo bloquea
+     try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (e) {
+        const code = e?.code || "";
+        console.warn("[login] popup fail, fallback to redirect:", code);
+        await signInWithRedirect(auth, googleProvider);
       }
-    }, 900);
-
-    await signInWithRedirect(auth, googleProvider);
-    redirected = true;
-    clearTimeout(t);
-    // La resolución se hará en el AuthRedirectGate (getRedirectResult)
+    }
   } catch (e) {
-    console.warn("[login] signInWithRedirect error:", e?.code || e);
-    throw e;
+    console.error("[login] error", e);
+  } finally {
+    // pequeño delay para no “desbloquear” antes del redirect
+    setTimeout(() => { logging = false; }, 1500);
   }
 }

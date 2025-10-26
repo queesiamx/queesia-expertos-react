@@ -1,124 +1,37 @@
 // src/components/LoginButton.jsx
-import React, { useEffect, useState } from "react";
-import { db, auth, googleProvider } from "@/firebase";
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
-import { handleLogout } from "@/auth/logout";
-import { doc, getDoc } from "firebase/firestore";
+import React, { useState } from "react";
+import { startLogin } from "@/auth/startLogin";
+import { handleLogout as doLogout } from "@/auth/logout";
 import { menuControl } from "../hooks/useMenuControl";
 import { useAuth } from "../hooks/useAuth";
-import { ROLES } from "../constants/roles";
-
- // Detección simple de móvil (con guarda)
- const isMobile =
-   typeof navigator !== "undefined" &&
-   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+import { ROLES, normalizeRole } from "@/constants/roles";
 
 export default function LoginButton() {
-  const [user, setUser] = useState(null);
+  
   const [openMenu, setOpenMenu] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(false); // 🔹 evita taps dobles
+  const { user, rol, aprobado } = useAuth(); // ← fuente única del estado
+  const [loading, setLoading] = useState(false); // evita taps dobles
 
-  const { rol, aprobado } = useAuth();
-  const adminEmails = ["queesiamx@gmail.com", "queesiamx.employee@gmail.com"];
-
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) setUser(JSON.parse(userData));
-
-    const unsubscribe = menuControl.subscribe((menu) => {
-      if (menu !== "avatar") setOpenMenu(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // —— Lógica común de post-login (para popup y redirect)
-  const afterLogin = async (firebaseUser, selectedRoleFromCaller) => {
-    const token = await firebaseUser.getIdToken();
-    localStorage.setItem("authToken", token);
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        uid: firebaseUser.uid,
-        name: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photo: firebaseUser.photoURL,
-      })
-    );
-
-    // Rol elegido (o recuperado si venimos de redirect)
-    const pending = sessionStorage.getItem("pendingRole");
-    const selectedRole = selectedRoleFromCaller || pending || "";
-
-    if (pending) sessionStorage.removeItem("pendingRole");
-
-    // Redirecciones por rol
-    if (selectedRole === ROLES.ADMIN || adminEmails.includes(firebaseUser.email)) {
-      window.location.href = "/admin-expertos";
-      return;
-    }
-
-    if (selectedRole === ROLES.EXPERTO) {
-      const expertRef = doc(db, "experts", firebaseUser.uid);
-      const expertSnap = await getDoc(expertRef);
-      if (expertSnap.exists() && expertSnap.data().aprobado) {
-        window.location.href = "/expert-dashboard";
-      } else {
-        window.location.href = "/registro";
-      }
-      return;
-    }
-
-    // Por defecto (usuario)
-    window.location.href = "/mis-consultas";
-  };
-
- // Procesa el retorno del redirect (móvil)
- useEffect(() => {
-   (async () => {
-     try {
-       const res = await getRedirectResult(auth);
-       if (!res?.user) return; // no venimos de redirect
-      await afterLogin(res.user); // el rol se toma de pendingRole
-     } catch (err) {
-       console.error("getRedirectResult error:", err);
-     }
-   })();
- }, []);
 
 
   const handleLogin = async (selectedRole) => {
-    if (loading) return;           // 🔹 evita multi-tap
-    setLoading(true);
-    setRoleMenuOpen(false);        // 🔹 cierra dropdown para que no tape toques
-    try {
-        if (isMobile) {
-        // En móvil: redirect para evitar bloqueos de popup/cookies
-        sessionStorage.setItem("pendingRole", selectedRole);
-        // En móvil: redirect para evitar bloqueos de popup/cookies        sessionStorage.setItem("pendingRole", selectedRole);
-        await signInWithRedirect(auth, googleProvider);
-        return; // continúa al volver con getRedirectResult()
-      }
+  if (loading) return;
+  setLoading(true);
+  setRoleMenuOpen(false);
+  
+  try {
+    await startLogin(normalizeRole(selectedRole || "USUARIO"));
+  } catch (error) {
+    console.error("[LoginButton] Error:", error);
+  } finally {
+    setTimeout(() => setLoading(false), 2000);
+  }
+};
 
-      // En desktop: popup
-      const result = await signInWithPopup(auth, googleProvider);
-      await afterLogin(result.user, selectedRole);
-    } catch (error) {
-      if (
-        error?.code !== "auth/cancelled-popup-request" &&
-        error?.code !== "auth/popup-closed-by-user"
-      ) {
-        console.error("Error al iniciar sesión:", error);
-        alert("No se pudo iniciar sesión. Intenta de nuevo.");
-      }
-    } finally {
-     setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/";
+  const handleLogout = async () => {
+    await doLogout();
+    setOpenMenu(false);
   };
 
   const toggleMenu = () => {
@@ -131,16 +44,16 @@ export default function LoginButton() {
     return (
       <div className="relative">
         <img
-          src={user.photo}
-          alt={user.name}
+          src={user.photoURL || user.photo}
+          alt={user.displayName || user.name}
           className="w-10 h-10 rounded-full border border-white shadow hover:ring-2 hover:ring-primary transition duration-300 cursor-pointer"
-          title={user.name}
+          title={user.displayName || user.name}
           onClick={toggleMenu}
         />
         {openMenu && (
           <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-50">
             <div className="px-4 py-2 text-sm text-gray-800 truncate border-b">
-              {user.name?.split(" ")[0]}
+              {(user.displayName || user.name || "").split(" ")[0]}
             </div>
 
             {rol === ROLES.ADMIN && (
@@ -149,7 +62,7 @@ export default function LoginButton() {
               </a>
             )}
             {rol === ROLES.EXPERTO && aprobado && (
-              <a href="/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-100">
+              <a href="/expert-dashboard" className="block px-4 py-2 text-sm hover:bg-gray-100">
                 Mi dashboard
               </a>
             )}
