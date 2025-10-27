@@ -25,7 +25,7 @@ export default function ResponderConsulta() {
           setConsulta({ id: snap.id, ...snap.data() });
         } else {
           toast.error("Consulta no encontrada.");
-          navigate("/dashboard");
+          navigate('/expert-dashboard');
         }
       } catch (error) {
         console.error(error);

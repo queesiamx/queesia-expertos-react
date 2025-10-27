@@ -1,8 +1,8 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/firebase";
-import { getOrCreateUserProfile } from "@/auth/roleService";
+import { onAuthStateChanged, getRedirectResult } from "firebase/auth";
+import { auth, db } from "@/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const AuthContext = createContext(null);
 
@@ -13,29 +13,53 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      try {
-        if (!u) {
-          setUser(null);
-          setRol(null);
-          setAprobado(false);
+    let unsub = () => {};
+    (async () => {
+      // 0) Completa el flujo cuando el login fue por redirect (móvil/DevTools)
+      try { await getRedirectResult(auth); } catch {}
+
+      unsub = onAuthStateChanged(auth, async (u) => {
+        setLoading(true);
+        try {
+          // Sin sesión
+          if (!u) {
+            setUser(null);
+            setRol(null);
+           setAprobado(false);
+            setLoading(false);
+            return;
+          }
+
+          // Con sesión: intenta leer perfil en Firestore
+          let rolDb = null;
+          let aprobadoDb = false;
+          try {
+            const snap = await getDoc(doc(db, "users", u.uid));
+            if (snap.exists()) {
+              const d = snap.data();
+              rolDb = (d?.rol || "").toLowerCase() || null;
+              aprobadoDb = Boolean(d?.aprobado);
+            }
+          } catch (e) {
+            console.error("AuthContext: error leyendo users/{uid}", e);
+          }
+
+          // Fallback a intención guardada si Firestore aún no trae rol
+          let pending = "";
+          try { pending = (localStorage.getItem("pendingRole") || "").toLowerCase(); } catch {}
+          const finalRol = (rolDb || pending || "usuario").toLowerCase();
+
+          setUser(u);
+         setRol(finalRol);
+          setAprobado(Boolean(aprobadoDb));
+          // Limpia intención
+          try { localStorage.removeItem("pendingRole"); } catch {}
+        } finally {
           setLoading(false);
-          return;
         }
-        const profile = await getOrCreateUserProfile(u);
-        setUser(u);
-        setRol(profile.rol);
-        setAprobado(Boolean(profile.aprobado));
-      } catch (e) {
-        console.error("Auth profile error", e);
-        setUser(u);
-        setRol(null);
-        setAprobado(false);
-      } finally {
-        setLoading(false);
-      }
-    });
-    return () => unsub();
+      });
+    })();
+    return () => unsub?.();
   }, []);
 
   const value = useMemo(

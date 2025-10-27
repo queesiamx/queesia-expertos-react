@@ -25,7 +25,7 @@ export default function RutaExpertoPrivada({ children, usuario }) {
 
   if (!usuario) return <Navigate to="/login" replace />;
   if (verificando) return <p className="text-center py-10">Verificando acceso...</p>;
-  if (!autorizado) return <Navigate to="/dashboard" replace />;
+  if (!autorizado) return <Navigate to="/expert-dashboard" replace />;
 
   return children;
 }

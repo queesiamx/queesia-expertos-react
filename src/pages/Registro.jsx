@@ -133,7 +133,7 @@ export default function Registro() {
           const data = snap.data();
           if (data.aprobado === true && data.formularioCompleto === true) {
             toast.success('Ya has sido aprobado.');
-            navigate('/dashboard');
+            navigate('/expert-dashboard');
           } else {
             setForm(prev => ({
               ...prev,
@@ -198,7 +198,7 @@ export default function Registro() {
         const data = expertSnap.data();
         if (data.aprobado === true && data.formularioCompleto === true) {
           toast.success('Bienvenido, acceso aprobado.');
-          navigate('/dashboard');
+          navigate('/expert-dashboard');
         } else if (data.aprobado === false) {
           toast('Completa tu formulario para continuar.');
         }

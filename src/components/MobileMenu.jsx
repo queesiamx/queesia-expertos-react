@@ -15,8 +15,8 @@ export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
 
   // 👇 Trae todo desde el contexto global (un solo listener en la app)
- const { user: usuario, rol, aprobado } = useAuth();
- const dashHref = usuario && rol ? pathByRole(usuario, rol) : null;
+  const { user: usuario, rol, aprobado } = useAuth();
+ const dashHref = usuario && rol ? pathByRole(rol, aprobado) : null;
 
 
   const btnRef = useRef(null);

@@ -10,7 +10,8 @@ import toast from "react-hot-toast";
 
 export default function UnifiedNavbar() {
   const { user, rol, aprobado } = useAuth();
-  const dashHref = user && rol ? pathByRole(user, rol) : null;
+  // Usa los TRES valores para calcular el destino del panel
+  const dashHref = user && rol ? pathByRole(rol, aprobado) : null;
 
 
   const navigate = useNavigate();

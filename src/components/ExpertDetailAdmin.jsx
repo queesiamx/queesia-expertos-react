@@ -72,7 +72,7 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
   };
 
     const enviarCorreoEstadoExperto = async (email, nombre, estado) => {
-    const LOGIN_URL    = "https://expertos.queesia.com/login?redirect=/dashboard";
+    const LOGIN_URL    = "https://expertos.queesia.com/login?redirect=/expert-dashboard";
     const REGISTRO_URL = "https://expertos.queesia.com/registro";
     const esAprobado   = estado === "aprobado";
     // Inyectamos la URL directo en el mensaje (texto plano seguro)

@@ -72,7 +72,7 @@ export default function App() {
             <Route path="/perfil" element={<Perfil />} />
 
             {/* Experto */}
-            <Route path="/dashboard" element={<ExpertDashboard />} />
+            <Route path="/expert-dashboard" element={<ExpertDashboard />} />
             <Route path="/consultas-aprobadas" element={<ConsultasAprobadas />} />
             <Route path="/historial-respuestas" element={<ExpertHistorialR />} />
             <Route path="/consultas-recibidas" element={<ConsultasRecibidas />} />

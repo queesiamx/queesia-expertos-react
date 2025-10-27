@@ -1,20 +1,40 @@
 // src/guards/RoleGuard.jsx
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/auth/context/AuthContext";
-import { pathByRole } from "@/auth/pathByRole";
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '@/auth/context/AuthContext';
+import { pathByRole } from '@/auth/pathByRole';
 
-export default function RoleGuard() {
-  const { user, rol, aprobado, loading } = useAuth();
-  const loc = useLocation();
+export default function RoleGuard({ allow }) {
+  const { loading, user, rol, aprobado } = useAuth();
 
-  if (loading) return <p className="p-6 text-center">Cargando…</p>;
-  if (!user) return <Navigate to="/login" replace state={{ from: loc }} />;
-  if (!rol) return <p className="p-6 text-center">Verificando permisos…</p>;
+  // 1) Cargando contexto (aún no sabemos rol/aprobado)
+  if (loading) return null;
 
-  // Si entra a raíz o login teniendo sesión, lo llevamos a su panel
-  if (loc.pathname === "/" || loc.pathname === "/login") {
-    return <Navigate to={pathByRole(rol, aprobado)} replace />;
+  // 2) Sin sesión -> login
+  if (!user) return <Navigate to="/login" replace />;
+
+  // 3) Normaliza
+  const current = (rol || '').toString().trim().toLowerCase();
+  const isApproved = Boolean(aprobado);
+
+  // Rutas solo para EXPERTO (aprobado)
+  if (allow === 'experto') {
+    if (current !== 'experto') {
+      return <Navigate to={pathByRole(current, isApproved)} replace />;
+    }
+    if (!isApproved) {
+      return <Navigate to="/espera-aprobacion" replace />;
+    }
+    return <Outlet />;
   }
 
+  // Rutas solo para ADMIN
+  if (allow === 'admin') {
+    if (current !== 'admin') {
+      return <Navigate to={pathByRole(current, isApproved)} replace />;
+    }
+    return <Outlet />;
+  }
+
+  // Público o sin restricción
   return <Outlet />;
 }

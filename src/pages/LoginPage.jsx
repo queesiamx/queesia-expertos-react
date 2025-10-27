@@ -1,15 +1,21 @@
 // src/pages/LoginPage.jsx
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loginWithGoogle } from "@/auth/login";
 import { useAuth } from "@/auth/context/AuthContext";
-import { Navigate } from "react-router-dom";
 import { pathByRole } from "@/auth/pathByRole";
 
 export default function LoginPage() {
-  const { user, rol, aprobado } = useAuth();
+  const navigate = useNavigate();
+  const { user, rol, aprobado, loading } = useAuth();
 
-  if (user && rol) {
-    return <Navigate to={pathByRole(rol, aprobado)} replace />;
-  }
+  useEffect(() => {
+    if (loading) return;         // aún cargando Firestore
+    if (!user) return;           // no hay sesión todavía
+    if (!rol) return;            // no tenemos rol aún
+    // aquí ya tenemos user/rol y, si es experto, también tendremos aprobado
+    navigate(pathByRole(rol, aprobado), { replace: true });
+  }, [user, rol, aprobado, loading, navigate]);
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">

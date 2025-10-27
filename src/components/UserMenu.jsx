@@ -194,7 +194,7 @@ const inicial = (
            {/* ✅ Ir a mi panel (dinámico por rol real) */}
             {userData && (rol || userData.rol) && (
               <Link
-                to={pathByRole(userData, rol || userData.rol)}
+                to={pathByRole(rol || userData.rol, aprobado ?? userData.aprobado)}
                 onClick={() => setIsOpen(false)}
                 className="block px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
                 role="menuitem"

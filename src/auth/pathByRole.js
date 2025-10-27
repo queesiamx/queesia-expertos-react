@@ -1,15 +1,14 @@
 // src/auth/pathByRole.js
-import { ROLES } from "@/constants/roles";
 
 /** Devuelve la ruta inicial según rol y aprobación */
-export function pathByRole(role, aprobado) {
-  switch (role) {
-    case ROLES.ADMIN:
-      return "/admin-expertos";
-    case ROLES.EXPERTO:
-      // 👇 Usa /expert-dashboard según tu captura
-      return aprobado ? "/dashboard" : "/espera-aprobacion";
-    default:
-      return "/mis-consultas";
-  }
-}
+// src/auth/pathByRole.js
+
+/** Devuelve la ruta inicial según rol y aprobación */
+export const pathByRole = (rolRaw, aprobadoRaw) => {
+  const rol = (rolRaw || '').toString().trim().toLowerCase();
+  const aprobado = Boolean(aprobadoRaw);
+
+  if (rol === 'admin') return '/admin-expertos';
+  if (rol === 'experto') return aprobado ? '/expert-dashboard' : '/espera-aprobacion';
+  return '/mis-consultas'; // fallback usuario
+};
