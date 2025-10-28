@@ -70,8 +70,10 @@ export default function App() {
             <Route path="/mis-valoraciones" element={<MisValoraciones />} />
             <Route path="/mis-compras" element={<MisCompras />} />
             <Route path="/perfil" element={<Perfil />} />
+             </Route>
 
             {/* Experto */}
+            <Route element={<RoleGuard allow="experto" />}> 
             <Route path="/expert-dashboard" element={<ExpertDashboard />} />
             <Route path="/consultas-aprobadas" element={<ConsultasAprobadas />} />
             <Route path="/historial-respuestas" element={<ExpertHistorialR />} />
@@ -79,8 +81,9 @@ export default function App() {
             <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
             <Route path="/mis-contenidos" element={<MisContenidos />} />
             <Route path="/mis-contenidos/:id" element={<VistaDetalleContenido />} />
-
+             </Route>
             {/* Admin */}
+            <Route element={<RoleGuard allow="admin" />}> 
             <Route path="/admin-expertos" element={<AdminExpertos />} />
             <Route path="/admin/consultas" element={<AdminConsultas />} />
             <Route path="/admin/solicitudes" element={<AdminSolicitudes />} />

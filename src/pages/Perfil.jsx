@@ -1,48 +1,58 @@
+// src/pages/Perfil.jsx
 import React, { useEffect, useState } from "react";
-import { auth, db } from "@/firebase"; // ⚠️ ajusta la ruta si es necesario
-import { onAuthStateChanged, updateProfile } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { Navigate } from "react-router-dom";
 import UnifiedNavbar from "../components/UnifiedNavbar";
+import { db } from "@/firebase";
+import { useAuth } from "@/auth/context/AuthContext";
+import { updateProfile } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 export default function Perfil() {
-  const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { user, loading } = useAuth();
 
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
   const [photoURL, setPhotoURL] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
+  // Cargar datos iniciales desde Auth + Firestore cuando haya sesión
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      setSavedMsg("");
-      if (!u) {
-        setLoadingUser(false);
+    let cancel = false;
+
+    const load = async () => {
+      if (!user) {
+        setLoadingProfile(false);
         return;
       }
-      // auth
-      setDisplayName(u.displayName || "");
-      setPhotoURL(u.photoURL || "");
-
-      // firestore
       try {
-        const snap = await getDoc(doc(db, "users", u.uid));
+        if (cancel) return;
+        setDisplayName(user.displayName || "");
+        setPhotoURL(user.photoURL || "");
+
+        const snap = await getDoc(doc(db, "users", user.uid));
         const data = snap.exists() ? snap.data() : {};
+        if (cancel) return;
         setPhone(data.phone || "");
       } catch (e) {
         console.error("Error leyendo perfil:", e);
       } finally {
-        setLoadingUser(false);
+        if (!cancel) setLoadingProfile(false);
       }
-    });
-    return () => unsub();
-  }, []);
+    };
 
+    load();
+    return () => {
+      cancel = true;
+    };
+  }, [user?.uid]); // se dispara cuando ya conocemos el uid
+
+  // Guardar cambios
   const onSave = async (e) => {
     e.preventDefault();
     if (!user) return;
+
     setSaving(true);
     setSavedMsg("");
     try {
@@ -52,7 +62,7 @@ export default function Perfil() {
         photoURL: photoURL || null,
       });
 
-      // Actualiza Firestore
+      // Actualiza/crea users/{uid} (incluye email para reglas)
       await setDoc(
         doc(db, "users", user.uid),
         {
@@ -75,18 +85,19 @@ export default function Perfil() {
     }
   };
 
+  // Guardias
+  if (loading) return <p className="p-4">Cargando…</p>;
+  if (!user) return <Navigate to="/login" replace />;
+
   return (
     <>
       <UnifiedNavbar title="Mi Perfil" />
       <main className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-semibold mb-4">Mi Perfil</h1>
 
-        {loadingUser && <p>Cargando...</p>}
-        {!loadingUser && !user && (
-          <p className="text-gray-600">Inicia sesión para ver tu perfil.</p>
-        )}
-
-        {!loadingUser && user && (
+        {loadingProfile ? (
+          <p>Cargando…</p>
+        ) : (
           <form onSubmit={onSave} className="space-y-4 bg-white p-4 border rounded-md">
             <div className="flex items-center gap-4">
               <img
@@ -94,9 +105,7 @@ export default function Perfil() {
                 alt="avatar"
                 className="w-16 h-16 rounded-full object-cover border"
               />
-              <div className="text-sm text-gray-600">
-                {user.email}
-              </div>
+              <div className="text-sm text-gray-600">{user.email}</div>
             </div>
 
             <div>

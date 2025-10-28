@@ -1,88 +1,106 @@
 // src/pages/MisValoraciones.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import UnifiedNavbar from "../components/UnifiedNavbar";
-import { auth, db } from "@/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import toast from "react-hot-toast";
+import { db } from "@/firebase";
+import { useAuth } from "@/auth/context/AuthContext";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 
 const AppHeader = ({ app }) => (
   <div className="flex items-center gap-3">
     {app?.logo ? (
       <img src={app.logo} alt={app.name} className="w-8 h-8 rounded-md border" />
     ) : (
-      <div className="w-8 h-8 rounded-md bg-gray-200 grid place-items-center text-xs text-gray-600">APP</div>
+      <div className="w-8 h-8 rounded-md bg-gray-200 grid place-items-center text-xs text-gray-600">
+        APP
+      </div>
     )}
     <div className="font-semibold">{app?.name || `App #${app?.id || "-"}`}</div>
   </div>
 );
 
 export default function MisValoraciones() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [ratings, setRatings] = useState([]);   // {appId, rating, timestamp, userId}
-  const [comments, setComments] = useState([]); // {appId, text, timestamp, user:{email,name,photo}}
-  const [appsMeta, setAppsMeta] = useState({}); // appId -> {id,name,logo}
+  const { user, loading } = useAuth();
 
+  // estado
+  const [cargando, setCargando] = useState(true);
+  const [ratings, setRatings] = useState([]);   // {id, appId, rating, timestamp, userId}
+  const [comments, setComments] = useState([]); // {id, appId, text, timestamp, user:{...}}
+  const [appsMeta, setAppsMeta] = useState({}); // appId -> {id, name, logo}
+
+  // guardia: primero esperamos al contexto; si no hay sesión, al login
+  if (loading) return <p className="p-4">Cargando…</p>;
+  if (!user) return <Navigate to="/login" replace />;
+
+  // fetch de ratings y comments del usuario
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) {
-        setUser(null);
-        setRatings([]);
-        setComments([]);
-        setLoading(false);
-        return;
-      }
-      setUser(u);
+    let cancel = false;
 
+    const cargar = async () => {
       try {
-        // 1) Ratings del usuario
-        const qR = query(collection(db, "ratings"), where("userId", "==", u.uid));
-        const snapR = await getDocs(qR);
-        const r = snapR.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setRatings(r);
+        // 1) ratings del usuario
+        const qr = query(
+          collection(db, "ratings"),
+          where("userId", "==", user.uid)
+        );
+        const sr = await getDocs(qr);
+        const _ratings = sr.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-        // 2) Comments del usuario (según tu estructura usa user.email)
-        const qC = query(collection(db, "comments"), where("user.email", "==", u.email));
-        const snapC = await getDocs(qC);
-        const c = snapC.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setComments(c);
+        // 2) comments del usuario
+        const qc = query(
+          collection(db, "comments"),
+          where("userId", "==", user.uid)
+        );
+        const sc = await getDocs(qc);
+        const _comments = sc.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-        // 3) (Opcional) Traer metadatos de apps (nombre/logo) para las appId involucradas
-        const ids = Array.from(new Set([...r.map(x => x.appId), ...c.map(x => x.appId)]));
-        const meta = {};
-        // Ajusta esta función a tu API real
-        const fetchMeta = async (appId) => {
-  try {
-    // Ejemplo de endpoint — cámbialo por el tuyo
-    const res = await fetch(`https://queesia.com/api/obtener_app.php?id=${encodeURIComponent(appId)}`);
-    const data = await res.json();
+        if (cancel) return;
 
-    // Ajusta los nombres de campos según tu API
-    meta[appId] = {
-      id: appId,
-      name: data?.app?.name || `App #${appId}`,
-      logo: data?.app?.logo_filename
-        ? `https://queesia.com/logos/${data.app.logo_filename}.png` // <-- aquí añadimos la extensión
-        : null,
-    };
-  } catch {
-    meta[appId] = { id: appId, name: `App #${appId}`, logo: null };
-  }
-};
+        setRatings(_ratings);
+        setComments(_comments);
 
-        await Promise.all(ids.map(fetchMeta));
-        setAppsMeta(meta);
-      } catch (e) {
-        console.error(e);
-        toast.error("No se pudo cargar tu historial.");
+        // 3) cargar metadata de apps únicas (si tienes colección apps)
+        const ids = Array.from(
+          new Set([
+            ..._ratings.map((r) => r.appId).filter(Boolean),
+            ..._comments.map((c) => c.appId).filter(Boolean),
+          ])
+        );
+
+        const metas = {};
+        await Promise.all(
+          ids.map(async (id) => {
+            try {
+              const ref = doc(db, "apps", String(id));
+              const ds = await getDoc(ref);
+              if (ds.exists()) metas[id] = { id, ...ds.data() };
+              else metas[id] = { id };
+            } catch {
+              metas[id] = { id };
+            }
+          })
+        );
+
+        if (!cancel) setAppsMeta(metas);
       } finally {
-        setLoading(false);
+        if (!cancel) setCargando(false);
       }
-    });
-    return () => unsub();
-  }, []);
+    };
 
+    cargar();
+    return () => {
+      cancel = true;
+    };
+  }, [user.uid]);
+
+  // agrupar por app y ordenar por actividad más reciente
   const grouped = useMemo(() => {
     const byApp = {};
     ratings.forEach((r) => {
@@ -93,18 +111,12 @@ export default function MisValoraciones() {
       byApp[c.appId] ??= { appId: c.appId, ratings: [], comments: [] };
       byApp[c.appId].comments.push(c);
     });
-    // Orden por timestamp desc (toma el más reciente de cada grupo)
+
+    const toMillis = (t) => (t?.toMillis ? t.toMillis() : t || 0);
+
     return Object.values(byApp).sort((a, b) => {
-      const ta = Math.max(
-        0,
-        ...a.ratings.map(x => x.timestamp?.toMillis ? x.timestamp.toMillis() : x.timestamp || 0),
-        ...a.comments.map(x => x.timestamp?.toMillis ? x.timestamp.toMillis() : x.timestamp || 0),
-      );
-      const tb = Math.max(
-        0,
-        ...b.ratings.map(x => x.timestamp?.toMillis ? x.timestamp.toMillis() : x.timestamp || 0),
-        ...b.comments.map(x => x.timestamp?.toMillis ? x.timestamp.toMillis() : x.timestamp || 0),
-      );
+      const ta = Math.max(0, ...a.ratings.map((x) => toMillis(x.timestamp)), ...a.comments.map((x) => toMillis(x.timestamp)));
+      const tb = Math.max(0, ...b.ratings.map((x) => toMillis(x.timestamp)), ...b.comments.map((x) => toMillis(x.timestamp)));
       return tb - ta;
     });
   }, [ratings, comments]);
@@ -114,10 +126,10 @@ export default function MisValoraciones() {
       <UnifiedNavbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl md:text-3xl font-extrabold italic flex items-center gap-2 mb-6">
-          <span>🏅</span> Mis valoraciones <span>🏅</span> 
+          <span>🏅</span> Mis valoraciones <span>🏅</span>
         </h1>
 
-        {loading ? (
+        {cargando ? (
           <p className="text-gray-600">Cargando…</p>
         ) : grouped.length === 0 ? (
           <div className="bg-white/70 border border-yellow-200 rounded-2xl p-6 shadow-sm">
@@ -128,11 +140,13 @@ export default function MisValoraciones() {
             {grouped.map((g) => {
               const app = appsMeta[g.appId] || { id: g.appId };
               return (
-                <article key={g.appId} className="bg-white border border-yellow-200 shadow-md rounded-2xl overflow-hidden">
+                <article
+                  key={g.appId}
+                  className="bg-white border border-yellow-200 shadow-md rounded-2xl overflow-hidden"
+                >
                   <div className="p-5 md:p-6">
                     <div className="flex items-start justify-between gap-4">
                       <AppHeader app={app} />
-                      {/* Link a la app en tu sitio: ajusta la ruta si es distinta */}
                       <a
                         href={`https://queesia.com/app/${g.appId}`}
                         target="_blank"
@@ -143,18 +157,27 @@ export default function MisValoraciones() {
                       </a>
                     </div>
 
-                    {/* Ratings */}
+                    {/* Calificaciones */}
                     {g.ratings.length > 0 && (
                       <div className="mt-4">
                         <h3 className="font-semibold mb-2">Calificaciones</h3>
                         <ul className="space-y-2">
                           {g.ratings.map((r) => {
-                            const ts = r.timestamp?.toMillis ? r.timestamp.toMillis() : r.timestamp;
+                            const t = r.timestamp?.toMillis
+                              ? r.timestamp.toMillis()
+                              : r.timestamp;
                             return (
-                              <li key={r.id} className="text-sm text-gray-800 flex items-center justify-between">
+                              <li
+                                key={r.id}
+                                className="text-sm text-gray-800 flex items-center justify-between"
+                              >
                                 <div>
                                   <span className="font-medium">⭐ {r.rating}</span>
-                                  {ts ? <span className="ml-2 text-gray-500">{new Date(ts).toLocaleString()}</span> : null}
+                                  {t ? (
+                                    <span className="ml-2 text-gray-500">
+                                      {new Date(t).toLocaleString()}
+                                    </span>
+                                  ) : null}
                                 </div>
                               </li>
                             );
@@ -163,20 +186,31 @@ export default function MisValoraciones() {
                       </div>
                     )}
 
-                    {/* Comments */}
+                    {/* Comentarios */}
                     {g.comments.length > 0 && (
                       <div className="mt-4">
                         <h3 className="font-semibold mb-2">Comentarios</h3>
                         <ul className="space-y-3">
                           {g.comments.map((c) => {
-                            const ts = c.timestamp?.toMillis ? c.timestamp.toMillis() : c.timestamp;
+                            const t = c.timestamp?.toMillis
+                              ? c.timestamp.toMillis()
+                              : c.timestamp;
                             return (
-                              <li key={c.id} className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                                <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.text}</p>
+                              <li
+                                key={c.id}
+                                className="bg-gray-50 border border-gray-200 rounded-xl p-3"
+                              >
+                                <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                  {c.text}
+                                </p>
                                 <div className="mt-2 text-xs text-gray-500 flex items-center gap-2">
-                                  {ts ? <span>{new Date(ts).toLocaleString()}</span> : null}
-                                  {typeof c.likes === "number" && <span>• 👍 {c.likes}</span>}
-                                  {typeof c.dislikes === "number" && <span>• 👎 {c.dislikes}</span>}
+                                  {t ? <span>{new Date(t).toLocaleString()}</span> : null}
+                                  {typeof c.likes === "number" && (
+                                    <span>• 👍 {c.likes}</span>
+                                  )}
+                                  {typeof c.dislikes === "number" && (
+                                    <span>• 👎 {c.dislikes}</span>
+                                  )}
                                 </div>
                               </li>
                             );

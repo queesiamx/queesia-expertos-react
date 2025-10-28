@@ -1,29 +1,24 @@
-import { createContext, useContext, useState, useEffect } from 'react';
- import { getAuth, onAuthStateChanged } from 'firebase/auth';
- import { app } ;
+// src/components/UserInfo.jsx
+import React from "react";
+import { useAuth } from "@/auth/context/AuthContext";
 
-const UserContext = createContext(null);
+// Alias por compatibilidad (si en algún lado importabas useUser)
+export function useUser() {
+  return useAuth();
+}
 
-export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const auth = getAuth(app);
+export default function UserInfo() {
+  const { user, loading, rol, aprobado } = useAuth();
 
-    useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-    
-    return () => unsubscribe();
-  }, []);
+  if (loading) return <div className="p-4">Cargando usuario…</div>;
+  if (!user)   return <div className="p-4">No has iniciado sesión.</div>;
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
-      {children}
-    </UserContext.Provider>
+    <div className="p-4 text-sm">
+      <div><strong>UID:</strong> {user.uid}</div>
+      <div><strong>Email:</strong> {user.email}</div>
+      <div><strong>Rol:</strong> {rol || "usuario"}</div>
+      <div><strong>Aprobado:</strong> {aprobado ? "Sí" : "No"}</div>
+    </div>
   );
 }
-
-export function useUser() {
-  return useContext(UserContext);
-}
-export default UserProvider;
