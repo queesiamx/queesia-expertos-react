@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
-import { db, auth } from "@/firebase";
+ import { db, auth } from "@/firebase";
+ import { startLogin } from "@/auth/login";
 import { useAuth } from "@/auth/context/AuthContext";
 import {
   doc,
@@ -14,12 +15,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import {
-  signInWithPopup,
-  signInWithRedirect,
-  
-  GoogleAuthProvider,
-} from "firebase/auth";
+
 import toast from "react-hot-toast";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertHeader from "../components/ExpertHeader";
@@ -30,10 +26,6 @@ import Footer from "../components/Footer";
 import PriceTag from "@/components/PriceTag";
 import ConsultaBox from "../components/ConsultaBox";
 
-// Detecta navegador móvil
-const isMobile =
-  typeof navigator !== "undefined" &&
-  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 // Usa el endpoint absoluto en dev y relativo en producción
 const API_BASE =
@@ -198,41 +190,21 @@ useEffect(() => {
 
   // 🔹 Iniciar sesión con Google (para botón “Iniciar sesión”)
   const handleLoginConGoogle = async () => {
-  try {
-    const provider = new GoogleAuthProvider();
-    if (isMobile) {
-      await signInWithRedirect(auth, provider);
-      return; // volverá por getRedirectResult()
-    }
-   await signInWithPopup(auth, provider);
-  } catch (error) {
-    console.error("Error al iniciar sesión:", error);
-  }
+  await startLogin("usuario"); // o "experto" si lo necesitas por contexto
   };
 
   // 🔹 Asegurar sesión (lo usa handleBuy)
   const ensureSignedIn = async () => {
-  if (auth.currentUser) return auth.currentUser;
-  if (authBusy) return null;        // 👈 nuevo
-  setAuthBusy(true);                // 👈 nuevo
-  const provider = new GoogleAuthProvider();
-  try {
-    if (isMobile) {
-     await signInWithRedirect(auth, provider);
-      return null; // volverá por getRedirectResult()
-    }
-    const { user } = await signInWithPopup(auth, provider);
-    return user;
-  } catch (e) {
-    console.error("Login error:", e);
-    // opcional: filtra popups cancelados
-    // if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") {
-    //   toast.error("No se pudo iniciar sesión");
-    // }
-      return null;
-    } finally {
-      setAuthBusy(false);
-    }
+   if (auth.currentUser) return auth.currentUser;
+   if (authBusy) return null;
+   setAuthBusy(true);
+   try {
+     await startLogin("usuario");
+     // Desktop: después del popup, onAuthStateChanged hidrata; aquí intentamos leerlo.
+     return auth.currentUser || null;
+   } finally {
+     setAuthBusy(false);
+   }
   };
 
   // 🔹 Verificar si ya está registrado (para cursos gratis)

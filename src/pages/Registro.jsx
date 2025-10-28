@@ -5,7 +5,7 @@ import { useAuth } from "@/auth/context/AuthContext";
 import {
   doc, getDoc, setDoc, serverTimestamp, onSnapshot
 } from "firebase/firestore";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { startLogin } from "@/auth/login";
 import { Toaster, toast } from "react-hot-toast";
 import emailjs from "@emailjs/browser";
 import { useNavigate } from "react-router-dom";
@@ -81,6 +81,13 @@ export default function Registro() {
 
   const step = useRegistrationStep(user, loading);
 
+ // Al hidratarse la sesión, autocompleta el email del formulario
+ useEffect(() => {
+   if (user?.email) {
+     setForm(prev => ({ ...prev, email: user.email }));
+   }
+ }, [user?.email]);
+
   // Toast solo en paso 1
   useEffect(() => {
     if (step !== 1) return;
@@ -104,30 +111,14 @@ export default function Registro() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const u = result.user;
-
-      const expertRef = doc(db, "experts", u.uid);
-      const expertSnap = await getDoc(expertRef);
-
-      if (expertSnap.exists()) {
-        const data = expertSnap.data();
-        if (data.aprobado === true && data.formularioCompleto === true) {
-          toast.success("Bienvenido, acceso aprobado.");
-          navigate("/expert-dashboard");
-        } else if (data.aprobado === false) {
-          toast("Completa tu formulario para continuar.");
-        }
-      } else {
-        toast("Bienvenido. Completa tu formulario para continuar.");
-      }
-      setForm((prev) => ({ ...prev, email: u.email || "" }));
-    } catch (error) {
-      console.error("Error con Google Login", error);
-      toast.error("No se pudo iniciar sesión con Google.");
-    }
+     try {
+     await startLogin("experto");   // móvil: redirect; desktop: popup
+     // El avance de pasos ya lo controla useRegistrationStep() con onSnapshot
+     // y el email se autocompleta en el useEffect anterior.
+   } catch (e) {
+     console.error("Error con Google Login", e);
+     toast.error("No se pudo iniciar sesión con Google.");
+   }
   };
 
   const handleSubmit = async (e) => {

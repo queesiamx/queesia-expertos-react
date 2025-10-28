@@ -13,73 +13,61 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("[AuthContext] usando src/auth/context/AuthContext.jsx");
+    console.info("[AuthContext] usando src/auth/context/AuthContext.jsx");
     let unsub = () => {};
 
     (async () => {
-      // 1) Completa el flujo cuando el login fue por redirect (móvil/DevTools)
+      // 0) Consumir el resultado del redirect si existe (clave en móvil)
       try {
         const res = await getRedirectResult(auth);
-        if (res) console.log("[auth] getRedirectResult OK → user:", !!res.user);
-      } catch {
-        // benigno si no hubo redirect
+        if (res?.user) {
+          console.info("[auth] redirect OK:", res.user.uid);
+        } else {
+          console.info("[auth] no redirect result (null)");
+        }
+      } catch (e) {
+        console.warn("[auth] getRedirectResult error:", e?.message || e);
       }
 
-      // 2) Escucha cambios de sesión
+      // 1) Listener principal (después de getRedirectResult)
       unsub = onAuthStateChanged(auth, async (u) => {
         setLoading(true);
+
+        if (!u) {
+          console.info("[auth] sin sesión");
+          setUser(null);
+          setRol(null);
+          setAprobado(false);
+          setLoading(false);
+          return;
+        }
+
+        // 2) Cargar perfil (rol/aprobado) desde Firestore
         try {
-          // Sin sesión
-          if (!u) {
-            console.log("[auth] sin sesión");
-            setUser(null);
-            setRol(null);
-            setAprobado(false);
-            return;
-          }
-
-          // Con sesión: intenta leer perfil en Firestore
-          let rolDb = null;
-          let aprobadoDb = false;
-          try {
-            const snap = await getDoc(doc(db, "users", u.uid));
-            if (snap.exists()) {
-              const d = snap.data();
-              rolDb = (d?.rol || "").toLowerCase() || null;
-              aprobadoDb = Boolean(d?.aprobado);
-            }
-            console.log("[auth] Firestore rol/aprobado:", rolDb, aprobadoDb);
-          } catch (e) {
-            console.error("[auth] error leyendo users/{uid}", e);
-          }
-
-          // Fallback a la intención guardada si Firestore aún no trae rol
-          let pending = "";
-          try {
-            pending = (localStorage.getItem("pendingRole") || "").toLowerCase();
-          } catch {}
-
-          const finalRol = (rolDb || pending || "usuario").toLowerCase();
-
           setUser(u);
-          setRol(finalRol);
-          setAprobado(Boolean(aprobadoDb));
+          const snap = await getDoc(doc(db, "users", u.uid));
+          const data = snap.exists() ? snap.data() : {};
+          const r = (data.rol || "").toLowerCase() || null;
+          setRol(r);
 
-          // Limpia intención
-          try { localStorage.removeItem("pendingRole"); } catch {}
+          setAprobado(Boolean(data.aprobado));
+        } catch (e) {
+          console.warn("[auth] perfil error:", e?.message || e);
+          // Fallback mínimo
+          setRol((localStorage.getItem("pendingRole") || "usuario").toLowerCase());
+          setAprobado(false);
         } finally {
+          // Limpia intención guardada (si existía)
+          try { localStorage.removeItem("pendingRole"); } catch {}
           setLoading(false);
         }
       });
     })();
 
-    return () => unsub?.();
+    return () => unsub && unsub();
   }, []);
 
-  const value = useMemo(
-    () => ({ user, rol, aprobado, loading }),
-    [user, rol, aprobado, loading]
-  );
+  const value = useMemo(() => ({ user, rol, aprobado, loading }), [user, rol, aprobado, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

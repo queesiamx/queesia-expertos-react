@@ -2,12 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 import { auth, db } from "@/firebase";
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
-  
-} from "firebase/auth";
+import { startLogin } from "@/auth/login";
 import { useAuth } from "@/auth/context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -42,7 +37,7 @@ export default function ConsultaBox({
     try {
       const provider = new GoogleAuthProvider();
       if (isMobile) {
-        await signInWithRedirect(auth, provider);
+        await startLogin("usuario");
         return;
       }
       await signInWithPopup(auth, provider);
