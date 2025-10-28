@@ -8,6 +8,10 @@ import "./index.css";
 // ✅ NUEVO provider
 import { AuthProvider } from "@/auth/context/AuthContext";
 
+if (import.meta?.env?.DEV) {
+  import("@/debug/attachAuthDebug").then(m => m.attachAuthDebug());
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
