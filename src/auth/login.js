@@ -41,3 +41,4 @@ export async function startLogin(role = "usuario") {
 }
 
 export default startLogin;
+export { startLogin as loginWithGoogle };
