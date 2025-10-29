@@ -14,24 +14,44 @@ export async function startLogin(role = "usuario") {
   locking = true;
 
   try {
-    try { localStorage.setItem("pendingRole", String(role).toLowerCase()); } catch {}
+    // Persistimos intención de rol en ambos storages (redundancia para móvil)
+    const roleStr = String(role).toLowerCase();
+    try { localStorage.setItem("pendingRole", roleStr); } catch {}
+    try { sessionStorage.setItem("pendingRole", roleStr); } catch {}
+   // Permite forzar popup en móvil con ?forcePopup=1 (prueba A/B)
+    const url = new URL(location.href);
+    const forcePopup = url.searchParams.get("forcePopup") === "1";
 
     console.info(
       "[login] UA móvil?:",
       isMobile,
-      "→",
-      isMobile ? "signInWithRedirect" : "signInWithPopup",
+      "→", (isMobile && !forcePopup) ? "signInWithRedirect" : "signInWithPopup",
       "origin:",
       location.origin
     );
 
-    if (isMobile) {
+      if (isMobile && !forcePopup) {
+      // Marcamos explícitamente que vamos a redirect (para diagnóstico en AuthContext)
+      try { sessionStorage.setItem("redirectInProgress", "1"); } catch {}
       await signInWithRedirect(auth, googleProvider);
       // No hay más flujo aquí: el resultado se consume en AuthContext con getRedirectResult()
       return;
-    } else {
+    }
+
+    // Popup (desktop por defecto, o móvil con ?forcePopup=1)
+    try {
       const res = await signInWithPopup(auth, googleProvider);
       console.info("[login] popup OK user:", res?.user?.uid);
+    } catch (popupErr) {
+      console.warn("[login] popup error:", popupErr?.message || popupErr);
+      // Fallback: si el popup es bloqueado, intentamos redirect
+      if (popupErr?.code === "auth/popup-blocked" || popupErr?.code === "auth/popup-closed-by-user") {
+        try { sessionStorage.setItem("redirectInProgress", "1"); } catch {}
+        console.info("[login] fallback → signInWithRedirect");
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
+      throw popupErr;
     }
   } catch (e) {
     console.warn("[login] error:", e?.message || e);

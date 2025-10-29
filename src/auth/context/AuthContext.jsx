@@ -5,6 +5,10 @@ import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ensureUserDoc } from "@/auth/ensureUserDoc";
 
+// 🔹 Debe ir después de los imports (import siempre primero)
+const t0_global =
+  typeof performance !== "undefined" ? performance.now() : Date.now();
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -14,33 +18,74 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const log = (...a) => console.info("[AUTHCTX]", ...a);
     console.info("[AuthContext] usando src/auth/context/AuthContext.jsx");
     let unsub = () => {};
 
     (async () => {
+      log(
+        "mount at",
+        (performance.now() - t0_global).toFixed(1),
+        "ms, location:",
+        location.href
+      );
+
+       // 🔹 Marca si venimos de redirect (seteado en startLogin)
+      const redirectFlag = sessionStorage.getItem("redirectInProgress") ? "1" : "0";
+      log("redirectInProgress?", redirectFlag);
+
+    const t0 = performance.now();
       // 0) Consumir el resultado del redirect si existe (clave en móvil)
       try {
         const res = await getRedirectResult(auth);
-        console.log('[auth] currentUser on mobile:', auth.currentUser?.uid, auth.currentUser?.email);
+        log(
+          "getRedirectResult() done in",
+          (performance.now() - t0).toFixed(1),
+          "ms — user?",
+          !!res?.user
+        );
+        console.log(
+          "[auth] currentUser after getRedirectResult:",
+          auth.currentUser?.uid,
+          auth.currentUser?.email
+        );
 
         if (res?.user) {
           console.info("[auth] redirect OK:", res.user.uid);
-        // 🔹 Garantiza perfil mínimo en Firestore (rol base) tras redirect
-          const pendingRole = (localStorage.getItem("pendingRole") || "usuario").toLowerCase();
+          // 🔹 Garantiza perfil mínimo en Firestore (rol base) tras redirect
+          const pendingRole =
+            (localStorage.getItem("pendingRole") || "usuario").toLowerCase();
           try {
             await ensureUserDoc(res.user, pendingRole);
           } catch (e) {
-            console.warn("[auth] ensureUserDoc after redirect error:", e?.message || e);
+            console.warn(
+              "[auth] ensureUserDoc after redirect error:",
+              e?.message || e
+            );
           }
         } else {
           console.info("[auth] no redirect result (null)");
         }
+        // 🔹 Ventana de gracia (experimento timing)
+        await new Promise((r) => setTimeout(r, 500));
+        // 🔹 Limpiar el flag tras procesar
+        try {
+          sessionStorage.removeItem("redirectInProgress");
+        } catch {}
       } catch (e) {
         console.warn("[auth] getRedirectResult error:", e?.message || e);
       }
 
       // 1) Listener principal (después de getRedirectResult)
-      unsub = onAuthStateChanged(auth, async (u) => {
+         unsub = onAuthStateChanged(auth, async (u) => {
+        log(
+          "onAuthStateChanged fired at +",
+          (performance.now() - t0).toFixed(1),
+          "ms — currentUser?",
+          !!u,
+          "auth.currentUser?",
+          !!auth.currentUser
+        );
         setLoading(true);
 
         if (!u) {
@@ -60,8 +105,9 @@ export function AuthProvider({ children }) {
 
           // Si no existe, lo creamos con el rol pendiente/base y re-leemos
           if (!snap.exists()) {
-            const pendingRole = (localStorage.getItem("pendingRole") || "usuario").toLowerCase();
-            console.warn("[auth] users/uid no existe, creando con rol:", pendingRole);
+            const pendingRole = (
+              localStorage.getItem("pendingRole") || "usuario"
+            ).toLowerCase();console.warn("[auth] users/uid no existe, creando con rol:", pendingRole);
             await ensureUserDoc(u, pendingRole);
             snap = await getDoc(ref);
           }
@@ -74,14 +120,27 @@ export function AuthProvider({ children }) {
         } catch (e) {
           console.warn("[auth] perfil error:", e?.message || e);
           // Fallback mínimo
-          setRol((localStorage.getItem("pendingRole") || "usuario").toLowerCase());
-          setAprobado(false);
+          setRol(
+            (localStorage.getItem("pendingRole") || "usuario").toLowerCase()
+          );setAprobado(false);
         } finally {
           // Limpia intención guardada (si existía)
           try { localStorage.removeItem("pendingRole"); } catch {}
           setLoading(false);
         }
       });
+      
+      // 🔹 Watchdog: detectar si nunca llega sesión (pista de bloqueo cookies/ITP)
+      let attempts = 0;
+      for (; attempts < 20 && !auth.currentUser; attempts++) {
+        await new Promise((r) => setTimeout(r, 100 * (attempts + 1)));
+      }
+      log(
+        "poll end:",
+        attempts,
+        "attempts — auth.currentUser?",
+        !!auth.currentUser
+      );
     })();
 
     return () => unsub && unsub();
