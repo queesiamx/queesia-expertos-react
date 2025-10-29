@@ -9,10 +9,11 @@ export async function ensureUserDoc(user, rol = "usuario") {
   }
 
   const normalizedRole = String(rol || "usuario").toLowerCase();
+  const email = String(user.email || "").trim().toLowerCase();
   
   console.log("[ensureUserDoc] Procesando usuario:", {
     uid: user.uid,
-    email: user.email,
+    email,
     displayName: user.displayName,
     rol: normalizedRole
   });
@@ -23,8 +24,9 @@ export async function ensureUserDoc(user, rol = "usuario") {
 
     const base = {
       uid: user.uid,
-      email: user.email || null,
-      displayName: user.displayName || null,
+      email,                              // <- coincide con token.email (lower)
+      correo: email,        
+      nombre: user.displayName || null,   // <- opcional: tu UI suele usar "nombre"
       photoURL: user.photoURL || null,
       rol: normalizedRole,
       updatedAt: serverTimestamp(),

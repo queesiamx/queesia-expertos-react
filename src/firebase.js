@@ -24,20 +24,22 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Evita doble init en hot-reload
+// Evita doble init en hot-reload (singleton con bandera global)
 let auth;
-try {
+if (!globalThis.__QUEESIA_AUTH__) {
   auth = initializeAuth(app, {
     persistence: [
-      indexedDBLocalPersistence,     // prioridad
+      indexedDBLocalPersistence,
       browserLocalPersistence,
       browserSessionPersistence,
     ],
-   // Necesario para signInWithPopup / signInWithRedirect en web
-   popupRedirectResolver: browserPopupRedirectResolver,    
+    popupRedirectResolver: browserPopupRedirectResolver,
   });
-} catch {
-  auth = getAuth(app);
+  globalThis.__QUEESIA_AUTH__ = auth;
+} else {
+  auth = globalThis.__QUEESIA_AUTH__;
+  // (opcional) refuerza persistencia si vienes de getAuth en algún build anterior
+  try { await setPersistence(auth, indexedDBLocalPersistence); } catch {}
 }
 
 const db = getFirestore(app);
