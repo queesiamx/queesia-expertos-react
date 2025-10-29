@@ -1,14 +1,13 @@
 // src/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
- import {
+  import {
    initializeAuth,
    getAuth,
    indexedDBLocalPersistence,
    browserLocalPersistence,
    browserSessionPersistence,
-   browserPopupRedirectResolver,   // 👈 agrega esto
-   GoogleAuthProvider,              // 👈 AÑADIR
- } from "firebase/auth";
+   browserPopupRedirectResolver,
+ } from 'firebase/auth';
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -39,7 +38,7 @@ if (!globalThis.__QUEESIA_AUTH__) {
 } else {
   auth = globalThis.__QUEESIA_AUTH__;
   // (opcional) refuerza persistencia si vienes de getAuth en algún build anterior
-  try { await setPersistence(auth, indexedDBLocalPersistence); } catch {}
+  
 }
 
 const db = getFirestore(app);
