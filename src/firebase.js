@@ -7,6 +7,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
    browserLocalPersistence,
    browserSessionPersistence,
    browserPopupRedirectResolver,
+   GoogleAuthProvider,
  } from 'firebase/auth';
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
