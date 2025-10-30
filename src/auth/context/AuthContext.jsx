@@ -1,7 +1,7 @@
 // src/auth/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, getRedirectResult } from "firebase/auth";
-import { auth, db } from "@/firebase";
+import { auth, db, app } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ensureUserDoc } from "@/auth/ensureUserDoc";
 
@@ -18,6 +18,17 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+   // --- Debug de proyecto/origin en Preview ---
+   try {
+     console.info(
+       "[fb] projectId:", app?.options?.projectId,
+       "origin:", location.origin
+     );
+   } catch (e) {
+     console.info("[fb] debug fail:", e);
+   }
+
+   
     const log = (...a) => console.info("[AUTHCTX]", ...a);
     console.info("[AuthContext] usando src/auth/context/AuthContext.jsx");
     let unsub = () => {};

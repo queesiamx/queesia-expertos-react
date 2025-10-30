@@ -1,6 +1,22 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+
+    
+    { "source": "/__/auth/:match*", "destination": "https://queesia-e0de5.firebaseapp.com/__/auth/:match*" },
+    { "source": "/__/firebase/:match*", "destination": "https://queesia-e0de5.firebaseapp.com/__/firebase/:match*" },
+
+    
     { "source": "/(.*)", "destination": "/" }
+  ],
+  "headers": [
+    {
+      "source": "/__/auth/:match*",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/__/firebase/:match*",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
   ]
 }
