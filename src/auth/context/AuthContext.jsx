@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
   const [rol, setRol] = useState(null);
   const [aprobado, setAprobado] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
    // --- Debug de proyecto/origin en Preview ---
@@ -43,6 +44,7 @@ export function AuthProvider({ children }) {
 
        // 🔹 Marca si venimos de redirect (seteado en startLogin)
       const redirectFlag = sessionStorage.getItem("redirectInProgress") ? "1" : "0";
+      setRedirecting(redirectFlag === "1");
       log("redirectInProgress?", redirectFlag);
 
     const t0 = performance.now();
@@ -61,20 +63,7 @@ export function AuthProvider({ children }) {
           auth.currentUser?.email
         );
 
-        if (res?.user) {
-          console.info("[auth] redirect OK:", res.user.uid);
-          // 🔹 Garantiza perfil mínimo en Firestore (rol base) tras redirect
-          const pendingRole =
-            (localStorage.getItem("pendingRole") || "usuario").toLowerCase();
-          try {
-            await ensureUserDoc(res.user, pendingRole);
-          } catch (e) {
-            console.warn(
-              "[auth] ensureUserDoc after redirect error:",
-              e?.message || e
-            );
-          }
-        } else {
+        if (!res?.user) {
           console.info("[auth] no redirect result (null)");
         }
         // 🔹 Ventana de gracia (experimento timing)
@@ -83,8 +72,10 @@ export function AuthProvider({ children }) {
         try {
           sessionStorage.removeItem("redirectInProgress");
         } catch {}
+        setRedirecting(false);
       } catch (e) {
         console.warn("[auth] getRedirectResult error:", e?.message || e);
+        setRedirecting(false);
       }
 
       // 1) Listener principal (después de getRedirectResult)
@@ -143,7 +134,7 @@ export function AuthProvider({ children }) {
       
       // 🔹 Watchdog: detectar si nunca llega sesión (pista de bloqueo cookies/ITP)
       let attempts = 0;
-      for (; attempts < 20 && !auth.currentUser; attempts++) {
+      for (; attempts < 12 && !auth.currentUser; attempts++) {
         await new Promise((r) => setTimeout(r, 100 * (attempts + 1)));
       }
       log(
@@ -157,8 +148,10 @@ export function AuthProvider({ children }) {
     return () => unsub && unsub();
   }, []);
 
-  const value = useMemo(() => ({ user, rol, aprobado, loading }), [user, rol, aprobado, loading]);
-
+  const value = useMemo(
+    () => ({ user, rol, aprobado, loading, redirecting }),
+    [user, rol, aprobado, loading, redirecting]
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
