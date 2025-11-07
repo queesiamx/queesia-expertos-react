@@ -4,6 +4,7 @@ import { collection, getDocs } from "firebase/firestore";
 // arriba, junto con tus imports
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp  } from "firebase/firestore";
 import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
+import MobileSocialDock from "@/components/social/MobileSocialDock";
 import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertCard from "../components/ExpertCard";
@@ -282,16 +283,24 @@ export default function Expertos() {
       <UnifiedNavbar />
       <main className="bg-white text-slate-900">
         <HeroExpertos />
-        
+
             {/* monta el híbrido */}
 
-            <SocialBubblesHybrid
-              sectionId="expertos-hero"
-              anchor="#expertos-hero .bubbles-slot"
-              sentinel="#bubbles-sentinel"
-              maxXvw={46}
-              dockLeftPx={16}
-            />
+           {/* Desktop/Tablet: burbujas “surfeo + dock” */}
+     <div className="hidden md:block">
+       <SocialBubblesHybrid
+         sectionId="expertos-hero"
+         anchor="#expertos-hero .bubbles-slot"
+         sentinel="#bubbles-sentinel"
+         maxXvw={46}
+         dockLeftPx={16}
+       />
+     </div>
+
+     {/* Móvil: FAB arrastrable + panel */}
+     <div className="md:hidden">
+       <MobileSocialDock />
+     </div>
 
 
         <FiltrosBar
