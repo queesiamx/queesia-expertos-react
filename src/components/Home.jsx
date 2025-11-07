@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 // arriba, junto con tus imports
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp  } from "firebase/firestore";
-
+import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
 import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertCard from "../components/ExpertCard";
@@ -18,7 +18,7 @@ import ExpertsBrowser from "./ExpertsBrowser";
 // ————————————————— Hero (light, estilo queesia.com)
 function HeroExpertos() {
   return (
-    <section className="relative isolate overflow-hidden bg-slate-50 text-slate-900">
+   <section id="expertos-hero" className="relative isolate overflow-hidden bg-slate-50 text-slate-900">
       {/* Circulitos suaves opcionales */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div
@@ -80,10 +80,17 @@ function HeroExpertos() {
           </div>
         </div>
       </div>
+
+            {/* slot para las burbujas (debajo de métricas) */}
+      <div className="bubbles-slot h-16 md:h-20" />
+      {/* sentinela para cambiar a modo dock al hacer scroll */}
+      <div id="bubbles-sentinel" className="h-px" />
     </section>
+
+
+    
   );
 }
-
 
 
 // ————————————————— Barra de filtros/búsqueda (mock)
@@ -275,6 +282,17 @@ export default function Expertos() {
       <UnifiedNavbar />
       <main className="bg-white text-slate-900">
         <HeroExpertos />
+        
+            {/* monta el híbrido */}
+
+            <SocialBubblesHybrid
+              sectionId="expertos-hero"
+              anchor="#expertos-hero .bubbles-slot"
+              sentinel="#bubbles-sentinel"
+              maxXvw={46}
+              dockLeftPx={16}
+            />
+
 
         <FiltrosBar
           query={query}
