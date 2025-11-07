@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-
+import { MessageSquare } from "lucide-react"; // 👈 icono por defecto
 import { auth, db } from "@/firebase";
 import { startLogin } from "@/auth/login";
 import { useAuth } from "@/auth/context/AuthContext";
@@ -14,6 +14,7 @@ const isMobile =
 export default function ConsultaBox({
   expertoId,
   expertoNombre,
+  icon: Icon = MessageSquare,
   className = "",
   maxChars = 600,
 }) {
@@ -118,9 +119,13 @@ export default function ConsultaBox({
   // Con sesión: textarea + enviar
   return (
     <div className={"rounded-2xl border border-slate-200/70 bg-slate-50 p-5 shadow-sm " + className}>
+      {/* Encabezado con icono */}
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="h-5 w-5 text-emerald-600" aria-hidden="true" />
       <h3 className="text-lg font-semibold text-slate-800 mb-1">Consulta al experto</h3>
+      </div>
       <p className="text-sm text-slate-600 mb-3">
-        Antes de enviar tu consulta, el equipo de Quesia la revisará. Algunas preguntas podrían requerir una respuesta profesional con costo.
+        Antes de enviar tu consulta, el equipo de Queesia la revisará. Algunas preguntas podrían requerir una respuesta profesional con costo.
         <span className="ml-1 font-medium text-slate-700">(sujeto a costes)</span>
       </p>
 

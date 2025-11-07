@@ -1,3 +1,4 @@
+import { GraduationCap, FileText } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
  import { db, auth } from "@/firebase";
@@ -25,6 +26,7 @@ import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
 import PriceTag from "@/components/PriceTag";
 import ConsultaBox from "../components/ConsultaBox";
+import SidebarFAQ from "../components/SidebarFAQ";
 
 
 // Usa el endpoint absoluto en dev y relativo en producción
@@ -89,6 +91,34 @@ const scrollStep = () =>
   Math.floor((carruselRef.current?.clientWidth || 600) * 0.9);
 const scrollByX = (dx) =>
   carruselRef.current?.scrollBy({ left: dx, behavior: "smooth" });
+
+// Mostrar/ocultar flechas según overflow y posición
+const [canLeft, setCanLeft] = useState(false);
+const [canRight, setCanRight] = useState(false);
+
+const updateArrows = () => {
+  const el = carruselRef.current;
+  if (!el) return;
+  const { scrollLeft, clientWidth, scrollWidth } = el;
+  setCanLeft(scrollLeft > 0);
+  setCanRight(scrollLeft + clientWidth < scrollWidth - 1);
+};
+
+// Recalcular al cargar/recargar slides, al hacer scroll y al redimensionar
+useEffect(() => {
+  updateArrows();
+  const el = carruselRef.current;
+  if (!el) return;
+
+  el.addEventListener("scroll", updateArrows, { passive: true });
+  window.addEventListener("resize", updateArrows);
+
+  return () => {
+    el.removeEventListener("scroll", updateArrows);
+    window.removeEventListener("resize", updateArrows);
+  };
+}, [contenidos.length]); // slides está definido más abajo con useMemo
+
 
  // Normaliza texto multilinea (de un textarea) a arreglo de strings
  const toLines = (v) =>
@@ -380,8 +410,70 @@ useEffect(() => {
     }
   };
 
-  if (cargando) return <p className="p-6">Cargando experto...</p>;
-  if (!expert) return <p className="p-6">Experto no encontrado.</p>;
+ // Slides visibles en carrusel (excluye 'consulta')
+ const slides = useMemo(() => {
+   return (contenidos ?? []).filter((c) => {
+     const isConsulta =
+       c.tipo === "consulta" ||
+       c.esConsulta === true ||
+       c.slug === "consulta" ||
+       /consulta/i.test(String(c.titulo || ""));
+     return !isConsulta;
+   });
+ }, [contenidos]);
+
+// === Helpers de tipo y badge ===============================
+const inferTipo = (c) => {
+  const fechas = Array.isArray(c.fechasDisponibles) && c.fechasDisponibles.length
+    ? c.fechasDisponibles
+    : (Array.isArray(c.fechas) ? c.fechas : []);
+
+  const tipoRaw = String(c?.tipo || "").toLowerCase().trim();
+  const text = `${tipoRaw} ${c?.slug||""} ${c?.titulo||""} ${c?.descripcion||""}`.toLowerCase();
+
+  // ¿Hay archivo/temario?
+  const temarioHref =
+    c.temarioHref ?? c.archivoUrl ?? c.urlArchivo ?? c.fileUrl ?? null;
+  const hasArchivo = Boolean(temarioHref);
+
+  // Prioriza lo explícito en c.tipo
+  if (/(manual|ebook|e-book|gu[ií]a|pdf|libro|documento|descargable)/.test(tipoRaw)) return "manual";
+  if (/(curso|taller|clase|bootcamp|workshop)/.test(tipoRaw)) return "curso";
+
+  // Heurísticas
+  if (fechas.length > 0) return "curso"; // fechas => curso
+  if (hasArchivo && fechas.length === 0) return "manual"; // archivo sin fechas => manual
+
+  // Palabras en título/desc
+  if (/(manual|ebook|e-book|gu[ií]a|pdf|libro|documento|descargable)/.test(text)) return "manual";
+  if (/(curso|taller|clase|bootcamp|workshop)/.test(text)) return "curso";
+
+  return "contenido";
+};
+
+
+const TipoBadge = ({ tipo }) => {
+  const label = tipo === "curso" ? "Curso" : tipo === "manual" ? "Manual" : "Contenido";
+  const cls =
+    tipo === "curso"
+      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+      : tipo === "manual"
+      ? "bg-slate-50 text-slate-700 ring-slate-200"
+      : "bg-slate-50 text-slate-600 ring-slate-200";
+  const Icon = tipo === "curso" ? GraduationCap : tipo === "manual" ? FileText : null;
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full ring-1 ${cls}`}>
+      {Icon ? <Icon size={14} strokeWidth={2} /> : null}
+      {label}
+    </span>
+  );
+};
+
+
+ if (cargando) return <p className="p-6">Cargando experto...</p>;
+ if (!expert) return <p className="p-6">Experto no encontrado.</p>;
+
 
   return (
     <>
@@ -482,10 +574,10 @@ useEffect(() => {
         </div>
 
         {/* === GRID PRINCIPAL (3/5 + 2/5) === */}
-<div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+<div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
   {/* === Columna izquierda (3/5) === */}
-  <section className="lg:col-span-3 space-y-6">
+  <section className="lg:col-span-8 space-y-6">
 
      {/* === Resumen (único) === */}
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
@@ -498,15 +590,40 @@ useEffect(() => {
      </p>
     </div>
 
+    {/* Consulta al experto (fuera del carrusel) */}
+    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+      <ConsultaBox
+        expertoId={resolvedExpertId}
+        expertoNombre={expert?.nombre}
+      />
+    </div>
+
     {/* === Contenidos disponibles — CARRUSEL === */}
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold">Contenidos disponibles</h2>
-        <div className="flex gap-2">
-          <button onClick={() => scrollByX(-scrollStep())} className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">←</button>
-          <button onClick={() => scrollByX( scrollStep())} className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">→</button>
-        </div>
-      </div>
+  <h2 className="text-lg font-semibold">Contenidos disponibles</h2>
+  <div className="hidden md:flex gap-2">
+    {canLeft && (
+      <button
+        onClick={() => scrollByX(-scrollStep())}
+        className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white"
+        aria-label="Anterior"
+      >
+        ←
+      </button>
+    )}
+    {canRight && (
+      <button
+        onClick={() => scrollByX(scrollStep())}
+        className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white"
+        aria-label="Siguiente"
+      >
+        →
+      </button>
+    )}
+  </div>
+</div>
+
 
       <div className="mt-4 relative">
         <div
@@ -518,14 +635,7 @@ useEffect(() => {
           tabIndex={0}
         >
 
-          {/* Slide fijo: Consulta al experto */}
-          <article className="min-w-[280px] sm:min-w-[360px] snap-start rounded-2xl ring-1 ring-black/5 bg-slate-50 p-5 md:p-6">
-            <ConsultaBox
-              expertoId={resolvedExpertId}   // resolvedExpertId = expert?.id ?? expertoId
-              expertoNombre={expert?.nombre}
-            />
-
-          </article>
+          
 
 
           {(contenidos ?? [])
@@ -543,6 +653,11 @@ useEffect(() => {
                             
               
               <div>
+
+                <div className="mb-2">
+                  <TipoBadge tipo={inferTipo(c)} />
+                </div>
+
                {(() => {
                   // Normaliza nombres de campo para el archivo/temario
                   const temarioHref =
@@ -648,6 +763,15 @@ useEffect(() => {
             </article>
           ))}
         </div>
+  {/* Dots de paginación (simple) */}
+  {slides.length > 1 && (
+    <div className="mt-3 flex items-center justify-center gap-2">
+      {slides.map((_, i) => (
+        <span key={i} className="h-2 w-2 rounded-full bg-slate-300 inline-block" />
+      ))}
+    </div>
+  )}
+
       </div>
     </div>
 
@@ -662,7 +786,7 @@ useEffect(() => {
   </section>
 
   {/* === Columna derecha (2/5) === */}
-  <aside className="lg:col-span-2 space-y-6">
+  <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-24 self-start">
     <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
       <h3 className="text-base font-semibold">Disponibilidad</h3>
       <ul className="mt-3 space-y-2 text-sm text-slate-600">
@@ -670,6 +794,7 @@ useEffect(() => {
         <li>{expert?.SLA || "Responde en 24 h"}</li>
       </ul>
     </div>
+    <SidebarFAQ />
 
     {/*<div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
       <h3 className="text-base font-semibold">Idiomas</h3>
