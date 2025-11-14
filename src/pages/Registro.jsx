@@ -12,6 +12,18 @@ import { useNavigate } from "react-router-dom";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import Footer from "../components/Footer";
 
+// Etiqueta reutilizable con asterisco para campos obligatorios
+const FieldLabel = ({ children, required = false, htmlFor }) => (
+  <label
+    htmlFor={htmlFor}
+    className="block text-sm font-medium mb-1 text-slate-700"
+  >
+    {children}
+    {required && <span className="text-red-500 ml-0.5">*</span>}
+  </label>
+);
+
+
 /* -------------------------------- Stepper -------------------------------- */
 function useRegistrationStep(user, loading) {
   const [step, setStep] = useState(1);
@@ -252,39 +264,70 @@ export default function Registro() {
             <section className="lg:col-span-3">
               <div className="rounded-3xl border border-black/5 bg-white shadow-xl shadow-amber-100/30">
                 <div className="p-6 md:p-8">
+
+                  <div className="mb-4 w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 
+                flex items-center gap-3 text-amber-800">
+                  <span className="text-lg">⚠️</span>
+                  <p className="text-sm leading-snug">
+                    <span className="font-semibold">Importante:</span>{" "}
+                    Los campos marcados con <span className="text-red-500">*</span> son obligatorios.
+                  </p>
+                </div>
+
+
                   <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Campos */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1" htmlFor="nombre">Nombre completo</label>
-                      <input id="nombre" name="nombre" value={form.nombre} onChange={handleChange}
-                             placeholder="Tu nombre y apellidos"
-                             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                    </div>
+                    <FieldLabel htmlFor="nombre" required>
+                      Nombre completo
+                    </FieldLabel>
+                    <input
+                      id="nombre"
+                      name="nombre"
+                      value={form.nombre}
+                      onChange={handleChange}
+                      placeholder="Tu nombre y apellidos"
+                      required
+                      className="w-full rounded-xl border... focus:ring-emerald-500"
+                    />
+                  </div>
+
 
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="especialidad">Especialidad</label>
+                      <FieldLabel htmlFor="especialidad" required>
+                      Especialidad
+                    </FieldLabel>
                       <input id="especialidad" name="especialidad" value={form.especialidad} onChange={handleChange}
                              placeholder="Ej. IA aplicada a auditoría"
+                             required
                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="email">Correo electrónico</label>
+                      <FieldLabel htmlFor="correo electrónico" required>
+                        Correo electrónico
+                      </FieldLabel>
                       <input id="email" type="email" name="email" value={form.email} onChange={handleChange}
                              disabled
                              placeholder="tucorreo@ejemplo.com"
+                             required
                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-70 disabled:cursor-not-allowed" />
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1" htmlFor="experiencia">Resumen de tu experiencia</label>
+                      <FieldLabel htmlFor="experiencia" required>
+                      Resumen de tu experiencia
+                    </FieldLabel>
                       <textarea id="experiencia" name="experiencia" rows={4} value={form.experiencia} onChange={handleChange}
                                 placeholder="Cuéntanos tu experiencia y el valor que ofreces"
+                                required
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1" htmlFor="educacion">Educación (separada por comas)</label>
+                      <FieldLabel htmlFor="educación" required>
+                        Educación (separadas por comas)
+                      </FieldLabel>
                       <input id="educacion" name="educacion" value={form.educacion} onChange={handleChange}
                              placeholder="Maestría…, Licenciatura…, Diplomado…"
                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
@@ -298,16 +341,22 @@ export default function Registro() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="linkedin">LinkedIn o portafolio</label>
+                      <FieldLabel htmlFor="linkedin" required>
+                        LinkedIn o portafolio
+                      </FieldLabel>
                       <input id="linkedin" name="linkedin" value={form.linkedin} onChange={handleChange}
                              placeholder="https://linkedin.com/in/tu-perfil"
+                             required
                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="telefono">Teléfono</label>
+                      <FieldLabel htmlFor="teléfono" required>
+                        Teléfono
+                      </FieldLabel>
                       <input id="telefono" name="telefono" value={form.telefono} onChange={handleChange}
                              placeholder="+52 55…"
+                             required
                              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
 

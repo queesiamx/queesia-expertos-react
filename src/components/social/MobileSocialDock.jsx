@@ -113,7 +113,7 @@ export default function MobileSocialDock() {
     className="text-[22px] leading-none select-none"
     style={{ fontFamily: `"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif` }}
   >
-    🐭
+    🔔
   </span>
    {/* pulso suave */}
    <span className="absolute inset-0 rounded-full animate-ping bg-blue-500/10" />
