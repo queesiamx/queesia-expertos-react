@@ -279,15 +279,25 @@ export default function AdminExpertos() {
           </div>
         </div>
 
-        {/* Botón export */}
-        <div className="mb-6">
-          <button
-            onClick={exportExpertosAprobadosCSV}
-            className="px-4 py-2 rounded-2xl font-semibold shadow bg-indigo-600 text-white hover:bg-indigo-700 transition"
-          >
-            Exportar expertos (CSV)
-          </button>
-        </div>
+      {/* Botones de acciones (export + acceso blog admin) */}
+      <div className="mb-6 flex flex-wrap gap-3">
+        <button
+          onClick={exportExpertosAprobadosCSV}
+          className="px-4 py-2 rounded-2xl font-semibold shadow bg-indigo-600 text-white hover:bg-indigo-700 transition"
+        >
+          Exportar expertos (CSV)
+        </button>
+
+        <a
+          href="https://queesia.com/blog-admin/login.php"
+          target="_blank"
+          rel="noreferrer"
+          className="px-4 py-2 rounded-2xl font-semibold shadow bg-white text-default border border-slate-300 hover:bg-slate-50 transition"
+        >
+          Acceso admin Blog
+        </a>
+      </div>
+
 
         {cargando ? (
           <p className="text-default-soft">Cargando expertos...</p>
