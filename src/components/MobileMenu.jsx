@@ -61,9 +61,9 @@ export default function MobileMenu() {
     { label: "Catálogo", href: "https://queesia.com/#catalogo" },
     { label: "Quesos de éxito", href: "https://queesia.com/casos" },
     { label: "Expertos", href: "https://expertos.queesia.com", external: true },
-    { label: "Foro", href: "https://expertos.queesia.com/foro", external: true },
-    { label: "Blog", href: "https://expertos.queesia.com/blog", external: true },
-    { label: "Acerca de 🧀", href: "https://queesia.com/nosotros" },
+    { label: "Foro", href: "https://foro.queesia.com/", external: true },
+    { label: "Blog", href: "https://queesia.com/blog/", external: true },
+    { label: "Sobre nosotros 🧀", href: "https://queesia.com/nosotros" },
     { label: "Contacto", href: "https://queesia.com/contacto" },
     ...(rol === ROLES.ADMIN ? [{ label: "Panel Admin", href: "/admin-expertos" }] : []),
     ...(rol === ROLES.EXPERTO && aprobado

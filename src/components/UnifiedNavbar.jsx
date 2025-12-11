@@ -22,18 +22,24 @@ export default function UnifiedNavbar() {
     <header className="sticky top-0 z-[9999] w-full
       bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70
       border-b border-slate-200 shadow-sm">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between">
+
+
         {/* Logo */}
         <a href="https://queesia.com" className="flex items-center gap-2">
-          <img src="/logo-bg.png" alt="Queesia" className="w-7 h-7" />
-          <span className="text-xl font-extrabold italic leading-none">
-            <span className="text-slate-900">quees</span>
-            <span className="text-blue-600">ia</span>
-            {rol === "experto" && (
-              <span className="ml-1 text-slate-900 not-italic font-semibold">expertos</span>
-            )}
-          </span>
-        </a>
+        <img src="/logo-bg.png" alt="Queesia" className="w-8 h-8" />
+        <span className="font-raleway italic font-bold text-[30px] leading-[36px]">
+          <span className="text-black">quees</span>
+          <span className="text-blue-600">ia</span>
+          {rol === "experto" && (
+            <span className="ml-1 not-italic font-semibold text-black text-[18px] align-middle">
+              expertos
+            </span>
+          )}
+        </span>
+      </a>
+
+
 
         {/* Navegación desktop */}
         <nav className="hidden md:flex items-center gap-7 text-[15px]">
@@ -104,22 +110,18 @@ export default function UnifiedNavbar() {
   </div>
 </div>
 
-       <NavLink
-          to="/foro"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-xl transition ${
-              isActive ? "bg-gray-900 text-white" : "hover:bg-gray-100"
-            }`
-          }
-        >
+         <a
+            href="https://foro.queesia.com"
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
           Foro
-        </NavLink>
+        </a>
 
           <a
             href="https://queesia.com/nosotros/"
             className="text-slate-700 hover:text-slate-900 transition-colors"
           >
-            Acerca de 🧀
+            Sobre Nosotros
           </a>
 
           <a
@@ -128,16 +130,12 @@ export default function UnifiedNavbar() {
           >
             Contacto
           </a>
-         <NavLink
-          to="/blog"
-          className={({ isActive }) =>
-            `px-3 py-2 rounded-xl transition ${
-              isActive ? "bg-gray-900 text-white" : "hover:bg-gray-100"
-            }`
-          }
-        >
+         <a
+            href="https://queesia.com/blog"
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
           Blog
-        </NavLink>
+        </a>
         </nav>
 
         {/* Lado derecho (login / CTA) */}
