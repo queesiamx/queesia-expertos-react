@@ -223,12 +223,17 @@ useEffect(() => {
 
     if (localStorage.getItem(key) === "1") return; // ya contó hoy
 
-    // Asegurar doc + incrementar total
-    await setDoc(
-      totalRef,
-      { page: PAGE_KEY, visits: 0, updatedAt: serverTimestamp() },
-      { merge: true }
-    );
+    // Asegurar doc + incrementar total (SIN resetear)
+      const snap = await getDoc(totalRef);
+
+      // 1) solo inicializa si NO existe
+      if (!snap.exists()) {
+        await setDoc(totalRef, {
+          page: PAGE_KEY,
+          visits: 0,
+          updatedAt: serverTimestamp(),
+        });
+      }
 
     await updateDoc(totalRef, {
       visits: increment(1),
