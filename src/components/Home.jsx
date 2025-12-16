@@ -5,13 +5,14 @@ import { collection, getDocs } from "firebase/firestore";
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp  } from "firebase/firestore";
 import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
 import MobileSocialDock from "@/components/social/MobileSocialDock";
-import { db } from "@/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertCard from "../components/ExpertCard";
 import Footer from "../components/Footer"; // <-- ajusta la ruta si difiere
 import ExpertsBrowser from "./ExpertsBrowser";
  //import { doc, getDoc } from "firebase/firestore";
- import { trackVisit } from "../services/analytics"; // ruta relativa desde /src/pages
+// import { trackVisit } from "../services/analytics"; // ruta relativa desde /src/pages
 
 
 // ————————————————— Hero (mock)
@@ -186,21 +187,63 @@ export default function Expertos() {
 
   // 👁️ contador (si no tienes backend, lo dejamos en null)
   const [visitas, setVisitas] = useState(0);
-  const PAGE_KEY = "expertos"; // sin slash; estable para esta vista
-  
-  useEffect(() => {
-  // No cuentes en desarrollo
-  // 1) Enviar visita a la API (excluye equipo)
-   trackVisit(PAGE_KEY);
+const PAGE_KEY = "expertos";
 
-   // 2) Leer el agregado diario generado por la API
-   (async () => {
-     const today = new Date().toISOString().slice(0, 10);
-     const aggRef = doc(db, "page_stats_daily", `${PAGE_KEY}__${today}`);
-     const snap = await getDoc(aggRef).catch(() => null);
-     setVisitas(snap?.exists() ? (snap.data().visits || 0) : 0);
-   })();
-  }, []);
+// ⚠️ Excluir equipo/admins (pon aquí tus correos)
+const EXCLUDED_EMAILS = new Set([
+  "admin@queesia.com",
+  "tu_correo@dominio.com",
+  // agrega los que quieras excluir
+]);
+
+useEffect(() => {
+  // 1) Mostrar el TOTAL histórico (aunque no esté logueado)
+  const totalRef = doc(db, "page_stats", PAGE_KEY);
+
+  const loadTotal = async () => {
+    const snap = await getDoc(totalRef).catch(() => null);
+    setVisitas(snap?.exists() ? (snap.data().visits || 0) : 0);
+  };
+
+  loadTotal();
+
+  // 2) Contar visita SOLO si hay usuario logueado, y SOLO 1 vez (no por navegación)
+  const unsub = onAuthStateChanged(auth, async (user) => {
+    if (!user) return; // ✅ solo logueados
+
+    const email = (user.email || "").toLowerCase().trim();
+    if (EXCLUDED_EMAILS.has(email)) return; // ✅ excluir admins/equipo
+
+    // Candado anti-duplicado:
+    // - si lo quieres 1 vez "por sesión", usa sessionStorage
+    // - si lo quieres 1 vez "para siempre", usa localStorage sin fecha
+    // - recomendado: 1 vez por día por usuario (para no inflar por refresh)
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `visit_lock:${PAGE_KEY}:${user.uid}:${today}`;
+
+    if (localStorage.getItem(key) === "1") return; // ya contó hoy
+
+    // Asegurar doc + incrementar total
+    await setDoc(
+      totalRef,
+      { page: PAGE_KEY, visits: 0, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+
+    await updateDoc(totalRef, {
+      visits: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Refrescar UI (o suma directa)
+    setVisitas((v) => v + 1);
+
+    localStorage.setItem(key, "1");
+  });
+
+  return () => unsub();
+}, []);
+
 
 
   // ——— Carga Firestore (experts + contenidosExpertos)
