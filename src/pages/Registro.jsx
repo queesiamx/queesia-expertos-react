@@ -45,7 +45,7 @@ async function notifyAdminsNewExpert({ nombre, email, especialidad, experiencia,
       {
         email: adminEmail,
          nombre: "Equipo Queesia",
-         estado: "nuevo registro recibido",
+         evento: "Nuevo experto registrado",
         mensaje_personalizado: mensaje,
       },
       "9SxO0lF9IKHaknc4Q"
