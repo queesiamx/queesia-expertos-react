@@ -12,6 +12,49 @@ import { useNavigate } from "react-router-dom";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import Footer from "../components/Footer";
 
+
+// ============================
+// Admin notifications (EmailJS Free)
+// Reusa template_n0pj59s SIN modificar la plantilla.
+// ============================
+const ADMIN_EMAILS = ["misaeltup@gmail.com", "amhjmixqui@gmail.com"];
+
+async function notifyAdminsNewExpert({ nombre, email, especialidad, experiencia, uid }) {
+  const mensaje = [
+    "🔔 NOTIFICACIÓN QUEESIA",
+    "Tipo: Nuevo experto registrado",
+    "",
+    `Nombre: ${nombre}`,
+    `Correo: ${email}`,
+    `Especialidad: ${especialidad || "-"}`,
+    `Experiencia: ${experiencia || "-"}`,
+    `UID: ${uid}`,
+    "",
+   "Acción requerida:",
+   "Revisar y aprobar desde el panel de expertos.",
+   "⚠️ Requiere iniciar sesión con una cuenta ADMIN autorizada.",
+  ].join("\n");
+
+
+  // Nota: el template usa {{email}} como destinatario.
+  // Por eso aquí "email" es el correo del admin.
+  const sends = ADMIN_EMAILS.map((adminEmail) =>
+    emailjs.send(
+      "service_vdpzkm8",
+      "template_n0pj59s",
+      {
+        email: adminEmail,
+        nombre: "Admin Quesia",
+        estado: "nuevo_experto",
+        mensaje_personalizado: mensaje,
+      },
+      "9SxO0lF9IKHaknc4Q"
+    )
+  );
+
+  await Promise.allSettled(sends);
+}
+
 // Etiqueta reutilizable con asterisco para campos obligatorios
 const FieldLabel = ({ children, required = false, htmlFor }) => (
   <label
@@ -194,6 +237,21 @@ export default function Registro() {
         "9SxO0lF9IKHaknc4Q"
       );
 
+      
+      // Notificación interna a admins
+      // (NO bloquea el flujo del usuario si falla EmailJS)
+      try {
+        await notifyAdminsNewExpert({
+          nombre: form.nombre,
+          email: form.email,
+          especialidad: form.especialidad,
+          experiencia: form.experiencia,
+          uid: auth.currentUser?.uid,
+        });
+      } catch (e) {
+        console.warn("No se pudo notificar a admins:", e);
+      }
+      
       toast((t) => (
         <div className="flex flex-col gap-1">
           <p className="font-semibold">¡Registro enviado!</p>
