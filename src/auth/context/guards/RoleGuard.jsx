@@ -34,9 +34,16 @@ export default function RoleGuard({ allow }) {
   }
 
   // (3) aún sin rol => NO navegar
+    // ✅ Si NO hay `allow`, no dependemos del rol: sólo pedimos sesión
+  if (!allow) {
+    return <Outlet />;
+  }
+
+  // (3) Si SÍ hay `allow`, entonces sí esperamos rol
   if (rol == null) {
     return <div className="p-6 text-center">Cargando rol…</div>;
   }
+
 
   // Normaliza
   const current = String(rol || "").trim().toLowerCase();

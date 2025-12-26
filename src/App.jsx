@@ -1,11 +1,14 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
-// 🔰 Nuevo contexto y guard
+
+// 🔰 Guard
 import RoleGuard from "@/auth/context/guards/RoleGuard";
-// 🔓 Páginas públicas mínimas
+
+// 🔓 Públicas
 import LoginPage from "@/pages/LoginPage";
 import EsperaAprobacion from "@/pages/EsperaAprobacion";
-// 📄 Resto de páginas reales (conserva tus rutas existentes)
+
+// 📄 Páginas
 import Blog from "@/pages/Blog";
 import Foro from "@/pages/Foro";
 import Home from "@/components/Home";
@@ -32,6 +35,9 @@ import Perfil from "@/pages/Perfil.jsx";
 import MisContenidos from "@/pages/MisContenidos";
 import VistaDetalleContenido from "@/pages/VistaDetalleContenido";
 
+// ✅ Mejor consistente:
+import AdminMilestones from "@/pages/AdminMilestones"; // o "./pages/AdminMilestones"
+
 export default function App() {
   const ExpertsHomeWrapper = () => (
     <main className="experts-home">
@@ -41,39 +47,38 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ✅ Nuevo proveedor de sesión + guard centralizado */}
-      
-        <Routes>
-          {/* ======= Públicas ======= */}
-          <Route path="/" element={<Home />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/foro" element={<Foro />} />
-          <Route path="/registro" element={<Registro />} />
-          <Route path="/terminos" element={<Terminos />} />
-          <Route path="/privacidad" element={<Privacidad />} />
-          <Route path="/expertos" element={<ExpertsHomeWrapper />} />
-          <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
-          {/* Login limpio */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/espera-aprobacion" element={<EsperaAprobacion />} />
-          {/* Páginas de pago públicas */}
-          <Route path="/pago-exitoso" element={<PagoExitoso />} />
-          <Route path="/pago-cancelado" element={<PagoCancelado />} />
-          {/* Alias histórico */}
-          <Route path="/dashboard" element={<Navigate to="/expert-dashboard" replace />} />
-          <Route path="/mis-servicios" element={<Navigate to="/expert-dashboard#servicios" replace />} />
+      <Routes>
+        {/* ======= Públicas ======= */}
+        <Route path="/" element={<Home />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/foro" element={<Foro />} />
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/terminos" element={<Terminos />} />
+        <Route path="/privacidad" element={<Privacidad />} />
+        <Route path="/expertos" element={<ExpertsHomeWrapper />} />
+        <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/espera-aprobacion" element={<EsperaAprobacion />} />
+        <Route path="/pago-exitoso" element={<PagoExitoso />} />
+        <Route path="/pago-cancelado" element={<PagoCancelado />} />
 
-          {/* ======= Protegidas por sesión/rol (RoleGuard decide destino) ======= */}
-          <Route element={<RoleGuard />}>
-            {/* Usuario */}
-            <Route path="/mis-consultas" element={<MisConsultas />} />
-            <Route path="/mis-valoraciones" element={<MisValoraciones />} />
-            <Route path="/mis-compras" element={<MisCompras />} />
-            <Route path="/perfil" element={<Perfil />} />
-             </Route>
+        {/* Alias histórico */}
+        <Route path="/dashboard" element={<Navigate to="/expert-dashboard" replace />} />
+        <Route
+          path="/mis-servicios"
+          element={<Navigate to="/expert-dashboard#servicios" replace />}
+        />
 
-            {/* Experto */}
-            <Route element={<RoleGuard allow="experto" />}> 
+        {/* ======= Protegidas ======= */}
+        <Route element={<RoleGuard />}>
+          {/* Usuario (si tu RoleGuard sin allow = cualquier logueado) */}
+          <Route path="/mis-consultas" element={<MisConsultas />} />
+          <Route path="/mis-valoraciones" element={<MisValoraciones />} />
+          <Route path="/mis-compras" element={<MisCompras />} />
+          <Route path="/perfil" element={<Perfil />} />
+
+          {/* Experto */}
+          <Route element={<RoleGuard allow="experto" />}>
             <Route path="/expert-dashboard" element={<ExpertDashboard />} />
             <Route path="/consultas-aprobadas" element={<ConsultasAprobadas />} />
             <Route path="/historial-respuestas" element={<ExpertHistorialR />} />
@@ -81,19 +86,21 @@ export default function App() {
             <Route path="/responder-consulta/:id" element={<ResponderConsulta />} />
             <Route path="/mis-contenidos" element={<MisContenidos />} />
             <Route path="/mis-contenidos/:id" element={<VistaDetalleContenido />} />
-             </Route>
-            {/* Admin */}
-            <Route element={<RoleGuard allow="admin" />}> 
+          </Route>
+
+          {/* Admin */}
+          <Route element={<RoleGuard allow="admin" />}>
             <Route path="/admin-expertos" element={<AdminExpertos />} />
             <Route path="/admin/consultas" element={<AdminConsultas />} />
+            <Route path="/admin-milestones" element={<AdminMilestones />} />
             <Route path="/admin/solicitudes" element={<AdminSolicitudes />} />
             <Route path="/admin/por-validar" element={<AdminPorValidar />} />
           </Route>
+        </Route>
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-     
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }
