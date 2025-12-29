@@ -95,12 +95,28 @@ async function sendEmailJS({ to_email, subject, message, siteId, milestone, coun
   }
 
   const payload = {
-    service_id,
-    template_id,
-    user_id,
-    ...(accessToken ? { accessToken } : {}),
-    template_params: { to_email, subject, message, siteId, milestone, countAtSend },
-  };
+  service_id,
+  template_id,
+  user_id,
+  ...(accessToken ? { accessToken } : {}),
+template_params: {
+  to_email,
+
+  // lo que tu template YA usa (por tu correo):
+  evento: subject,
+  mensaje: message,
+
+  // opcional, por si también usas estas en el template:
+  subject,
+  message,
+
+  siteId,
+  milestone,
+  countAtSend,
+},
+
+};
+
 
   const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
     method: "POST",
