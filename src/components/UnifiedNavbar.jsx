@@ -117,6 +117,13 @@ export default function UnifiedNavbar() {
           Foro
         </a>
 
+           <a
+            href="https://queesia.com/blog"
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
+          Blog
+        </a>
+
           <a
             href="https://queesia.com/nosotros/"
             className="text-slate-700 hover:text-slate-900 transition-colors"
@@ -130,12 +137,7 @@ export default function UnifiedNavbar() {
           >
             Contacto
           </a>
-         <a
-            href="https://queesia.com/blog"
-          className="text-slate-700 hover:text-slate-900 transition-colors"
-          >
-          Blog
-        </a>
+
         </nav>
 
         {/* Lado derecho (login / CTA) */}
