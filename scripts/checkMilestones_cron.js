@@ -1,14 +1,16 @@
-// api/checkMilestones.js
+// scripts/checkMilestones_cron.js
 import admin from "firebase-admin";
 
-// ====== CONFIG ======
-const NOTIFY_EMAILS = [
+// ============================
+// RTC_CO — CONFIG
+// ============================
+
+const DEFAULT_NOTIFY_EMAILS = [
   "misaeltup@gmail.com",
   "amhjmixqui@gmail.com",
   "queesiamx.employee@gmail.com",
 ];
 
-// Usa EXACTAMENTE los doc ids reales en visitCounts/
 const MILESTONES_BY_SITE = {
   quesiaHome: [1000, 5000, 10000, 25000, 50000, 100000],
   foroHome: [500, 1000, 5000, 10000, 25000],
@@ -16,35 +18,72 @@ const MILESTONES_BY_SITE = {
   blogHome: [250, 500, 1000, 5000, 10000, 25000],
 };
 
-// ====== Firebase Admin init (reutiliza el patrón que ya usas en api/) ======
+// ============================
+// RTC_CO — HELPERS
+// ============================
+
+function getNotifyEmails() {
+  const raw = (process.env.NOTIFY_EMAILS || "").trim();
+  if (!raw) return DEFAULT_NOTIFY_EMAILS;
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function safeJsonParse(maybeJson) {
+  try {
+    return JSON.parse(maybeJson);
+  } catch {
+    return null;
+  }
+}
+
 function initAdmin() {
   if (admin.apps.length) return;
 
-  // Opción A: si ya usas GOOGLE_APPLICATION_CREDENTIALS en Vercel, con esto basta:
-  // admin.initializeApp();
+  const saJsonRaw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (saJsonRaw && saJsonRaw.trim()) {
+    const sa = safeJsonParse(saJsonRaw) || safeJsonParse(saJsonRaw.replace(/\\n/g, "\n"));
+    if (!sa || !sa.client_email || !sa.private_key || !sa.project_id) {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT_JSON existe pero NO es válido (pega TODO el JSON del service account)."
+      );
+    }
 
-  // Opción B: si usas credenciales en env (lo más común en Vercel):
+    const privateKey = String(sa.private_key).replace(/\\n/g, "\n");
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: sa.project_id,
+        clientEmail: sa.client_email,
+        privateKey,
+      }),
+    });
+
+    console.log("[checkMilestones] Firebase Admin init: OK (service account JSON)");
+    return;
+  }
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (!projectId || !clientEmail || !privateKey) {
-    throw new Error("Faltan envs Firebase Admin: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY");
+    throw new Error(
+      "Faltan envs Firebase Admin. Usa FIREBASE_SERVICE_ACCOUNT_JSON (recomendado) o define FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY."
+    );
   }
 
-  // Vercel guarda saltos de línea como \n
   privateKey = privateKey.replace(/\\n/g, "\n");
 
   admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
+    credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
   });
+
+  console.log("[checkMilestones] Firebase Admin init: OK (split envs)");
 }
 
-// ====== EmailJS ======
 async function sendEmailJS({ to_email, subject, message, siteId, milestone, countAtSend }) {
   const service_id = process.env.EMAILJS_SERVICE_ID;
   const template_id = process.env.EMAILJS_TEMPLATE_ID;
@@ -60,14 +99,7 @@ async function sendEmailJS({ to_email, subject, message, siteId, milestone, coun
     template_id,
     user_id,
     ...(accessToken ? { accessToken } : {}),
-    template_params: {
-      to_email,
-      subject,
-      message,
-      siteId,
-      milestone,
-      countAtSend,
-    },
+    template_params: { to_email, subject, message, siteId, milestone, countAtSend },
   };
 
   const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
@@ -82,85 +114,107 @@ async function sendEmailJS({ to_email, subject, message, siteId, milestone, coun
   }
 }
 
-export default async function handler(req, res) {
-  try {
-    // (Opcional) Protege el endpoint con un token
-    const token = req.headers["x-cron-token"];
-    if (process.env.CRON_TOKEN && token !== process.env.CRON_TOKEN) {
-      return res.status(401).json({ ok: false, error: "Unauthorized" });
-    }
+// ============================
+// RTC_CO — MAIN (script)
+// ============================
 
-    initAdmin();
-    const db = admin.firestore();
+async function main() {
+  console.log("[checkMilestones] Cron started", new Date().toISOString());
 
-    const results = [];
+  const notifyEmails = getNotifyEmails();
+  console.log("[checkMilestones] notify emails:", notifyEmails.join(", ") || "(none)");
 
-    for (const [siteId, goals] of Object.entries(MILESTONES_BY_SITE)) {
-      const countSnap = await db.collection("visitCounts").doc(siteId).get();
-      const count = countSnap.exists ? Number(countSnap.data()?.count ?? 0) : 0;
+  initAdmin();
+  const db = admin.firestore();
 
-      for (const m of goals) {
-        if (count < m) continue;
+  const results = [];
+  let milestonesFound = 0;
+  let emailsSent = 0;
 
-        const milestoneId = `${siteId}_${m}`;
-        const ref = db.collection("milestones").doc(milestoneId);
+  for (const [siteId, goals] of Object.entries(MILESTONES_BY_SITE)) {
+    console.log("[checkMilestones] site:", siteId);
 
-        // Candado idempotente con transacción
-        const shouldSend = await db.runTransaction(async (tx) => {
-          const snap = await tx.get(ref);
-          if (snap.exists) {
-            const st = snap.data()?.status;
-            if (st === "sent" || st === "sending") return false;
-          }
-          tx.set(
-            ref,
-            {
-              siteId,
-              milestone: m,
-              countAtSend: count,
-              status: "sending",
-              createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-          return true;
-        });
+    const countSnap = await db.collection("visitCounts").doc(siteId).get();
+    const count = countSnap.exists ? Number(countSnap.data()?.count ?? 0) : 0;
+    console.log("[checkMilestones] count:", siteId, count);
 
-        if (!shouldSend) continue;
+    for (const m of goals) {
+      if (count < m) continue;
 
-        try {
-          const subject = `🎯 Milestone alcanzado: ${siteId} → ${m}`;
-          const message = `El sitio "${siteId}" alcanzó el hito ${m}. Conteo actual: ${count}.`;
+      milestonesFound += 1;
 
-          for (const to_email of NOTIFY_EMAILS) {
-            await sendEmailJS({ to_email, subject, message, siteId, milestone: m, countAtSend: count });
-          }
+      const milestoneId = `${siteId}_${m}`;
+      const ref = db.collection("milestones").doc(milestoneId);
 
-          await ref.set(
-            {
-              status: "sent",
-              sentAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-
-          results.push({ siteId, milestone: m, status: "sent" });
-        } catch (err) {
-          await ref.set(
-            {
-              status: "error",
-              lastError: String(err?.message || err),
-              lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-          results.push({ siteId, milestone: m, status: "error", error: String(err?.message || err) });
+      const shouldSend = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (snap.exists) {
+          const st = snap.data()?.status;
+          if (st === "sent" || st === "sending") return false;
         }
+        tx.set(
+          ref,
+          {
+            siteId,
+            milestone: m,
+            countAtSend: count,
+            status: "sending",
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+        return true;
+      });
+
+      if (!shouldSend) {
+        console.log("[checkMilestones] SKIP already sent/sending:", milestoneId);
+        continue;
+      }
+
+      try {
+        const subject = `🎯 Milestone alcanzado: ${siteId} → ${m}`;
+        const message = `El sitio "${siteId}" alcanzó el hito ${m}. Conteo actual: ${count}.`;
+
+        console.log("[checkMilestones] SEND:", milestoneId, "to", notifyEmails.join(", "));
+
+        for (const to_email of notifyEmails) {
+          await sendEmailJS({ to_email, subject, message, siteId, milestone: m, countAtSend: count });
+          emailsSent += 1;
+        }
+
+        await ref.set(
+          { status: "sent", sentAt: admin.firestore.FieldValue.serverTimestamp() },
+          { merge: true }
+        );
+
+        results.push({ siteId, milestone: m, status: "sent" });
+      } catch (err) {
+        console.log("[checkMilestones] ERROR:", milestoneId, String(err?.message || err));
+
+        await ref.set(
+          {
+            status: "error",
+            lastError: String(err?.message || err),
+            lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        results.push({ siteId, milestone: m, status: "error", error: String(err?.message || err) });
       }
     }
-
-    return res.status(200).json({ ok: true, results });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e?.message || e) });
   }
+
+  console.log("[checkMilestones] milestones found:", milestonesFound);
+  console.log("[checkMilestones] emails sent:", emailsSent);
+  console.log("[checkMilestones] done", new Date().toISOString());
+
+  return { ok: true, meta: { milestonesFound, emailsSent }, results };
 }
+
+main()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.log("[checkMilestones] FATAL:", String(e?.message || e));
+    process.exit(1);
+  });
