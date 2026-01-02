@@ -9,7 +9,7 @@ export default function PagoCancelado() {
       <h1 className="text-3xl font-bold mb-2">Pago cancelado</h1>
       <p className="mb-6">Tu pago no fue completado. Puedes intentarlo de nuevo cuando lo desees.</p>
       <Link
-        to="/expertos"
+        to="/#expertos"
         className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-semibold transition"
       >
         Volver a expertos

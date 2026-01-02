@@ -38,7 +38,7 @@ export default function PagoExitoso() {
       <CheckCircle className="w-16 h-16 mb-4 text-green-600" />
       <h1 className="text-3xl font-bold mb-2">{ok ? "¡Listo!" : "Confirmando..."}</h1>
       <p className="mb-6">{msg}</p>
-      <Link to="/expertos" className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition">
+      <Link to="/#expertos" className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition">
         Volver a expertos
       </Link>
     </div>

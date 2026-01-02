@@ -55,7 +55,7 @@ export default function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/privacidad" element={<Privacidad />} />
-        <Route path="/expertos" element={<ExpertsHomeWrapper />} />
+        <Route path="/expertos" element={<Navigate to="/#expertos" replace />} />
         <Route path="/expertos/:id" element={<ExpertDetailPublic />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/espera-aprobacion" element={<EsperaAprobacion />} />
