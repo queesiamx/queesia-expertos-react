@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 // arriba, junto con tus imports
-import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp  } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, onSnapshot } from "firebase/firestore";
 import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
 import MobileSocialDock from "@/components/social/MobileSocialDock";
 import { onAuthStateChanged } from "firebase/auth";
@@ -18,7 +18,7 @@ import ExpertsBrowser from "./ExpertsBrowser";
 // ————————————————— Hero (mock)
 // ————————————————— Hero (light, estilo queesia.com)
 // ————————————————— Hero (light, estilo queesia.com)
-function HeroExpertos() {
+function HeroExpertos({ stats }) {
   return (
    <section id="expertos-hero" className="relative isolate overflow-hidden bg-slate-50 text-slate-900">
       {/* Circulitos suaves opcionales */}
@@ -69,16 +69,22 @@ function HeroExpertos() {
         {/* Métricas (tarjetas claras) */}
         <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-2xl font-bold">150+</div>
+            <div className="text-2xl font-bold">{stats?.expertsVerified ?? "—"}</div>
             <div className="mt-0.5 text-sm text-slate-600">Expertos verificados</div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-2xl font-bold">4.8 <span className="text-yellow-300">★</span></div>
-            <div className="mt-0.5 text-sm text-slate-600">Rating promedio</div>
+            <div className="text-2xl font-bold">
+              {stats?.avgRating == null ? "—" : Number(stats.avgRating).toFixed(1)}{" "}
+              <span className="text-yellow-300">★</span>
+            </div>
+            <div className="mt-0.5 text-sm text-slate-600">
+              Rating promedio
+              <span className="text-xs text-slate-400"> {stats?.ratingsCount ? `(${stats.ratingsCount} reseñas)` : "(sin reseñas)"}</span>
+            </div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-2xl font-bold">2,500+</div>
-            <div className="mt-0.5 text-sm text-slate-600">Proyectos completados</div>
+            <div className="text-2xl font-bold">{stats?.consultasResueltas ?? "—"}</div>
+            <div className="mt-0.5 text-sm text-slate-600">Consultas atendidas</div>
           </div>
         </div>
       </div>
@@ -185,6 +191,14 @@ export default function Expertos() {
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
+  // ✅ Métricas reales del hero (platform_stats/expertos)
+  const [heroStats, setHeroStats] = useState({
+    expertsVerified: null,
+    avgRating: null,
+    ratingsCount: 0,
+    consultasResueltas: null,
+  });
+
   // 👁️ contador (si no tienes backend, lo dejamos en null)
   const [visitas, setVisitas] = useState(0);
 const PAGE_KEY = "expertos";
@@ -249,7 +263,21 @@ useEffect(() => {
   return () => unsub();
 }, []);
 
-
+// ✅ AQUÍ VA EL BLOQUE DE HERO STATS (platform_stats/expertos)
+useEffect(() => {
+  const ref = doc(db, "platform_stats", "expertos");
+  const unsub = onSnapshot(ref, (snap) => {
+    if (!snap.exists()) return;
+    const d = snap.data() || {};
+    setHeroStats({
+      expertsVerified: d.expertsVerified ?? null,
+      avgRating: d.avgRating ?? null,
+      ratingsCount: d.ratingsCount ?? 0,
+      consultasResueltas: d.consultasResueltas ?? null,
+    });
+  });
+  return () => unsub();
+}, []);
 
   // ——— Carga Firestore (experts + contenidosExpertos)
   useEffect(() => {
@@ -330,7 +358,7 @@ useEffect(() => {
     <>
       <UnifiedNavbar />
       <main className="bg-white text-slate-900">
-        <HeroExpertos />
+        <HeroExpertos stats={heroStats} />
 
             {/* monta el híbrido */}
 
