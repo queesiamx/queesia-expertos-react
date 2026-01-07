@@ -14,6 +14,11 @@ import ExpertsBrowser from "./ExpertsBrowser";
  //import { doc, getDoc } from "firebase/firestore";
 // import { trackVisit } from "../services/analytics"; // ruta relativa desde /src/pages
 
+const WHATSAPP_URL =
+  import.meta.env.PUBLIC_WHATSAPP_URL ??
+  "https://chat.whatsapp.com/DDXjMhmhVqQCWlDChoT5tL";
+
+const DISCORD_URL = import.meta.env.PUBLIC_DISCORD_URL ?? "";
 
 // ————————————————— Hero (mock)
 // ————————————————— Hero (light, estilo queesia.com)
@@ -89,7 +94,46 @@ function HeroExpertos({ stats }) {
         </div>
       </div>
 
-            {/* slot para las burbujas (debajo de métricas) */}
+        {/*Únete a la comunidad */}
+        
+    <section class="mt-16 bg-yellow-100/60 rounded-2xl px-6 py-8 border">
+      <div class="max-w-3xl mx-auto text-center">
+        <h2 class="text-2xl md:text-3xl font-extrabold italic">Únete a la comunidad</h2>
+        <p class="text-gray-700 mt-2">
+          Compartimos lanzamientos, tutoriales y casos reales. Entra al grupo y trae tu queso favorito 🧀
+        </p>
+
+        <div class="flex flex-wrap items-center justify-center gap-3 mt-5">
+          {WHATSAPP_URL && (
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              WhatsApp
+            </a>
+          )}
+          {DISCORD_URL && (
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition"
+            >
+              Discord
+            </a>
+          )}
+          {!WHATSAPP_URL && !DISCORD_URL && (
+            <span class="text-sm text-gray-500">
+              Configura <code>PUBLIC_WHATSAPP_URL</code> o <code>PUBLIC_DISCORD_URL</code> en tu <code>.env</code>.
+            </span>
+          )}
+        </div>
+      </div>
+    </section>
+
+       {/* slot para las burbujas (debajo de métricas) */}
       <div className="bubbles-slot h-16 md:h-20" />
       {/* sentinela para cambiar a modo dock al hacer scroll */}
       <div id="bubbles-sentinel" className="h-px" />
