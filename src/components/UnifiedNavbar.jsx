@@ -1,6 +1,6 @@
 // src/components/UnifiedNavbar.jsx
-import React, { useState } from "react";
-import { Link, useNavigate, NavLink } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, NavLink, useLocation } from "react-router-dom";
 import { pathByRole } from "@/auth/pathByRole";
 import { useAuth } from "@/auth/context/AuthContext";
 import { logout } from "@/auth/logout";
@@ -9,17 +9,74 @@ import UserMenu from "./UserMenu";
 import toast from "react-hot-toast";
 
 export default function UnifiedNavbar() {
+  const headerRef = useRef(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const { user, rol, aprobado } = useAuth();
   // Usa los TRES valores para calcular el destino del panel
   const dashHref = user && rol ? pathByRole(rol, aprobado) : null;
 
+  // Exponer altura real de la navbar para que los anchors / scrollIntoView no queden cubiertos
+ useEffect(() => {
+   const el = headerRef.current;
+    if (!el) return;
 
-  const navigate = useNavigate();
+    const setNavH = () => {
+      const h = el.offsetHeight || 64;
+      document.documentElement.style.setProperty("--nav-h", `${h}px`);
+    };
+
+    setNavH();
+    window.addEventListener("resize", setNavH);
+    return () => window.removeEventListener("resize", setNavH);
+  }, []);
+
+  
+  // Scroll con offset cuando hay hash (#seccion) para que NO lo tape la navbar
+  useEffect(() => {
+    if (!location.hash) return;
+
+    const id = location.hash.replace("#", "");
+    if (!id) return;
+
+    let raf1 = 0;
+    let raf2 = 0;
+
+    const scrollWithOffset = () => {
+      const target = document.getElementById(id);
+      if (!target) return;
+
+      const navH =
+        parseInt(
+          getComputedStyle(document.documentElement).getPropertyValue("--nav-h"),
+          10
+        ) || headerRef.current?.offsetHeight || 64;
+
+      const extra = 12; // airecito debajo de la navbar
+      const top =
+        target.getBoundingClientRect().top + window.scrollY - navH - extra;
+
+      window.scrollTo({ top, behavior: "smooth" });
+    };
+
+    // 2 rafs = esperamos layout/paint, mejora mucho en mobile
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(scrollWithOffset);
+    });
+
+    return () => {
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [location.pathname, location.hash]);
+
   //const { user: usuario } = useAuth();
 
 
-  return (
-    <header className="sticky top-0 z-[9999] w-full
+    return (
+    <header ref={headerRef} data-navbar className="sticky top-0 z-[9999] w-full
       bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70
       border-b border-slate-200 shadow-sm">
       <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between">

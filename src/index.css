@@ -5,17 +5,37 @@
 
 /* === BASE === */
 @layer base {
+    :root {
+    /* Altura default de la navbar (se actualiza en runtime desde UnifiedNavbar.jsx) */
+    --nav-h: 64px;
+  }
+
   /* Reset ligero dentro de la capa base */
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   /* Lienzo BLANCO detrás de toda la app + tipografía por defecto */
-  html, body, #root { 
+  html, body { 
+    @apply h-full;
+    
+  }
+
+  #root {
     @apply font-normal font-sans bg-white text-slate-900 min-h-screen;
     background-color: #ffffff !important; /* fuerza color sólido detrás de todo */
+    
   }
 
   /* Forzar esquema claro (ignora dark del sistema para el fondo) */
-  html { color-scheme: light; }
+  html {
+    color-scheme: light;
+    /* Evita que anchors/scrollIntoView queden tapados por la navbar sticky */
+    scroll-padding-top: calc(var(--nav-h) + 12px);
+  }
+
+  /* Cualquier sección con id recibe margen superior al hacer scroll a ella */
+  [id] {
+    scroll-margin-top: calc(var(--nav-h) + 12px);
+  }
 
   /* Evita “gaps”/rebotes en móviles */
   body { overscroll-behavior: none; }
@@ -37,6 +57,7 @@
 
   /* Controles de formulario sin bold */
   button, input, select, textarea, label { @apply font-normal; }
+
 }
 
 /* === COMPONENTES === */
@@ -103,7 +124,7 @@ iframe[name^="__privateStripeController"] { display: none !important; }
 .mobile-menu-btn, .mobile-menu-btn svg, .mobile-menu-btn svg * { color: #000 !important; stroke: #000 !important; fill: none !important; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
-html, body, #root { overflow-x: hidden; }
+
 
 /* Tema claro por preferencia (no toca el fondo global ya forzado a #fff) */
 @media (prefers-color-scheme: light) {

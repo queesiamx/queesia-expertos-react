@@ -5,6 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, onSnapshot } from "firebase/firestore";
 import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
 import MobileSocialDock from "@/components/social/MobileSocialDock";
+import CtaBanner from "../components/CtaBanner";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
@@ -137,7 +138,17 @@ function HeroExpertos({ stats }) {
       <div className="bubbles-slot h-16 md:h-20" />
       {/* sentinela para cambiar a modo dock al hacer scroll */}
       <div id="bubbles-sentinel" className="h-px" />
+
+
+<CtaBanner fullWidth className="mb-10"
+  title="¿Tienes un proyecto en mente o no sabes por dónde empezar?"
+  buttonText="Contáctanos"
+  href="https://queesia.com/contacto"
+/>
+
     </section>
+
+    
 
 
     

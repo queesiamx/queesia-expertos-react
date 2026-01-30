@@ -36,9 +36,12 @@ export default function MobileMenu() {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Bloquear scroll del body cuando el menú está abierto
-    const prevOverflow = document.body.style.overflow;
+    // Bloquear scroll cuando el menú está abierto (body + html)
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
 
     // Registrar este menú en el coordinador (si existe)
@@ -48,7 +51,8 @@ export default function MobileMenu() {
         : () => {};
 
     return () => {
-      document.body.style.overflow = prevOverflow || "";
+      document.body.style.overflow = prevBodyOverflow || "";
+      document.documentElement.style.overflow = prevHtmlOverflow || "";
       unsubscribeMenu();
     };
   }, [isOpen, close]);

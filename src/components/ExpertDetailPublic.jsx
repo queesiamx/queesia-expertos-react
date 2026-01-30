@@ -22,6 +22,7 @@ import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertHeader from "../components/ExpertHeader";
 import ExpertContentList from "../components/ExpertContentList";
 import ExpertModal from "../components/ExpertModal";
+import CtaBanner from "../components/CtaBanner";
 import ExpertRatingSection from "../components/ExpertRatingSection";
 import Footer from "../components/Footer";
 import PriceTag from "@/components/PriceTag";
@@ -49,6 +50,62 @@ export default function ExpertDetailPublic() {
   const { id: expertoId } = useParams();
  const navigate = useNavigate();
   const { user: usuario } = useAuth();
+
+ // ===== Refs para scroll =====
+  const consultaRef = useRef(null);
+  const contenidosRef = useRef(null);
+
+    const scrollToRef = (ref) => {
+    const el = ref?.current;
+    if (!el) return;
+
+    // Navbar height (dinámico)
+    const nav = document.querySelector("[data-navbar]");
+    const navH = nav ? nav.getBoundingClientRect().height : 0;
+    const gap = 12; // separacion visual extra
+
+    const y = window.scrollY + el.getBoundingClientRect().top - navH - gap;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  };
+
+  // ===== Seguir (MVP local) =====
+  const [isFollowing, setIsFollowing] = useState(false);
+  useEffect(() => {
+    if (!expertoId) return;
+    const key = `follow_expert_${expertoId}`;
+    setIsFollowing(localStorage.getItem(key) === "1");
+  }, [expertoId]);
+
+  const toggleFollow = () => {
+    if (!expertoId) return;
+    const key = `follow_expert_${expertoId}`;
+    setIsFollowing((prev) => {
+      const next = !prev;
+      localStorage.setItem(key, next ? "1" : "0");
+      toast.success(next ? "Siguiendo experto" : "Dejaste de seguir");
+      return next;
+    });
+  };
+
+  // ===== Compartir =====
+  const handleShare = async () => {
+    try {
+      const url = window.location.href;
+      const title = expert?.nombre ? `Perfil: ${expert.nombre}` : "Perfil de experto";
+      const text = "Mira este perfil de experto en Queesia";
+
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado al portapapeles");
+   } catch (e) {
+      toast.error("No se pudo compartir el enlace");
+    }
+  };
+
 
   // Estados básicos
   const [expert, setExpert] = useState(null);
@@ -531,22 +588,39 @@ const TipoBadge = ({ tipo }) => {
   </div>
 
   <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-    <button className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 font-medium shadow-sm hover:bg-emerald-700">
+    <button
+      onClick={() => scrollToRef(consultaRef)}
+      className="rounded-xl bg-emerald-600 text-white px-4 py-2.5 font-medium shadow-sm hover:bg-emerald-700"
+      type="button"
+    >
       Consultar
     </button>
-    <button className="rounded-xl bg-slate-100 text-slate-700 px-4 py-2.5 font-medium ring-1 ring-black/5 hover:bg-white">
+     <button
+      onClick={() => scrollToRef(contenidosRef)}
+      className="rounded-xl bg-slate-100 text-slate-700 px-4 py-2.5 font-medium ring-1 ring-black/5 hover:bg-white"
+      type="button"
+    >
       Reservar sesión
     </button>
     <div className="flex gap-2">
-      <button className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">
-        Seguir
+      <button
+        onClick={toggleFollow}
+        className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white"
+        type="button"
+      >
+        {isFollowing ? "Siguiendo" : "Seguir"}
       </button>
-      <button className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white">
+      <button
+        onClick={handleShare}
+        className="rounded-xl bg-slate-100 text-slate-700 px-3 py-2 ring-1 ring-black/5 hover:bg-white"
+        type="button"
+      >
         Compartir
       </button>
     </div>
   </div>
 </div>
+
 
 {/* Métricas */}
 <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -569,9 +643,14 @@ const TipoBadge = ({ tipo }) => {
     <p className="mt-1 font-semibold">{expert?.tiempoRespuesta || "< 24h"}</p>
   </div>
 </div>
-
-        
         </div>
+
+                  <CtaBanner
+  title="Hablemos de tu proyecto"
+  buttonText="Escríbenos aquí"
+  href="https://queesia.com/contacto"
+  className="mt-6"
+/>
 
         {/* === GRID PRINCIPAL (3/5 + 2/5) === */}
 <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -591,7 +670,10 @@ const TipoBadge = ({ tipo }) => {
     </div>
 
     {/* Consulta al experto (fuera del carrusel) */}
-    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+    <div
+      ref={consultaRef}
+      className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl"
+    >
       <ConsultaBox
         expertoId={resolvedExpertId}
         expertoNombre={expert?.nombre}
@@ -599,7 +681,10 @@ const TipoBadge = ({ tipo }) => {
     </div>
 
     {/* === Contenidos disponibles — CARRUSEL === */}
-    <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl">
+    <div
+      ref={contenidosRef}
+      className="rounded-3xl border border-black/5 bg-white p-6 shadow-xl"
+    >
       <div className="flex items-center justify-between gap-4">
   <h2 className="text-lg font-semibold">Contenidos disponibles</h2>
   <div className="hidden md:flex gap-2">
