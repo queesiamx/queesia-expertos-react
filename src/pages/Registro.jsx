@@ -138,47 +138,64 @@ export default function Registro() {
 
  // Al hidratarse la sesión, autocompleta el email del formulario
  useEffect(() => {
-   if (user?.email) {
+   if (!loading && user?.email) {
      setForm(prev => ({ ...prev, email: user.email }));
    }
- }, [user?.email]);
+ }, [user?.email, loading]);
 
   // Toast solo en paso 1
   useEffect(() => {
-    if (step !== 1) return;
-    const shown = sessionStorage.getItem("toast_validacion_shown");
-    if (shown) return;
-    toast((t) => (
-      <div className="flex flex-col gap-1">
-        <p className="font-medium">Primero valida tu correo para continuar.</p>
-        <button
-          onClick={() => { handleGoogleLogin(); toast.dismiss(t.id); }}
-          className="text-emerald-700 underline font-semibold"
-        >
-          Inicia sesión con tu cuenta de Google
-        </button>
-      </div>
-    ), { icon: "🔒" });
-    sessionStorage.setItem("toast_validacion_shown", "1");
-  }, [step]);
+  if (loading) return;   // 🔑 no molestes mientras rehidrata Firebase
+  if (user) return;      // 🔑 si ya hay sesión, no mostrar
+  if (step !== 1) return;
+
+  const shown = sessionStorage.getItem("toast_validacion_shown");
+  if (shown) return;
+
+  toast((t) => (
+    <div className="flex flex-col gap-1">
+      <p className="font-medium">Primero valida tu correo para continuar.</p>
+      <button
+        onClick={() => { handleGoogleLogin(); toast.dismiss(t.id); }}
+        className="text-emerald-700 underline font-semibold"
+      >
+        Inicia sesión con tu cuenta de Google
+      </button>
+    </div>
+  ), { icon: "🔒" });
+
+  sessionStorage.setItem("toast_validacion_shown", "1");
+}, [step, loading, user]);
+
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleGoogleLogin = async () => {
-     try {
-     await startLogin("experto");   // móvil: redirect; desktop: popup
-     // El avance de pasos ya lo controla useRegistrationStep() con onSnapshot
-     // y el email se autocompleta en el useEffect anterior.
-   } catch (e) {
-     console.error("Error con Google Login", e);
-     toast.error("No se pudo iniciar sesión con Google.");
-   }
-  };
+  try {
+    if (loading) return;
+    if (user) {
+      toast.success("Ya tienes sesión iniciada.");
+      return;
+    }
+    await startLogin("experto");
+  } catch (e) {
+    console.error("Error con Google Login", e);
+    toast.error("No se pudo iniciar sesión con Google.");
+  }
+};
+
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!auth.currentUser) { toast.error("Debes iniciar sesión con Google."); return; }
+  e.preventDefault();
+
+  if (loading) { toast("Verificando tu sesión…"); return; }
+  if (!user) { toast.error("Debes iniciar sesión con Google."); return; }
+
+  // ... aquí ya sigue tu código normal
+
+    if (loading) { toast("Verificando tu sesión…"); return; }
+    if (!user) { toast.error("Debes iniciar sesión con Google."); return; }
 
     const obligatorios = ["nombre", "especialidad", "experiencia", "email"];
     for (const campo of obligatorios) {
@@ -188,7 +205,7 @@ export default function Registro() {
 
     setSubiendo(true);
     try {
-      const uid = auth.currentUser.uid;
+      const uid = user.uid;
       const docRef = doc(db, "experts", uid);
 
       const existing = await getDoc(docRef);
@@ -246,7 +263,7 @@ export default function Registro() {
           email: form.email,
           especialidad: form.especialidad,
           experiencia: form.experiencia,
-          uid: auth.currentUser?.uid,
+          uid,
         });
       } catch (e) {
         console.warn("No se pudo notificar a admins:", e);
@@ -308,14 +325,25 @@ export default function Registro() {
 
             <Stepper current={step} />
 
-            <p className="mt-2 text-slate-600">
-              ⓘ Primero valida tu correo para continuar.{" "}
-              <button type="button" onClick={handleGoogleLogin}
-                      className="text-emerald-700 underline hover:no-underline font-medium">
-                Inicia sesión
-              </button>{" "}
-              con tu cuenta de Google.
-            </p>
+            {loading ? (
+              <p className="mt-2 text-slate-600">ⓘ Verificando tu sesión…</p>
+            ) : user ? (
+              <p className="mt-2 text-slate-600">
+                ✅ Sesión detectada: <span className="font-medium">{user.email}</span>
+              </p>
+            ) : (
+              <p className="mt-2 text-slate-600">
+                ⓘ Primero valida tu correo para continuar.{" "}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className="text-emerald-700 underline hover:no-underline font-medium"
+                >
+                  Inicia sesión
+                </button>{" "}
+                con tu cuenta de Google.
+              </p>
+            )}
           </div>
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
@@ -362,7 +390,7 @@ export default function Registro() {
                     </div>
 
                     <div>
-                      <FieldLabel htmlFor="correo electrónico" required>
+                      <FieldLabel htmlFor="email" required>
                         Correo electrónico
                       </FieldLabel>
                       <input id="email" type="email" name="email" value={form.email} onChange={handleChange}
@@ -443,7 +471,9 @@ export default function Registro() {
                     </div>
 
                     <div className="md:col-span-2 flex flex-col sm:flex-row gap-3 mt-2">
-                      <button type="submit" disabled={subiendo || !aceptoTerminos}
+                      <button
+                        type="submit"
+                        disabled={subiendo || !aceptoTerminos || loading || !user}
                               className={`inline-flex justify-center rounded-xl text-white px-4 py-2.5 font-medium shadow-sm ${subiendo || !aceptoTerminos ? "bg-emerald-600/60 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"}`}>
                         {subiendo ? "Enviando..." : "Registrar experto"}
                       </button>
