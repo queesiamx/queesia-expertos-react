@@ -90,3 +90,8 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
 export { app, auth, db, storage, googleProvider };
+
+// DEBUG ONLY (quitar después)
+if (typeof window !== "undefined") {
+  window.__QUEESIA_AUTH__ = auth;
+}
