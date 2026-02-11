@@ -1,6 +1,6 @@
 // src/auth/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, getRedirectResult } from "firebase/auth";
+import { onAuthStateChanged, getRedirectResult, signInWithCustomToken } from "firebase/auth";
 import { auth, db, app } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ensureUserDoc } from "@/auth/ensureUserDoc";
@@ -33,6 +33,7 @@ export function AuthProvider({ children }) {
     const log = (...a) => console.info("[AUTHCTX]", ...a);
     console.info("[AuthContext] usando src/auth/context/AuthContext.jsx");
     let unsub = () => {};
+    let bridgeTried = false; // evita loops
 
     (async () => {
       log(
@@ -91,6 +92,30 @@ export function AuthProvider({ children }) {
         setLoading(true);
 
         if (!u) {
+         // 🔹 Intento 1 vez: puente SSO(cookie) -> Firebase client (custom token)
+          // Esto resuelve tu caso: en queesia.com "me" ya da user, pero en expertos auth.currentUser = false.
+          if (!bridgeTried) {
+            bridgeTried = true;
+            log("no firebase session; trying SSO bridge (customtoken)...");
+            try {
+              const r = await fetch("/api/trackVisit?action=customtoken", {
+                method: "GET",
+                credentials: "include",
+              });
+              const data = await r.json().catch(() => ({}));
+              if (r.ok && data?.customToken) {
+                log("SSO bridge: got customToken; signing in with custom token...");
+                await signInWithCustomToken(auth, data.customToken);
+                // IMPORTANTE: aquí NO seteamos "sin sesión"; esperamos a que onAuthStateChanged dispare de nuevo con user
+                return;
+              } else {
+                log("SSO bridge: no customToken (ok? ", r.ok, ") data:", data);
+              }
+            } catch (e) {
+              log("SSO bridge error:", e?.message || e);
+            }
+          }
+
           console.info("[auth] sin sesión");
           setUser(null);
           setRol(null);

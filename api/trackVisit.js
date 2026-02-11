@@ -19,6 +19,29 @@ function setCors(req, res) {
   res.setHeader("Access-Control-Max-Age", "86400");
 }
 
+/* ---------- Cookies helpers (sin libs) ---------- */
+function parseCookies(req) {
+  const header = req.headers.cookie || "";
+  const out = {};
+  header.split(";").forEach(part => {
+    const [k, ...rest] = part.trim().split("=");
+    if (!k) return;
+    out[k] = decodeURIComponent(rest.join("=") || "");
+  });
+  return out;
+}
+function cookieStr(name, value, opts = {}) {
+  const parts = [`${name}=${encodeURIComponent(value)}`];
+  if (opts.maxAge != null) parts.push(`Max-Age=${opts.maxAge}`);
+  if (opts.domain) parts.push(`Domain=${opts.domain}`);
+  if (opts.path) parts.push(`Path=${opts.path}`);
+  if (opts.httpOnly) parts.push("HttpOnly");
+  if (opts.secure) parts.push("Secure");
+  if (opts.sameSite) parts.push(`SameSite=${opts.sameSite}`);
+  return parts.join("; ");
+}
+
+
 /* ---------- Firebase Admin ---------- */
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -111,6 +134,25 @@ export default async function handler(req, res) {
 
       return res.status(200).json({ ok: true });
     }
+
+        // 2.5) CUSTOMTOKEN: usa la cookie SSO para emitir un custom token de Firebase
+    // Esto permite que el FRONTEND de expertos haga signInWithCustomToken()
+    if (action === "customtoken") {
+      if (req.method !== "GET") return res.status(405).json({ ok:false, error:"Method not allowed" });
+
+      const cookies = parseCookie(req.headers.cookie || "");
+      const sessionCookie = cookies.__session;
+      if (!sessionCookie) return res.status(401).json({ ok:false, error:"No session" });
+
+      try {
+        const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
+        const customToken = await admin.auth().createCustomToken(decoded.uid);
+        return res.status(200).json({ ok:true, customToken });
+      } catch (e) {
+        return res.status(401).json({ ok:false, error:"Invalid session" });
+      }
+    }
+
 
     // 3) LOGOUT: borra cookie global
     if (action === "logout") {
