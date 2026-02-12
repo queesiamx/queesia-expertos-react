@@ -41,6 +41,13 @@ function cookieStr(name, value, opts = {}) {
   return parts.join("; ");
 }
 
+function isHttpsReq(req) {
+  const xfProto = String(req.headers["x-forwarded-proto"] || "").toLowerCase();
+  if (xfProto) return xfProto === "https";
+  // fallback: si viene origin https, asumimos https
+  const origin = String(req.headers.origin || "");
+  return origin.startsWith("https://");
+}
 
 /* ---------- Firebase Admin ---------- */
 if (!admin.apps.length) {
@@ -115,6 +122,24 @@ export default async function handler(req, res) {
       }
     }
 
+   // 1.5) CUSTOMTOKEN: puente para que otros subdominios inicien Firebase local usando el cookie SSO
+    if (action === "customtoken") {
+      if (req.method !== "GET") return res.status(405).json({ ok:false, error:"Method not allowed" });
+
+      const cookies = parseCookies(req);
+      const sessionCookie = cookies.__session;
+      if (!sessionCookie) return res.status(401).json({ ok:false, error:"No session cookie" });
+
+      try {
+        const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
+        const customToken = await admin.auth().createCustomToken(decoded.uid);
+        return res.status(200).json({ ok:true, customToken });
+      } catch (e) {
+        return res.status(401).json({ ok:false, error:"Invalid session cookie" });
+      }
+    }
+
+
     // 2) LOGIN: recibe idToken y setea cookie global .queesia.com
     if (action === "login") {
       if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Method not allowed" });
@@ -127,10 +152,15 @@ export default async function handler(req, res) {
       const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
       const maxAge = Math.floor(expiresIn / 1000);
 
-      res.setHeader(
-        "Set-Cookie",
-        `__session=${sessionCookie}; Max-Age=${maxAge}; Path=/; Domain=.queesia.com; HttpOnly; Secure; SameSite=None`
-      );
+      const secure = isHttpsReq(req);
+      res.setHeader("Set-Cookie", cookieStr("__session", sessionCookie, {
+        maxAge,
+        path: "/",
+        domain: ".queesia.com",
+        httpOnly: true,
+        secure,
+        sameSite: secure ? "None" : "Lax",
+      }));
 
       return res.status(200).json({ ok: true });
     }
@@ -158,10 +188,15 @@ export default async function handler(req, res) {
     if (action === "logout") {
       if (req.method !== "POST") return res.status(405).json({ ok:false, error:"Method not allowed" });
 
-      res.setHeader(
-        "Set-Cookie",
-        `__session=; Max-Age=0; Path=/; Domain=.queesia.com; HttpOnly; Secure; SameSite=None`
-      );
+      const secure = isHttpsReq(req);
+      res.setHeader("Set-Cookie", cookieStr("__session", "", {
+        maxAge: 0,
+        path: "/",
+        domain: ".queesia.com",
+        httpOnly: true,
+        secure,
+       sameSite: secure ? "None" : "Lax",
+      }));
 
       return res.status(200).json({ ok: true });
     }

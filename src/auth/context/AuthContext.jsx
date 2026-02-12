@@ -1,6 +1,6 @@
 // src/auth/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { onAuthStateChanged, getRedirectResult, signInWithCustomToken } from "firebase/auth";
+import { onAuthStateChanged, getRedirectResult, signInWithCustomToken, signOut } from "firebase/auth";
 import { auth, db, app } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { ensureUserDoc } from "@/auth/ensureUserDoc";
@@ -10,6 +10,10 @@ const t0_global =
   typeof performance !== "undefined" ? performance.now() : Date.now();
 
 const AuthContext = createContext(null);
+
+// ✅ En expertos podemos usar ruta relativa. Si quieres, lo puedes volver env var.
+const SSO_API = "/api/trackVisit";
+
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -34,6 +38,56 @@ export function AuthProvider({ children }) {
     console.info("[AuthContext] usando src/auth/context/AuthContext.jsx");
     let unsub = () => {};
     let bridgeTried = false; // evita loops
+
+      async function ssoMe() {
+      try {
+        const r = await fetch(`${SSO_API}?action=me`, { credentials: "include" });
+        return await r.json();
+      } catch {
+        return { user: null };
+      }
+    }
+
+    async function ssoLoginWithIdToken(idToken) {
+      try {
+        const r = await fetch(`${SSO_API}?action=login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ idToken }),
+        });
+        return r.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    async function ssoBridgeToFirebase() {
+      const r = await fetch(`${SSO_API}?action=customtoken`, { credentials: "include" });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data?.customToken) {
+        await signInWithCustomToken(auth, data.customToken);
+        return true;
+      }
+      return false;
+    }
+
+    async function syncWithSSO() {
+      const me = await ssoMe();
+      const cookieHasUser = !!me?.user?.uid;
+      const fbHasUser = !!auth.currentUser;
+
+      if (!cookieHasUser && fbHasUser) {
+        console.info("[SSO] cookie OFF -> signOut(firebase)");
+        await signOut(auth);
+        return;
+      }
+
+      if (cookieHasUser && !fbHasUser) {
+        console.info("[SSO] cookie ON -> bridge to firebase");
+        await ssoBridgeToFirebase();
+      }
+    }
 
     (async () => {
       log(
@@ -67,7 +121,20 @@ export function AuthProvider({ children }) {
         if (!res?.user) {
           console.info("[auth] no redirect result (null)");
         }
+
+
+       // ✅ Si venimos de redirect y hay user, setea cookie SSO global
+        if (res?.user) {
+          try {
+            const idToken = await res.user.getIdToken(true);
+            await ssoLoginWithIdToken(idToken);
+          } catch (e) {
+            console.warn("[SSO] login(cookie) fail after redirect:", e?.message || e);
+          }
+        }
+
         // 🔹 Ventana de gracia (experimento timing)
+
         await new Promise((r) => setTimeout(r, 500));
         // 🔹 Limpiar el flag tras procesar
         try {
@@ -78,6 +145,10 @@ export function AuthProvider({ children }) {
         console.warn("[auth] getRedirectResult error:", e?.message || e);
         setRedirecting(false);
       }
+
+     // ✅ Sync inicial (por si cookie ya existe de otro subdominio)
+      await syncWithSSO();
+      const syncTimer = setInterval(syncWithSSO, 8000);
 
       // 1) Listener principal (después de getRedirectResult)
          unsub = onAuthStateChanged(auth, async (u) => {
@@ -121,6 +192,8 @@ export function AuthProvider({ children }) {
           setRol(null);
           setAprobado(false);
           setLoading(false);
+          // ✅ si cookie SSO existe, “revivimos” sesión firebase en este subdominio
+          try { await syncWithSSO(); } catch {}
           return;
         }
 
@@ -168,6 +241,7 @@ export function AuthProvider({ children }) {
         "attempts — auth.currentUser?",
         !!auth.currentUser
       );
+    return () => clearInterval(syncTimer);
     })();
 
     return () => unsub && unsub();

@@ -2,6 +2,8 @@
 import { auth, googleProvider } from "@/firebase";
 import { signInWithRedirect, signInWithPopup } from "firebase/auth";
 
+const SSO_API = "/api/trackVisit";
+
 const isMobile =
   typeof navigator !== "undefined" &&
   /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -41,7 +43,19 @@ export async function startLogin(role = "usuario") {
     // Popup (desktop por defecto, o móvil con ?forcePopup=1)
     try {
       const res = await signInWithPopup(auth, googleProvider);
-      console.info("[login] popup OK user:", res?.user?.uid);
+     
+    // ✅ set cookie SSO global (.queesia.com)
+      try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        await fetch(`${SSO_API}?action=login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ idToken }),
+        });
+      } catch (e) {
+        console.warn("[SSO] login(cookie) fail after popup:", e?.message || e);
+      }
     } catch (popupErr) {
       console.warn("[login] popup error:", popupErr?.message || popupErr);
       // Fallback: si el popup es bloqueado, intentamos redirect
