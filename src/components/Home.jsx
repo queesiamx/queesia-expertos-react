@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, onSnapshot 
 import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
 import MobileSocialDock from "@/components/social/MobileSocialDock";
 import CtaBanner from "../components/CtaBanner";
+import { FaWhatsapp } from "react-icons/fa";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
@@ -17,7 +18,7 @@ import ExpertsBrowser from "./ExpertsBrowser";
 
 const WHATSAPP_URL =
   import.meta.env.PUBLIC_WHATSAPP_URL ??
-  "https://chat.whatsapp.com/DDXjMhmhVqQCWlDChoT5tL";
+  "https://whatsapp.com/channel/0029VbCIjGd6RGJBYBgCKz3W";
 
 const DISCORD_URL = import.meta.env.PUBLIC_DISCORD_URL ?? "";
 
@@ -110,8 +111,9 @@ function HeroExpertos({ stats }) {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition"
+              class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"
             >
+              <FaWhatsapp className="h-5 w-5" aria-hidden="true" />
               WhatsApp
             </a>
           )}

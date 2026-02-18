@@ -10,7 +10,12 @@ function setCors(req, res) {
   const origin = req.headers.origin || "";
   res.setHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
   res.setHeader("Access-Control-Allow-Origin", ALLOWLIST.includes(origin) ? origin : (ALLOWLIST[0] || origin));
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+   // Con credentials=true NO debemos reflejar un origin “fallback” si no está permitido.
+  // Si viene Origin y está permitido, lo reflejamos; si no viene Origin, usamos el primero (server-to-server).
+  const allowOrigin = origin
+    ? (ALLOWLIST.includes(origin) ? origin : "")
+    : (ALLOWLIST[0] || "");
+  if (allowOrigin) res.setHeader("Access-Control-Allow-Origin", allowOrigin);;
   res.setHeader(
     "Access-Control-Allow-Headers",
     req.headers["access-control-request-headers"] || "Content-Type, Authorization"
@@ -76,15 +81,6 @@ function hashIp(ip) {
   return crypto.createHash("sha256").update(`${ip}|${pepper}`).digest("hex");
 }
 
-function parseCookie(cookieHeader = "") {
-  const out = {};
-  cookieHeader.split(";").forEach(part => {
-    const [k, ...v] = part.trim().split("=");
-    if (!k) return;
-    out[k] = decodeURIComponent(v.join("=") || "");
-  });
-  return out;
-}
 
 async function readJsonBody(req) {
   let body = req.body || {};
@@ -99,6 +95,13 @@ export default async function handler(req, res) {
   setCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
 
+// Bloquea requests CORS no permitidas (importante con cookies/credentials)
+  const origin = req.headers.origin || "";
+  if (origin && !ALLOWLIST.includes(origin)) {
+    return res.status(403).json({ ok:false, error:"Origin not allowed" });
+  }
+
+
   const action = String(req.query?.action || "").toLowerCase();
 
   try {
@@ -110,7 +113,7 @@ export default async function handler(req, res) {
     if (action === "me") {
       if (req.method !== "GET") return res.status(405).json({ ok:false, error:"Method not allowed" });
 
-      const cookies = parseCookie(req.headers.cookie || "");
+      const cookies = parseCookies(req);
       const sessionCookie = cookies.__session;
       if (!sessionCookie) return res.status(200).json({ user: null });
 
@@ -122,23 +125,7 @@ export default async function handler(req, res) {
       }
     }
 
-   // 1.5) CUSTOMTOKEN: puente para que otros subdominios inicien Firebase local usando el cookie SSO
-    if (action === "customtoken") {
-      if (req.method !== "GET") return res.status(405).json({ ok:false, error:"Method not allowed" });
-
-      const cookies = parseCookies(req);
-      const sessionCookie = cookies.__session;
-      if (!sessionCookie) return res.status(401).json({ ok:false, error:"No session cookie" });
-
-      try {
-        const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
-        const customToken = await admin.auth().createCustomToken(decoded.uid);
-        return res.status(200).json({ ok:true, customToken });
-      } catch (e) {
-        return res.status(401).json({ ok:false, error:"Invalid session cookie" });
-      }
-    }
-
+   
 
     // 2) LOGIN: recibe idToken y setea cookie global .queesia.com
     if (action === "login") {
@@ -165,24 +152,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-        // 2.5) CUSTOMTOKEN: usa la cookie SSO para emitir un custom token de Firebase
-    // Esto permite que el FRONTEND de expertos haga signInWithCustomToken()
-    if (action === "customtoken") {
-      if (req.method !== "GET") return res.status(405).json({ ok:false, error:"Method not allowed" });
-
-      const cookies = parseCookie(req.headers.cookie || "");
-      const sessionCookie = cookies.__session;
-      if (!sessionCookie) return res.status(401).json({ ok:false, error:"No session" });
-
-      try {
-        const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
-        const customToken = await admin.auth().createCustomToken(decoded.uid);
-        return res.status(200).json({ ok:true, customToken });
-      } catch (e) {
-        return res.status(401).json({ ok:false, error:"Invalid session" });
-      }
-    }
-
 
     // 3) LOGOUT: borra cookie global
     if (action === "logout") {
@@ -199,6 +168,24 @@ export default async function handler(req, res) {
       }));
 
       return res.status(200).json({ ok: true });
+    }
+
+    
+    // 4) CUSTOMTOKEN: bridge cookie -> firebase local (signInWithCustomToken)
+    if (action === "customtoken") {
+      if (req.method !== "GET") return res.status(405).json({ ok:false, error:"Method not allowed" });
+
+      const cookies = parseCookies(req);
+      const sessionCookie = cookies.__session;
+      if (!sessionCookie) return res.status(401).json({ ok:false, error:"No session" });
+
+      try {
+        const decoded = await admin.auth().verifySessionCookie(sessionCookie, true);
+        const customToken = await admin.auth().createCustomToken(decoded.uid);
+        return res.status(200).json({ ok:true, customToken });
+      } catch (e) {
+        return res.status(401).json({ ok:false, error:"Invalid session" });
+      }
     }
 
     /* =========================================================
