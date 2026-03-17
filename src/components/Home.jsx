@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, onSnapshot 
 import SocialBubblesHybrid from "@/components/social/SocialBubblesHybrid";
 import MobileSocialDock from "@/components/social/MobileSocialDock";
 import CtaBanner from "../components/CtaBanner";
-import { FaWhatsapp } from "react-icons/fa";
+import { FaTelegramPlane } from "react-icons/fa";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
@@ -16,9 +16,9 @@ import ExpertsBrowser from "./ExpertsBrowser";
  //import { doc, getDoc } from "firebase/firestore";
 // import { trackVisit } from "../services/analytics"; // ruta relativa desde /src/pages
 
-const WHATSAPP_URL =
-  import.meta.env.PUBLIC_WHATSAPP_URL ??
-  "https://whatsapp.com/channel/0029VbCIjGd6RGJBYBgCKz3W";
+const TELEGRAM_URL =
+  import.meta.env.PUBLIC_TELEGRAM_URL ??
+  "https://t.me/radarqueesia";
 
 const DISCORD_URL = import.meta.env.PUBLIC_DISCORD_URL ?? "";
 
@@ -100,23 +100,26 @@ function HeroExpertos({ stats }) {
         
     <section class="mt-16 bg-yellow-100/60 rounded-2xl px-6 py-8 border">
       <div class="max-w-3xl mx-auto text-center">
-        <h2 class="text-2xl md:text-3xl font-extrabold italic">Únete a la comunidad</h2>
-        <p class="text-gray-700 mt-2">
-          Compartimos lanzamientos, tutoriales y casos reales. Entra al grupo y trae tu queso favorito 🧀
-        </p>
+        <h2 class="text-2xl md:text-3xl font-extrabold italic">Únete al canal</h2>
+        <p className="text-gray-700 mt-2">
+      Recibe señales, tendencias, lanzamientos y casos relevantes sobre IA, energía e innovación.
+    </p>
+    <p className="text-gray-700">
+      Sigue el Radar Queesia en Telegram y mantente al día. 🧀
+    </p>
 
         <div class="flex flex-wrap items-center justify-center gap-3 mt-5">
-          {WHATSAPP_URL && (
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition inline-flex items-center gap-2"
-            >
-              <FaWhatsapp className="h-5 w-5" aria-hidden="true" />
-              WhatsApp
-            </a>
-          )}
+          {TELEGRAM_URL && (
+  <a
+    href={TELEGRAM_URL}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="px-4 py-2 rounded-xl bg-sky-500 text-white hover:bg-sky-600 transition inline-flex items-center gap-2"
+  >
+    <FaTelegramPlane className="h-5 w-5" aria-hidden="true" />
+    Telegram
+  </a>
+)}
           {DISCORD_URL && (
             <a
               href={DISCORD_URL}
@@ -127,11 +130,11 @@ function HeroExpertos({ stats }) {
               Discord
             </a>
           )}
-          {!WHATSAPP_URL && !DISCORD_URL && (
-            <span class="text-sm text-gray-500">
-              Configura <code>PUBLIC_WHATSAPP_URL</code> o <code>PUBLIC_DISCORD_URL</code> en tu <code>.env</code>.
-            </span>
-          )}
+          {!TELEGRAM_URL && !DISCORD_URL && (
+          <span className="text-sm text-gray-500">
+            Configura <code>PUBLIC_TELEGRAM_URL</code> o <code>PUBLIC_DISCORD_URL</code> en tu <code>.env</code>.
+          </span>
+        )}
         </div>
       </div>
     </section>
