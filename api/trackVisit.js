@@ -188,6 +188,116 @@ export default async function handler(req, res) {
       }
     }
 
+        // 5) NOTIFICAR NUEVO EXPERTO A ADMINS
+    if (action === "notify-new-expert") {
+      if (req.method !== "POST") {
+        return res.status(405).json({ ok: false, error: "Method not allowed" });
+      }
+
+      const body = await readJsonBody(req);
+
+      const {
+        expertId,
+        nombre,
+        email,
+        especialidad,
+        experiencia,
+        educacion,
+        certificaciones,
+        linkedin,
+        telefono,
+      } = body || {};
+
+      const NOTIFY_EMAILS = [
+        "misaeltup@gmail.com",
+        "amhjmixqui@gmail.com",
+        "queesiamx.employee@gmail.com",
+        "gustavo.alfaro.m@gmail.com",
+      ];
+
+      const service_id = process.env.EMAILJS_SERVICE_ID;
+      const template_id = process.env.EMAILJS_TEMPLATE_ID;
+      const user_id = process.env.EMAILJS_PUBLIC_KEY;
+      const accessToken = process.env.EMAILJS_PRIVATE_KEY;
+
+      if (!service_id || !template_id || !user_id) {
+        return res.status(500).json({
+          ok: false,
+          error: "Faltan variables de entorno de EmailJS",
+        });
+      }
+
+      const educacionTexto = Array.isArray(educacion)
+        ? educacion.join(", ")
+        : (educacion || "-");
+
+      const certificacionesTexto = Array.isArray(certificaciones)
+        ? certificaciones.join(", ")
+        : (certificaciones || "-");
+
+      const mensaje = [
+        "🔔 NOTIFICACIÓN QUEESIA",
+        "Tipo: Nuevo experto registrado",
+        "",
+        `Nombre: ${nombre || "Sin nombre"}`,
+        `Correo: ${email || "Sin correo"}`,
+        `Especialidad: ${especialidad || "-"}`,
+        `Experiencia: ${experiencia || "-"}`,
+        `Educación: ${educacionTexto}`,
+        `Certificaciones: ${certificacionesTexto}`,
+        `LinkedIn: ${linkedin || "-"}`,
+        `Teléfono: ${telefono || "-"}`,
+        `UID: ${expertId || "-"}`,
+        "",
+        "Acción requerida:",
+        "Revisar y aprobar desde el panel de expertos.",
+      ].join("\n");
+
+      const results = await Promise.allSettled(
+        NOTIFY_EMAILS.map(async (to_email) => {
+          const payload = {
+            service_id,
+            template_id,
+            user_id,
+            ...(accessToken ? { accessToken } : {}),
+            template_params: {
+              to_email,
+              subject: "Nuevo experto registrado en Queesia",
+              nombre: "Equipo Queesia",
+              evento: "Nuevo experto registrado",
+              mensaje_personalizado: mensaje,
+              message: mensaje,
+            },
+          };
+
+          const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            throw new Error(`EmailJS ${response.status}: ${text}`);
+          }
+
+          return true;
+        })
+      );
+
+      const failed = results.filter((r) => r.status === "rejected");
+
+      if (failed.length > 0) {
+        return res.status(500).json({
+          ok: false,
+          error: `Fallaron ${failed.length} envíos`,
+          detail: failed.map((f) => f.reason?.message || String(f.reason)),
+        });
+      }
+
+      return res.status(200).json({ ok: true });
+    }
+
     /* =========================================================
        MODO TRACKING (comportamiento original)
        ========================================================= */

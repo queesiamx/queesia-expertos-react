@@ -202,6 +202,34 @@ export default function Registro() {
 
       await setDoc(docRef, nuevoExperto);
 
+      try {
+        const notifyRes = await fetch("/api/trackVisit?action=notify-new-expert", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            expertId: uid,
+            nombre: form.nombre,
+            email: form.email,
+            especialidad: form.especialidad,
+            experiencia: form.experiencia,
+            educacion: form.educacion,
+            certificaciones: form.certificaciones,
+            linkedin: form.linkedin,
+            telefono: form.telefono,
+          }),
+        });
+
+        const notifyData = await notifyRes.json().catch(() => ({}));
+
+        if (!notifyRes.ok) {
+          console.warn("No se pudo notificar a admins:", notifyData);
+        }
+      } catch (err) {
+        console.warn("Error notificando a admins:", err);
+      }
+
       // Correo de confirmación al experto (no bloquea el registro)
       try {
         await emailjs.send(
