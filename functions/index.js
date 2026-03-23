@@ -1,10 +1,13 @@
 /* eslint-disable */
 const admin = require("firebase-admin");
-admin.initializeApp();
-const db = admin.firestore();
-
-const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { logger } = require("firebase-functions");
+
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const db = admin.firestore();
 
 // ====== Config ======
 const NOTIFY_EMAILS = [
@@ -24,7 +27,6 @@ const MILESTONES_BY_SITE = {
 
 function getCrossedMilestones(siteId, prevCount, newCount) {
   const goals = MILESTONES_BY_SITE[siteId] ?? [];
-  // devuelve TODOS los hitos cruzados (por si sube en “saltos” grandes)
   return goals.filter((m) => prevCount < m && newCount >= m);
 }
 
@@ -32,23 +34,34 @@ function getCrossedMilestones(siteId, prevCount, newCount) {
 // ENV vars requeridas:
 // EMAILJS_SERVICE_ID
 // EMAILJS_TEMPLATE_ID
-// EMAILJS_PUBLIC_KEY  (en EmailJS suele llamarse "Public Key")
-// EMAILJS_PRIVATE_KEY (si tu setup lo usa; si no, lo puedes quitar)
-async function sendEmailJS({ to_email, subject, message, siteId, milestone, countAtSend }) {
+// EMAILJS_PUBLIC_KEY
+// EMAILJS_PRIVATE_KEY (opcional, según tu setup)
+async function sendEmailJS({
+  to_email,
+  subject,
+  message,
+  siteId = "",
+  milestone = "",
+  countAtSend = "",
+  evento = "",
+  nombre = "",
+  mensaje_personalizado = "",
+}) {
   const service_id = process.env.EMAILJS_SERVICE_ID;
   const template_id = process.env.EMAILJS_TEMPLATE_ID;
   const user_id = process.env.EMAILJS_PUBLIC_KEY;
   const accessToken = process.env.EMAILJS_PRIVATE_KEY;
 
   if (!service_id || !template_id || !user_id) {
-    throw new Error("Faltan ENV de EmailJS: EMAILJS_SERVICE_ID / EMAILJS_TEMPLATE_ID / EMAILJS_PUBLIC_KEY");
+    throw new Error(
+      "Faltan ENV de EmailJS: EMAILJS_SERVICE_ID / EMAILJS_TEMPLATE_ID / EMAILJS_PUBLIC_KEY"
+    );
   }
 
   const payload = {
     service_id,
     template_id,
     user_id,
-    // Si tu EmailJS no requiere accessToken, puedes borrar la línea.
     ...(accessToken ? { accessToken } : {}),
     template_params: {
       to_email,
@@ -57,6 +70,9 @@ async function sendEmailJS({ to_email, subject, message, siteId, milestone, coun
       siteId,
       milestone,
       countAtSend,
+      evento,
+      nombre,
+      mensaje_personalizado,
     },
   };
 
@@ -72,6 +88,9 @@ async function sendEmailJS({ to_email, subject, message, siteId, milestone, coun
   }
 }
 
+// =====================================================
+// 1) NOTIFICACIÓN DE HITOS DE VISITAS
+// =====================================================
 exports.notifyVisitMilestones = onDocumentUpdated("visitCounts/{siteId}", async (event) => {
   const siteId = event.params.siteId;
 
@@ -86,12 +105,10 @@ exports.notifyVisitMilestones = onDocumentUpdated("visitCounts/{siteId}", async 
   const crossed = getCrossedMilestones(siteId, prevCount, newCount);
   if (!crossed.length) return;
 
-  // procesar cada hito cruzado
   for (const milestone of crossed) {
     const milestoneDocId = `${siteId}_${milestone}`;
     const ref = db.collection("milestones").doc(milestoneDocId);
 
-    // 1) Transacción = candado anti-duplicados
     const shouldSend = await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       if (snap.exists) {
@@ -116,7 +133,6 @@ exports.notifyVisitMilestones = onDocumentUpdated("visitCounts/{siteId}", async 
 
     if (!shouldSend) continue;
 
-    // 2) Envío de email (1 por destinatario)
     try {
       const subject = `🎯 Milestone alcanzado: ${siteId} → ${milestone}`;
       const message = `El sitio "${siteId}" alcanzó el hito ${milestone}. Conteo actual: ${newCount}.`;
@@ -132,7 +148,6 @@ exports.notifyVisitMilestones = onDocumentUpdated("visitCounts/{siteId}", async 
         });
       }
 
-      // 3) Marcar como sent
       await ref.set(
         {
           status: "sent",
@@ -141,7 +156,11 @@ exports.notifyVisitMilestones = onDocumentUpdated("visitCounts/{siteId}", async 
         { merge: true }
       );
     } catch (err) {
-      logger.error("Milestone email failed", { siteId, milestone, err: String(err?.message || err) });
+      logger.error("Milestone email failed", {
+        siteId,
+        milestone,
+        err: String(err?.message || err),
+      });
 
       await ref.set(
         {
@@ -152,5 +171,77 @@ exports.notifyVisitMilestones = onDocumentUpdated("visitCounts/{siteId}", async 
         { merge: true }
       );
     }
+  }
+});
+
+// =====================================================
+// 2) NOTIFICACIÓN DE NUEVO EXPERTO REGISTRADO
+// =====================================================
+exports.notifyNewExpertRegistration = onDocumentCreated("experts/{expertId}", async (event) => {
+  const expertId = event.params.expertId;
+  const data = event.data?.data();
+
+  if (!data) return;
+
+  const nombre = data.nombre || "Sin nombre";
+  const email = data.email || "Sin correo";
+  const especialidad = data.especialidad || "-";
+  const experiencia = data.experiencia || "-";
+  const educacion = data.educacion || "-";
+  const certificaciones = data.certificaciones || "-";
+  const linkedin = data.linkedin || "-";
+  const telefono = data.telefono || "-";
+
+  const mensaje = [
+    "🔔 NOTIFICACIÓN QUEESIA",
+    "Tipo: Nuevo experto registrado",
+    "",
+    `Nombre: ${nombre}`,
+    `Correo: ${email}`,
+    `Especialidad: ${especialidad}`,
+    `Experiencia: ${experiencia}`,
+    `Educación: ${educacion}`,
+    `Certificaciones: ${certificaciones}`,
+    `LinkedIn: ${linkedin}`,
+    `Teléfono: ${telefono}`,
+    `UID: ${expertId}`,
+    "",
+    "Acción requerida:",
+    "Revisar y aprobar desde el panel de expertos.",
+  ].join("\n");
+
+  try {
+    for (const to_email of NOTIFY_EMAILS) {
+      await sendEmailJS({
+        to_email,
+        subject: "Nuevo experto registrado en Queesia",
+        message: mensaje,
+        evento: "Nuevo experto registrado",
+        nombre: "Equipo Queesia",
+        mensaje_personalizado: mensaje,
+      });
+    }
+
+    await db.collection("experts").doc(expertId).set(
+      {
+        adminNotified: true,
+        adminNotifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    logger.error("Error notificando nuevo experto", {
+      expertId,
+      error: String(err?.message || err),
+    });
+
+    await db.collection("experts").doc(expertId).set(
+      {
+        adminNotified: false,
+        adminNotifyError: String(err?.message || err),
+        adminNotifyErrorAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
   }
 });
