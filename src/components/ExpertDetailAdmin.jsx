@@ -13,9 +13,15 @@ import {
   Mail,
   Phone,
   Globe,
+  Pencil,
 } from 'lucide-react';
+import React, { useState } from "react";
+import ExpertAdminEditor from "./ExpertAdminEditor";
+
 
 function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
+
+  
   const adminEmails = ['queesiamx@gmail.com', 'queesiamx.employee@gmail.com'];
   
   const cambiarAprobacion = async (nuevoEstado) => {
@@ -57,6 +63,7 @@ function ExpertDetailAdmin({ expert, onClose, onUpdate, onDelete }) {
   }
 };
 
+  const [isEditing, setIsEditing] = useState(false);
 
   const eliminar = async () => {
     const confirmar = confirm('¿Estás seguro de que deseas eliminar este experto?');
@@ -131,13 +138,36 @@ const limpiarExpertosIncompletos = async () => {
     return <FileText className="w-5 h-5 inline mr-1 text-gray-500" />;
   };
 
-  
+  const handleSavedExpert = (updatedExpert) => {
+    onUpdate?.(updatedExpert);
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-0">
+      
+      {isEditing && (
+        <ExpertAdminEditor
+          expert={expert}
+          onClose={() => setIsEditing(false)}
+          onSaved={handleSavedExpert}
+        />
+      )}
+
       <div className="grid gap-6 md:grid-cols-3">
         {/* Columna principal */}
         <article className="md:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-6 md:p-8">
+         
+         <div className="flex justify-end mb-3">
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="h-10 w-10 inline-flex items-center justify-center rounded-full border border-slate-200 bg-white hover:bg-slate-50 shadow-sm"
+            title="Editar perfil"
+          >
+            <Pencil className="w-4 h-4 text-slate-600" />
+          </button>
+        </div>
+
           {/* Header */}
           <div className="flex items-start gap-4">
             {expert.fotoPerfilURL ? (
