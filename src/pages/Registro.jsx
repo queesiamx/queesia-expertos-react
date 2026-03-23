@@ -151,10 +151,6 @@ export default function Registro() {
   if (loading) { toast("Verificando tu sesión…"); return; }
   if (!user) { toast.error("Debes iniciar sesión con Google."); return; }
 
-  // ... aquí ya sigue tu código normal
-
-    if (loading) { toast("Verificando tu sesión…"); return; }
-    if (!user) { toast.error("Debes iniciar sesión con Google."); return; }
 
     const obligatorios = ["nombre", "especialidad", "experiencia", "email"];
     for (const campo of obligatorios) {
@@ -206,12 +202,18 @@ export default function Registro() {
 
       await setDoc(docRef, nuevoExperto);
 
-      await emailjs.send(
-        "service_6xnal3g",
-        "template_cbwns4s",
-        { nombre: form.nombre, email: form.email },
-        "9SxO0lF9IKHaknc4Q"
-      );
+      // Correo de confirmación al experto (no bloquea el registro)
+      try {
+        await emailjs.send(
+          "service_6xnal3g",
+          "template_cbwns4s",
+          { nombre: form.nombre, email: form.email },
+          "9SxO0lF9IKHaknc4Q"
+        );
+      } catch (emailError) {
+        console.warn("No se pudo enviar el correo al experto:", emailError);
+      }
+
 
       
       toast((t) => (
