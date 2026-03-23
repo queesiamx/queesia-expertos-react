@@ -9,6 +9,7 @@ const DEFAULT_NOTIFY_EMAILS = [
   "misaeltup@gmail.com",
   "amhjmixqui@gmail.com",
   "queesiamx.employee@gmail.com",
+  "gustavo.alfaro.m@gmail.com",
 ];
 
 const MILESTONES_BY_SITE = {
