@@ -206,8 +206,14 @@ export default function Registro() {
       try {
         await emailjs.send(
           "service_6xnal3g",
-          "template_cbwns4s",
-          { nombre: form.nombre, email: form.email },
+          "template_n0pj59s",
+          {
+            email: form.email,
+            nombre: form.nombre,
+            estado: "Recibido",
+            mensaje_personalizado:
+              "Tu registro fue recibido correctamente. Nuestro equipo lo revisará antes de publicarlo en la plataforma.",
+          },
           "9SxO0lF9IKHaknc4Q"
         );
       } catch (emailError) {

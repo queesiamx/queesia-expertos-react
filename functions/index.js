@@ -14,7 +14,7 @@ const NOTIFY_EMAILS = [
   "misaeltup@gmail.com",
   "amhjmixqui@gmail.com",
   "queesiamx.employee@gmail.com",
-  "gustavo.alfaro.m@gmail.com,"
+  "gustavo.alfaro.m@gmail.com"
 ];
 
 // IMPORTANTE: usa EXACTAMENTE los mismos ids que tus docs en visitCounts
