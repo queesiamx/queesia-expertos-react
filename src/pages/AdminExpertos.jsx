@@ -1,6 +1,6 @@
 // src/pages/AdminExpertos.jsx
 import React, { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import ExpertDetailAdmin from "../components/ExpertDetailAdmin";
 import { exportExpertosAprobadosCSV } from "@/utils/exportExpertsCsv";
@@ -20,8 +20,9 @@ export default function AdminExpertos() {
   const [seleccionado, setSeleccionado] = useState(null);
   const [autorizado, setAutorizado] = useState(false);
   const [verificado, setVerificado] = useState(false);
-  const [consultas, setConsultas] = useState([]);
+  
   const [consultasContadores, setConsultasContadores] = useState({
+    porValidar: 0,
     pendientes: 0,
     resueltasGratis: 0,
     conCobro: 0,
@@ -72,17 +73,17 @@ export default function AdminExpertos() {
     };
   }, [autorizado]);
 
-  // ✅ Contar estados de consultas (solo si autorizado)
+  // ✅ Contar estados de consultas en tiempo real (solo si autorizado)
   useEffect(() => {
     if (!autorizado) return;
-    let cancel = false;
 
-    const contarConsultas = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "consultasModeradas"));
-        if (cancel) return;
+    const ref = collection(db, "consultasModeradas");
+    const unsubscribe = onSnapshot(
+      ref,
+      (snapshot) => {
 
         const todas = snapshot.docs.map((doc) => doc.data());
+        const porValidar = todas.filter((c) => c.estado === "porValidar").length;       
         const pendientes = todas.filter((c) => c.estado === "pendiente").length;
         const gratis = todas.filter((c) => c.estado === "resueltaGratis").length;
         const conPago = todas.filter(
@@ -90,20 +91,18 @@ export default function AdminExpertos() {
         ).length;
 
         setConsultasContadores({
+          porValidar,
           pendientes,
           resueltasGratis: gratis,
           conCobro: conPago,
         });
-        setConsultas(todas);
-      } catch (error) {
-        console.error("Error al contar consultas:", error);
+      },
+      (error) => {
+        console.error("Error al escuchar consultas:", error);
       }
-    };
+      );
 
-    contarConsultas();
-    return () => {
-      cancel = true;
-    };
+     return () => unsubscribe();
   }, [autorizado]);
 
   // ——— Guards de acceso ———
@@ -134,7 +133,7 @@ export default function AdminExpertos() {
   );
 
   return (
-    <div className="relative min-h-screen font-sans bg-[#f7fafc]">
+    <div className="relative min-h-screen flex flex-col font-sans bg-[#f7fafc]">
       <div className="absolute inset-x-0 top-0 h-24 bg-transparent pointer-events-none" />
       <Toaster position="top-right" />
       <UnifiedNavbar />
@@ -210,9 +209,9 @@ export default function AdminExpertos() {
             </button>
 
             <div className="relative h-10 px-4 rounded-full bg-white text-default text-sm font-semibold border border-slate-200 whitespace-nowrap flex items-center">
-              Consultas pendientes
+              Consultas por validar
               <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] bg-rose-100 text-rose-700">
-                {consultasContadores.pendientes}
+                {consultasContadores.porValidar}
               </span>
             </div>
 
@@ -248,6 +247,7 @@ export default function AdminExpertos() {
       </div>
 
       {/* Contenido principal */}
+      <main className="flex-1 w-full">
       <div className="max-w-6xl mx-auto px-4 pt-10">
         <h1 className="text-[28px] md:text-3xl font-extrabold tracking-snugger text-default mb-5 font-montserrat">
           Panel de Administración de Expertos
@@ -268,9 +268,9 @@ export default function AdminExpertos() {
             </div>
           </div>
           <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
-            <div className="text-sm text-slate-500">Consultas abiertas</div>
+            <div className="text-sm text-slate-500">Consultas por validar</div>
             <div className="mt-1 text-2xl font-bold text-default">
-              {consultasContadores.pendientes}
+              {consultasContadores.porValidar}
             </div>
           </div>
           <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
@@ -387,7 +387,7 @@ export default function AdminExpertos() {
           </div>
         )}
       </div>
-
+        </main>
       <Footer />
     </div>
   );

@@ -4,7 +4,7 @@ import { FaTiktok, FaXTwitter, FaYoutube } from "react-icons/fa6";
 
 export default function Footer() {
   return (
-    <footer className="bg-black text-white py-6 px-4 mt-10 font-sans">
+    <footer className="w-full bg-black text-white py-6 px-4 mt-10 font-sans">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm gap-4">
         <p className="text-center md:text-left text-white">
           © {new Date().getFullYear()} Queesia. Todos los derechos reservados.
