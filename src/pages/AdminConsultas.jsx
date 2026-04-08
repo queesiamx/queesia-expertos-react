@@ -9,13 +9,20 @@ import {
 } from 'firebase/firestore';
 import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
+
 import toast, { Toaster } from 'react-hot-toast';
 import { unparse } from 'papaparse';
+
+import { useSearchParams } from 'react-router-dom';
+import AdminShell from "@/components/admin/AdminShell";
+import AdminSectionHeader from "@/components/admin/AdminSectionHeader";
 
 export default function AdminConsultas() {
   const [consultas, setConsultas] = useState([]);
   const [expertos, setExpertos] = useState([]);
   const [asignaciones, setAsignaciones] = useState({}); // consultaId -> expertoId
+  const [searchParams] = useSearchParams();
+
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -44,6 +51,11 @@ export default function AdminConsultas() {
   const pendientes = consultas.filter(c => c.estado === 'pendiente');
   const gratis = consultas.filter(c => c.estado === 'resueltaGratis');
   const conPago = consultas.filter(c => c.estado === 'conCobro' || c.estado === 'requierePago');
+
+  const conCobro = consultas.filter(
+    c => c.estado === 'conCobro' || c.estado === 'requierePago'
+  );
+  const tab = searchParams.get('tab') || 'pendientes';
 
   const actualizarEstado = async (id, nuevoEstado) => {
     try {
@@ -234,52 +246,52 @@ export default function AdminConsultas() {
   );
 
   return (
-    <div className="min-h-screen bg-primary-soft px-6 py-10 mt-[72px] font-sans">
+    <>
       <Toaster position="top-right" />
-      <UnifiedNavbar />
 
+      <AdminShell
+        title="Gestión de consultas"
+        subtitle="Administra consultas pendientes, gratuitas y con cobro."
+        sidebarProps={{
+          expertosCount: expertos.length,
+          aprobadosCount: expertos.length,
+          pendientesExpertosCount: 0,
+          consultasPendientesCount: pendientes.length,
+          porValidarCount: 0,
+          resueltasGratisCount: gratis.length,
+          conCobroCount: conCobro.length,
+        }}
+      >
+        <AdminSectionHeader
+          title={
+            tab === 'gratis'
+              ? 'Consultas resueltas gratis'
+              : tab === 'cobro'
+              ? 'Consultas con cobro'
+              : 'Consultas pendientes'
+          }
+          actions={
+            <button
+              onClick={exportarConsultasCSV}
+              className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800"
+            >
+              Exportar consultas a CSV
+            </button>
+          }
+        />
 
-      <h1 className="text-3xl font-bold text-default mb-6 font-montserrat">
-        Consultas pendientes
-      </h1>
-
-      <div className="mb-6">
-        <button
-          onClick={exportarConsultasCSV}
-          className="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800"
-        >
-          Exportar consultas a CSV
-        </button>
-      </div>
-
-      <div className="grid gap-4">
-        {consultas.length === 0 ? (
-          <p className="text-default-soft">No hay consultas aún.</p>
-        ) : (
-          <>
-            {pendientes.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold mt-6 text-yellow-800">Consultas pendientes</h2>
-                {pendientes.map(renderConsultaCard)}
-              </>
-            )}
-
-            {gratis.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold mt-6 text-green-700">Consultas resueltas gratis</h2>
-                {gratis.map(renderConsultaCard)}
-              </>
-            )}
-
-            {conPago.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold mt-6 text-orange-700">Consultas con cobro</h2>
-                {conPago.map(renderConsultaCard)}
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+        <div className="grid gap-4">
+          {consultas.length === 0 ? (
+            <p className="text-default-soft">No hay consultas aún.</p>
+          ) : (
+            <>
+              {tab === 'pendientes' && pendientes.map(renderConsultaCard)}
+              {tab === 'gratis' && gratis.map(renderConsultaCard)}
+              {tab === 'cobro' && conCobro.map(renderConsultaCard)}
+            </>
+          )}
+        </div>
+      </AdminShell>
+    </>
   );
 }
