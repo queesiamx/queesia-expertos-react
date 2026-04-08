@@ -342,7 +342,6 @@ export default function AdminExpertos() {
           </div>
         )}
       </AdminShell>
-
       <Footer />
     </>
   );
