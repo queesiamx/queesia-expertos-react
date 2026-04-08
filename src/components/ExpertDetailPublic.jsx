@@ -208,10 +208,20 @@ const idiomasList = toList(expert?.idiomas);
 // experiencia (nos aseguramos que sea array; si no, vacío)
  const experienciaList = Array.isArray(expert?.experiencia)
    ? expert.experiencia
-   // fallback 1: campo plano "experiencias" del dashboard (texto)
    : linesToExperiencia(toLines(expert?.experiencias))
-   // fallback 2: otro alias posible
    || [];
+
+  const yearsExpRaw =
+  expert?.aniosExp ??
+  expert?.experienciaAnios ??
+  expert?.aniosExperiencia ??
+  expert?.yearsExperience ??
+  "";
+
+const yearsExp =
+  yearsExpRaw === null || yearsExpRaw === undefined || yearsExpRaw === ""
+    ? ""
+    : String(yearsExpRaw).replace(/[^\d]/g, "");
 
    // Procesa el regreso del redirect (si el user inició sesión desde esta vista)
   /*useEffect(() => {
@@ -571,9 +581,12 @@ const TipoBadge = ({ tipo }) => {
       <p className="mt-1 text-emerald-700 font-medium">
         {expert?.titulo || expert?.especialidad}
       </p>
-      <p className="mt-1 text-sm text-slate-600">
-        {expert?.especialidad} • {expert?.ciudad} • {(expert?.aniosExp ?? expert?.experienciaAnios) || "—"}+ años exp.
-      </p>
+      
+     <p className="mt-1 text-sm text-slate-600">
++        {expert?.especialidad}
++        {expert?.ciudad ? ` • ${expert.ciudad}` : ""}
++        {yearsExp ? ` • ${yearsExp}+ años exp.` : ""}
++      </p>
 
       {/* Tags/skills */}
       <div className="mt-3 flex flex-wrap gap-2">

@@ -46,18 +46,19 @@ async function safeDeleteOldImage(publicId) {
   }
 }
 export default function ExpertProfileEditor({ expert, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    nombre: "",
-    especialidad: "",
-    experiencia: "",
-    educacion: "",
-    certificaciones: [],
-    linkedin: "",
-    telefono: "",
-    redes: "",
-    fotoPerfilURL: "",
-    fotoPerfilPublicId: "",
-  });
+     const [formData, setFormData] = useState({
+     nombre: "",
+     especialidad: "",
+    aniosExp: "",
+     experiencia: "",
+     educacion: "",
+     certificaciones: [],
+     linkedin: "",
+     telefono: "",
+     redes: "",
+     fotoPerfilURL: "",
+     fotoPerfilPublicId: "",
+   });
 
   const [servicios, setServicios] = useState([
     { tipo: "", titulo: "", descripcion: "", precio: "", fechas: [] },
@@ -66,19 +67,31 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
   const [nuevaImagen, setNuevaImagen] = useState(null);
   const [previewURL, setPreviewURL] = useState("");
 
-   useEffect(() => {
-    if (!expert) return;
+ 
+    useEffect(() => {
+     if (!expert) return;
+    const yearsExpRaw =
+      expert.aniosExp ??
+      expert.experienciaAnios ??
+      expert.aniosExperiencia ??
+      expert.yearsExperience ??
+      "";
+
       setFormData((prev) => ({
-      ...prev,
-      ...expert,
-      certificaciones: Array.isArray(expert.certificaciones) ? expert.certificaciones : [],
-      fotoPerfilURL: expert.fotoPerfilURL || "",
-      fotoPerfilPublicId: expert.fotoPerfilPublicId || "",
-    }));
-    setPreviewURL(expert.fotoPerfilURL || "");
-    // Evita where(..., undefined)
-    if (expert.uid) cargarServicios(expert.uid);
-  }, [expert]);
+       ...prev,
+       ...expert,
+      aniosExp:
+        yearsExpRaw === null || yearsExpRaw === undefined || yearsExpRaw === ""
+          ? ""
+          : String(yearsExpRaw).replace(/[^\d]/g, ""),
+       certificaciones: Array.isArray(expert.certificaciones) ? expert.certificaciones : [],
+       fotoPerfilURL: expert.fotoPerfilURL || "",
+       fotoPerfilPublicId: expert.fotoPerfilPublicId || "",
+     }));
+     setPreviewURL(expert.fotoPerfilURL || "");
+     // Evita where(..., undefined)
+     if (expert.uid) cargarServicios(expert.uid);
+   }, [expert]);
 
    const cargarServicios = async (uid) => {
    if (!uid) return; // ← evita where(..., undefined)
@@ -91,10 +104,18 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
     setServicios(serviciosCargados.length > 0 ? serviciosCargados : servicios);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  
+   const handleChange = (e) => {
+     const { name, value } = e.target;
+    if (name === "aniosExp") {
+      setFormData((prev) => ({
+        ...prev,
+        aniosExp: value.replace(/[^\d]/g, ""),
+      }));
+      return;
+    }
+     setFormData((prev) => ({ ...prev, [name]: value }));
+   };
 
   const handleServicioChange = (index, field, value) => {
     const nuevos = [...servicios];
@@ -175,16 +196,25 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
       }
 
       // --- 2) Sanitiza y quita claves vacías/undefined ---
-      const base = {
-        ...stateForSave,
-        certificaciones: Array.isArray(formData.certificaciones)
-          ? formData.certificaciones
-          : String(formData.certificaciones || "")
-              .split(",")
-              .map((c) => c.trim())
-              .filter(Boolean),
-        formularioCompleto: true,
-      };
+     
+      const normalizedYears =
+        stateForSave.aniosExp === null || stateForSave.aniosExp === undefined
+          ? ""
+          : String(stateForSave.aniosExp).replace(/[^\d]/g, "");
+
+       const base = {
+         ...stateForSave,
+        aniosExp: normalizedYears ? Number(normalizedYears) : null,
+        experienciaAnios: normalizedYears ? Number(normalizedYears) : null,
+        titulo: stateForSave.titulo || stateForSave.especialidad || "",
+         certificaciones: Array.isArray(formData.certificaciones)
+           ? formData.certificaciones
+           : String(formData.certificaciones || "")
+               .split(",")
+               .map((c) => c.trim())
+               .filter(Boolean),
+         formularioCompleto: true,
+       };
       // Remueve undefined/strings vacíos para evitar "Unsupported field value"
       const cleaned = Object.fromEntries(
         Object.entries(base).filter(
@@ -279,6 +309,17 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
           onChange={handleChange}
           className="w-full border px-4 py-2 rounded"
           required
+        />
+        <input
+          type="number"
+          name="aniosExp"
+          placeholder="Años de experiencia"
+          value={formData.aniosExp}
+          onChange={handleChange}
+          min="0"
+          step="1"
+          inputMode="numeric"
+          className="w-full border px-4 py-2 rounded"
         />
         <textarea
           name="experiencia"
