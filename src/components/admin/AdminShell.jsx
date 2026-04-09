@@ -9,10 +9,10 @@ export default function AdminShell({
   sidebarProps = {},
 }) {
   return (
-    <div className="min-h-screen bg-[#f7fafc] font-sans">
+    <div className="bg-[#f7fafc] font-sans">
       <UnifiedNavbar />
 
-      <div className="max-w-7xl mx-auto px-4 pt-[96px] pb-10">
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-0">
         <div className="flex flex-col lg:flex-row gap-6">
           <AdminSidebar {...sidebarProps} />
 

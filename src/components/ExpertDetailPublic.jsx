@@ -218,10 +218,13 @@ const idiomasList = toList(expert?.idiomas);
   expert?.yearsExperience ??
   "";
 
-const yearsExp =
-  yearsExpRaw === null || yearsExpRaw === undefined || yearsExpRaw === ""
-    ? ""
-    : String(yearsExpRaw).replace(/[^\d]/g, "");
+
+ const yearsExp =
+   yearsExpRaw === null || yearsExpRaw === undefined || yearsExpRaw === ""
+     ? ""
+     : String(yearsExpRaw).replace(/[^\d]/g, "");
+
+const showYearsExp = Number(yearsExp) > 0;
 
    // Procesa el regreso del redirect (si el user inició sesión desde esta vista)
   /*useEffect(() => {
@@ -582,11 +585,11 @@ const TipoBadge = ({ tipo }) => {
         {expert?.titulo || expert?.especialidad}
       </p>
       
-     <p className="mt-1 text-sm text-slate-600">
-+        {expert?.especialidad}
-+        {expert?.ciudad ? ` • ${expert.ciudad}` : ""}
-+        {yearsExp ? ` • ${yearsExp}+ años exp.` : ""}
-+      </p>
+  <p className="mt-1 text-sm text-slate-600">
+    {expert?.especialidad}
+    {expert?.ciudad ? ` • ${expert.ciudad}` : ""}
+    {showYearsExp ? ` • ${yearsExp}+ años exp.` : ""}
+  </p>
 
       {/* Tags/skills */}
       <div className="mt-3 flex flex-wrap gap-2">
