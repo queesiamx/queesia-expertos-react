@@ -49,7 +49,38 @@ export default function AdminSidebar({
           </div>
         </div>
 
-                <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
+            Consultas
+          </p>
+          <div className="space-y-2">
+            <AdminNavCard
+              to="/admin/consultas?tab=pendientes"
+              label="Pendientes"
+              count={consultasPendientesCount}
+              active={isConsultasTab("pendientes")}
+            />
+            <AdminNavCard
+              to="/admin/por-validar"
+              label="Por validar"
+              count={porValidarCount}
+              active={pathname === "/admin/por-validar"}
+            />
+            <AdminNavCard
+              to="/admin/consultas?tab=gratis"
+              label="Resueltas gratis"
+              count={resueltasGratisCount}
+              active={isConsultasTab("gratis")}
+            />
+            <AdminNavCard
+              to="/admin/consultas?tab=cobro"
+              label="Con cobro"
+              count={conCobroCount}
+              active={isConsultasTab("cobro")}
+            />
+          </div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
             Contenido
           </p>
