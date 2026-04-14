@@ -14,8 +14,11 @@ export default function AdminSidebar({
   const location = useLocation();
   const { pathname, search } = location;
 
-  const isConsultasTab = (tab) =>
+    const isConsultasTab = (tab) =>
     pathname === "/admin/consultas" && search.includes(`tab=${tab}`);
+
+  const externalLinkBase =
+    "flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-default hover:bg-slate-50 transition";
 
   return (
     <aside className="w-full lg:w-[290px] shrink-0">
@@ -46,35 +49,36 @@ export default function AdminSidebar({
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
-            Consultas
+            Contenido
           </p>
+
           <div className="space-y-2">
-            <AdminNavCard
-              to="/admin/consultas?tab=pendientes"
-              label="Pendientes"
-              count={consultasPendientesCount}
-              active={isConsultasTab("pendientes")}
-            />
-            <AdminNavCard
-              to="/admin/por-validar"
-              label="Por validar"
-              count={porValidarCount}
-              active={pathname === "/admin/por-validar"}
-            />
-            <AdminNavCard
-              to="/admin/consultas?tab=gratis"
-              label="Resueltas gratis"
-              count={resueltasGratisCount}
-              active={isConsultasTab("gratis")}
-            />
-            <AdminNavCard
-              to="/admin/consultas?tab=cobro"
-              label="Con cobro"
-              count={conCobroCount}
-              active={isConsultasTab("cobro")}
-            />
+            <a
+              href="https://queesia.com/blog-admin/login.php"
+              target="_blank"
+              rel="noreferrer"
+              className={externalLinkBase}
+            >
+              <span className="font-medium">Blog</span>
+              <span className="text-xs text-slate-400">↗</span>
+            </a>
+
+            <a
+              href="https://queesia.com/biblioteca-admin/"
+              target="_blank"
+              rel="noreferrer"
+              className={externalLinkBase}
+            >
+              <span className="font-medium">Biblioteca</span>
+              <span className="text-xs text-slate-400">↗</span>
+            </a>
+
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-400">
+              <span className="font-medium">Ofertas educativas</span>
+              <span className="text-xs">Próximamente</span>
+            </div>
           </div>
         </div>
       </div>

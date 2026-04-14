@@ -247,14 +247,6 @@ export default function AdminExpertos() {
                 Exportar expertos (CSV)
               </button>
 
-              <a
-                href="https://queesia.com/blog-admin/login.php"
-                target="_blank"
-                rel="noreferrer"
-                className="px-4 py-2 rounded-2xl font-semibold shadow bg-white text-default border border-slate-300 hover:bg-slate-50 transition"
-              >
-                Acceso admin Blog
-              </a>
             </>
           }
         />
