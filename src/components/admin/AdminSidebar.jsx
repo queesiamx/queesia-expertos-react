@@ -106,10 +106,15 @@ export default function AdminSidebar({
               <span className="text-xs text-slate-400">↗</span>
             </a>
 
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-400">
+            <a
+              href="https://queesia.com/ofertas-admin/login.php"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+            >
               <span className="font-medium">Ofertas educativas</span>
-              <span className="text-xs">Próximamente</span>
-            </div>
+              <span className="text-xs text-slate-400">↗</span>
+            </a>
           </div>
         </div>
       </div>
