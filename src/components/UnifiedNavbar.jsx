@@ -180,6 +180,19 @@ export default function UnifiedNavbar() {
           >
           Blog
         </a>
+        
+         <a
+            href="https://queesia.com/biblioteca/"
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
+          Biblioteca
+        </a>
+        <a
+            href="https://queesia.com/ofertas-educativas/"
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
+          Ofertas educativas
+        </a>
 
           <a
             href="https://queesia.com/nosotros/"
