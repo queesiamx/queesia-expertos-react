@@ -27,6 +27,12 @@ function fmt(n) {
   return new Intl.NumberFormat("es-MX").format(n ?? 0);
 }
 
+function countFromSnapshot(snap) {
+  if (!snap.exists()) return 0;
+  const data = snap.data() || {};
+  return Number(data.count ?? data.visits ?? data.totalViews ?? 0);
+}
+
 export default function AdminMilestones() {
   const [counts, setCounts] = useState({
     quesiaHome: null,
@@ -37,13 +43,21 @@ export default function AdminMilestones() {
 
   useEffect(() => {
     const unsubs = SITES.map((s) => {
-            const refs = [s.id, ...(s.aliases || [])].map((id) => doc(db, "visitCounts", id));
+           const countRefs = [s.id, ...(s.aliases || [])].map((id) => ({
+        key: `visitCounts/${id}`,
+        ref: doc(db, "visitCounts", id),
+      }));
+      const statsRefs = (s.pageStatsKeys || []).map((key) => ({
+        key: `page_stats/${key}`,
+        ref: doc(db, "page_stats", key),
+      }));
+
+      const refs = [...countRefs, ...statsRefs];
       const values = new Map();
 
-      const inner = refs.map((ref, idx) =>
+      const inner = refs.map(({ key, ref }) =>
         onSnapshot(ref, (snap) => {
-          const id = idx === 0 ? s.id : s.aliases[idx - 1];
-          values.set(id, snap.exists() ? Number(snap.data()?.count ?? 0) : 0);
+          values.set(key, countFromSnapshot(snap));
           const merged = Math.max(...Array.from(values.values()), 0);
           setCounts((prev) => ({ ...prev, [s.id]: merged }));
         })
@@ -98,7 +112,7 @@ export default function AdminMilestones() {
               <div>
                 <div style={{ fontWeight: 700 }}>{r.label}</div>
                 <div style={{ fontSize: 13, opacity: 0.7 }}>
-                  Documento: visitCounts/{r.id}
+                  Fuente: max(visitCounts/{r.id}, page_stats/*)
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
