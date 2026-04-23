@@ -20,14 +20,16 @@ const NOTIFY_EMAILS = [
 // IMPORTANTE: usa EXACTAMENTE los mismos ids que tus docs en visitCounts
 // y el mismo mapa de metas que tu panel.
 const MILESTONES_BY_SITE = {
-  queesiaHome: [1000, 5000, 10000, 25000, 50000, 100000],
+  quesiaHome: [1000, 5000, 10000, 25000, 50000, 100000],
+  queesiaHome: [1000, 5000, 10000, 25000, 50000, 100000], // alias legado
   foroHome: [500, 1000, 5000, 10000, 25000],
   expertosHome: [500, 1000, 5000, 10000, 25000],
   blogHome: [250, 500, 1000, 5000, 10000, 25000],
 };
 
 function getCrossedMilestones(siteId, prevCount, newCount) {
-  const goals = MILESTONES_BY_SITE[siteId] ?? [];
+  const canonicalSiteId = siteId === "queesiaHome" ? "quesiaHome" : siteId;
+  const goals = MILESTONES_BY_SITE[canonicalSiteId] ?? [];
   return goals.filter((m) => prevCount < m && newCount >= m);
 }
 

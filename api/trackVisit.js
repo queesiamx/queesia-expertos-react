@@ -56,11 +56,14 @@ function isHttpsReq(req) {
 
 /* ---------- Firebase Admin ---------- */
 if (!admin.apps.length) {
+  const projectId = process.env.FB_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FB_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKeyRaw = process.env.FB_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY;
   admin.initializeApp({
     credential: admin.credential.cert({
-      project_id: process.env.FB_PROJECT_ID,
-      client_email: process.env.FB_CLIENT_EMAIL,
-      private_key: process.env.FB_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      projectId,
+      clientEmail,
+      privateKey: privateKeyRaw?.replace(/\\n/g, "\n"),
     }),
   });
 }
@@ -70,6 +73,25 @@ const db = admin.firestore();
 const EXCLUDE_EMAILS = (process.env.EXCLUDE_EMAILS || "").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
 const EXCLUDE_UIDS   = (process.env.EXCLUDE_UIDS   || "").split(",").map(s=>s.trim()).filter(Boolean);
 const EXCLUDE_IP_HASHES = new Set((process.env.EXCLUDE_IP_HASHES || "").split(",").map(s=>s.trim()).filter(Boolean));
+
+const PAGE_TO_VISIT_COUNT_ID = {
+  home: "quesiaHome",
+  quesiahome: "quesiaHome",
+  queesiahome: "quesiaHome",
+  catalogo: "quesiaHome",
+  catalog: "quesiaHome",
+  landing: "quesiaHome",
+  main: "quesiaHome",
+  foro: "foroHome",
+  forohome: "foroHome",
+  forum: "foroHome",
+  expertos: "expertosHome",
+  expertoshome: "expertosHome",
+  experts: "expertosHome",
+  blog: "blogHome",
+  bloghome: "blogHome",
+  noticias: "blogHome",
+};
 
 function ipFromReq(req) {
   const xf = req.headers["x-forwarded-for"];
@@ -359,6 +381,18 @@ export default async function handler(req, res) {
         },
         { merge: true }
       );
+      
+      const mappedSiteId = PAGE_TO_VISIT_COUNT_ID[pageKey.toLowerCase()];
+      if (mappedSiteId) {
+        const visitCountRef = db.collection("visitCounts").doc(mappedSiteId);
+        await visitCountRef.set(
+          {
+            count: admin.firestore.FieldValue.increment(1),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
     }
 
     return res.json({ ok:true });

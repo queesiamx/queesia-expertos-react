@@ -3,7 +3,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase"; // ajusta si tu path es distinto
 
 const SITES = [
-  { id: "quesiaHome", label: "queesia.com" },
+  { id: "quesiaHome", aliases: ["queesiaHome"], label: "queesia.com" },
   { id: "foroHome", label: "foro.queesia.com" },
   { id: "expertosHome", label: "expertos.queesia.com" },
   { id: "blogHome", label: "queesia.com/blog" }, // ✅ NUEVO
@@ -11,7 +11,7 @@ const SITES = [
 
 // Metas simples (puedes cambiarlas cuando quieras)
 const MILESTONES = {
-  queesiaHome: [1000, 5000, 10000, 25000, 50000, 100000],
+  quesiaHome: [1000, 5000, 10000, 25000, 50000, 100000],
   foroHome: [500, 1000, 5000, 10000, 25000],
   expertosHome: [500, 1000, 5000, 10000, 25000],
   blogHome: [250, 500, 1000, 5000, 10000, 25000], // ✅ NUEVO (ajústalo a gusto)
@@ -29,18 +29,27 @@ function fmt(n) {
 
 export default function AdminMilestones() {
   const [counts, setCounts] = useState({
-    queesiaHome: null,
+    quesiaHome: null,
     foroHome: null,
     expertosHome: null,
+    blogHome: null,
   });
 
   useEffect(() => {
     const unsubs = SITES.map((s) => {
-      const ref = doc(db, "visitCounts", s.id);
-      return onSnapshot(ref, (snap) => {
-        const c = snap.exists() ? snap.data()?.count ?? 0 : 0;
-        setCounts((prev) => ({ ...prev, [s.id]: c }));
-      });
+            const refs = [s.id, ...(s.aliases || [])].map((id) => doc(db, "visitCounts", id));
+      const values = new Map();
+
+      const inner = refs.map((ref, idx) =>
+        onSnapshot(ref, (snap) => {
+          const id = idx === 0 ? s.id : s.aliases[idx - 1];
+          values.set(id, snap.exists() ? Number(snap.data()?.count ?? 0) : 0);
+          const merged = Math.max(...Array.from(values.values()), 0);
+          setCounts((prev) => ({ ...prev, [s.id]: merged }));
+        })
+      );
+
+      return () => inner.forEach((u) => u && u());
     });
 
     return () => unsubs.forEach((u) => u && u());
