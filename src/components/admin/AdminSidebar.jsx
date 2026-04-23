@@ -116,6 +116,7 @@ export default function AdminSidebar({
               <span className="text-xs text-slate-400">↗</span>
             </a>
           </div>
+        </div>
 
           <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
@@ -134,7 +135,7 @@ export default function AdminSidebar({
             </a>
 
             
-          </div>
+          
 
           </div>
         </div>
