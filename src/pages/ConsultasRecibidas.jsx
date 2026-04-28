@@ -224,12 +224,12 @@ const getEstadoBadge = (estado) => {
           </h2>
 
           <p className="text-sm text-slate-700">
-            <strong>Consulta:</strong> {consultaSeleccionada.consulta}
+            <strong>Consulta:</strong> {getTextoConsulta(consultaSeleccionada)}
           </p>
 
           <p className="mt-2 text-sm text-slate-600">
-            <strong>De:</strong> {consultaSeleccionada.nombre} (
-            {consultaSeleccionada.correo})
+            <strong>De:</strong> {getNombreUsuario(consultaSeleccionada)} (
+            {getCorreoUsuario(consultaSeleccionada)}
           </p>
 
           <p className="mt-2 text-sm text-slate-600">
@@ -325,7 +325,7 @@ const getEstadoBadge = (estado) => {
         {consultasFiltradas.map((c, index) => (
           <article
             key={c.id}
-            className={`grid gap-4 p-5 lg:grid-cols-[1fr_auto_auto] lg:items-center ${
+            className={`grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_110px_130px_44px] lg:items-center ${
               index !== consultasFiltradas.length - 1
                 ? "border-b border-slate-100"
                 : ""
@@ -336,7 +336,7 @@ const getEstadoBadge = (estado) => {
 
               <p className="mt-1 text-sm text-slate-600">
                 De: {getNombreUsuario(c)}{" "}
-                {c.correo ? (
+                {getCorreoUsuario(c) ? (
                   <span className="text-slate-500">({getCorreoUsuario(c)})</span>
                 ) : null}
               </p>
@@ -411,11 +411,11 @@ const getEstadoBadge = (estado) => {
                 setConsultaSeleccionada(c);
                 setConsultaModalVisible(true);
               }}
-                className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 lg:block"
-                aria-label="Ver detalles"
-              >
-                <MoreVertical size={18} />
-          </button>
+              className="grid h-10 w-10 shrink-0 place-items-center justify-self-end rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
+              aria-label="Ver detalles"
+            >
+              <MoreVertical size={18} />
+            </button>
           </article>
         ))}
       </div>
