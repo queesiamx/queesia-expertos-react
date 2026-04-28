@@ -67,11 +67,11 @@ export default function ConsultasRecibidas() {
   }, [loading, user]);
 
   const estados = [
-    { label: "Todas", valor: "todas" },
-    { label: "Pendientes", valor: "pendiente" },
-    { label: "Gratis", valor: "resueltaGratis" },
-    { label: "Pagadas", valor: "respondida" }, // ajusta si usas otro estado
-  ];
+  { label: "Todas", valor: "todas" },
+  { label: "Pendientes", valor: "aprobadoParaExperto" },
+  { label: "Gratis", valor: "resueltaGratis" },
+  { label: "Pagadas", valor: "requierePago" },
+];
 
   const getTextoConsulta = (c) =>
   c.consulta ||
@@ -115,22 +115,19 @@ const getFechaConsulta = (c) => {
   .filter((c) => {
     if (filtroEstado === "todas") return true;
 
-    if (filtroEstado === "pendiente") {
-      return (
-        c.estado === "pendiente" ||
-        (c.estado === "resueltaGratis" && !c.respuesta)
-      );
+    if (filtroEstado === "aprobadoParaExperto") {
+      return c.estado === "aprobadoParaExperto" || c.estado === "porValidar";
     }
 
     if (filtroEstado === "resueltaGratis") {
       return c.estado === "resueltaGratis";
     }
 
-    if (filtroEstado === "respondida") {
-      return c.estado === "respondida" || c.estado === "requierePago";
+    if (filtroEstado === "requierePago") {
+      return c.estado === "requierePago";
     }
 
-    return false;
+    return c.estado === filtroEstado;
   })
   .filter((c) => {
     const texto = `${getTextoConsulta(c)} ${getNombreUsuario(c)} ${getCorreoUsuario(c)}`.toLowerCase();
@@ -172,7 +169,7 @@ const getFechaConsulta = (c) => {
   const totalConsultas = consultas.length;
 
 const totalPendientes = consultas.filter(
-  (c) => c.estado === "pendiente" || (c.estado === "resueltaGratis" && !c.respuesta)
+  (c) => c.estado === "aprobadoParaExperto" || c.estado === "porValidar"
 ).length;
 
 const totalRespondidas = consultas.filter(
