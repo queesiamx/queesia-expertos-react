@@ -36,7 +36,11 @@ export default function ConsultasRecibidas() {
         if (cancel) return;
 
         const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setConsultas(rows);
+        // El experto solo debe ver lo que admin ya aprobó/asignó para su atención
+        const visiblesParaExperto = rows.filter((c) =>
+          ["aprobadoParaExperto", "resueltaGratis", "requierePago", "respondida", "porValidar"].includes(c.estado)
+        );
+        setConsultas(visiblesParaExperto);
       } catch (e) {
         console.error("Error al cargar consultas:", e);
         toast.error("No se pudieron cargar las consultas.");
@@ -61,7 +65,12 @@ export default function ConsultasRecibidas() {
     if (filtroEstado === "todas") return true;
     if (filtroEstado === "pendiente") {
       // “pendiente” o marcadas como gratis pero aún sin respuesta
-      return c.estado === "pendiente" || (c.estado === "resueltaGratis" && !c.respuesta);
+      return (
+        c.estado === "pendiente" ||
+        c.estado === "porRevisar" ||
+        c.estado === "aprobadoParaExperto" ||
+        (c.estado === "resueltaGratis" && !c.respuesta)
+      );
     }
     if (filtroEstado === "resueltaGratis") {
       return c.estado === "resueltaGratis" && !!c.respuesta;
@@ -106,10 +115,10 @@ export default function ConsultasRecibidas() {
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
             <h2 className="text-xl font-bold mb-4">Detalles de la consulta</h2>
             <p>
-              <strong>Consulta:</strong> {consultaSeleccionada.consulta}
+              <strong>Consulta:</strong> {consultaSeleccionada.consulta || consultaSeleccionada.pregunta}
             </p>
             <p>
-              <strong>De:</strong> {consultaSeleccionada.nombre} ({consultaSeleccionada.correo})
+              <strong>De:</strong> {consultaSeleccionada.nombre || consultaSeleccionada.userNombre} ({consultaSeleccionada.correo || consultaSeleccionada.userEmail})
             </p>
             <p>
               <strong>Estado:</strong> {consultaSeleccionada.estado}
@@ -173,10 +182,10 @@ export default function ConsultasRecibidas() {
                 )}
 
                 <p className="text-sm text-gray-800">
-                  <strong>Consulta:</strong> {c.consulta}
+                  <strong>Consulta:</strong> {c.consulta || c.pregunta}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <strong>De:</strong> {c.nombre} ({c.correo})
+                  <strong>De:</strong> {c.nombre || c.userNombre} ({c.correo || c.userEmail})
                 </p>
                 <p className="text-sm mt-1">
                   <strong>Estado:</strong>{" "}

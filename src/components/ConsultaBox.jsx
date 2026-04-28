@@ -67,15 +67,23 @@ export default function ConsultaBox({
     try {
       await addDoc(collection(db, "consultasModeradas"), {
         tipo: "consulta",
-        estado: "porRevisar",
+         // Estado inicial para que entre al flujo de revisión del admin
+        estado: "pendiente",
         origen: "publico",
+        // Campos normalizados (nuevo)
         pregunta: texto.trim(),
         userId: user.uid,
         userNombre: user.displayName || user.email || "Usuario",
         userEmail: user.email ?? null,
+        // Compatibilidad con pantallas que aún consumen claves legacy
+        consulta: texto.trim(),
+        nombre: user.displayName || user.email || "Usuario",
+        correo: user.email ?? null,
+        usuarioId: user.uid,
         expertoId,
         expertoNombre: expertoNombre ?? null,
         createdAt: serverTimestamp(),
+        timestamp: serverTimestamp(),
         precioSugeridoAdmin: null,
         precioPropuestoExperto: null,
         precioAprobado: null,

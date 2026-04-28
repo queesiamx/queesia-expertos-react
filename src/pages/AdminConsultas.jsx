@@ -48,7 +48,10 @@ export default function AdminConsultas() {
     cargarDatos();
   }, []);
 
-  const pendientes = consultas.filter(c => c.estado === 'pendiente');
+  const pendientes = consultas.filter(
+    (c) => c.estado === 'pendiente' || c.estado === 'porRevisar'
+  );
+
   const gratis = consultas.filter(c => c.estado === 'resueltaGratis');
   const conPago = consultas.filter(c => c.estado === 'conCobro' || c.estado === 'requierePago');
 
@@ -154,11 +157,11 @@ export default function AdminConsultas() {
     }
 
     const datosFormateados = consultas.map((c) => ({
-      'Fecha de envío': formatearFecha(c.timestamp),
-      'Nombre del remitente': c.nombre || 'Anónimo',
-      'Correo del remitente': c.correo || 'Sin correo',
+      'Fecha de envío': formatearFecha(c.timestamp || c.createdAt),
+      'Nombre del remitente': c.nombre || c.userNombre || 'Anónimo',
+      'Correo del remitente': c.correo || c.userEmail || 'Sin correo',
       'Nombre del experto': c.expertoNombre || 'No especificado',
-      'Mensaje': c.consulta || '',
+      'Mensaje': c.consulta || c.pregunta || '',
       'Estado de la consulta': formatearEstado(c.estado),
     }));
 
@@ -176,10 +179,10 @@ export default function AdminConsultas() {
   const renderConsultaCard = (c) => (
     <div key={c.id} className="bg-white p-4 rounded-xl shadow border mt-3">
       <p className="text-sm mb-1">
-        <strong>Consulta:</strong> {c.consulta}
+        <strong>Consulta:</strong> {c.consulta || c.pregunta || "Sin contenido"}
       </p>
       <p className="text-sm">
-        <strong>De:</strong> {c.nombre || 'Anónimo'} ({c.correo || 'sin correo'})
+        <strong>De:</strong> {c.nombre || c.userNombre || 'Anónimo'} ({c.correo || c.userEmail || 'sin correo'})
       </p>
       <p className="text-sm mb-2">
         <strong>Estado:</strong>{' '}
@@ -196,7 +199,7 @@ export default function AdminConsultas() {
         </span>
       </p>
 
-      {c.estado === 'pendiente' && (
+      {(c.estado === 'pendiente' || c.estado === 'porRevisar') && (
         <div className="mt-3 space-y-2">
           <label className="block text-sm font-medium">Asignar a experto:</label>
           <select

@@ -75,26 +75,40 @@ export default function MisConsultas() {
         const colRef = collection(db, "consultasModeradas");
         let items = [];
 
-        // 1) Buscar por usuarioId
+        // 1) Buscar por usuarioId (legacy)
         try {
           const qUid = query(colRef, where("usuarioId", "==", usuario.uid));
           const snapUid = await getDocs(qUid);
           items = snapUid.docs.map((d) => ({ id: d.id, ...d.data() }));
         } catch {}
 
-        // 2) Fallback por correo
+        // 2) Fallback por userId (actual)
+        if (!items.length) {
+          const qUserId = query(colRef, where("userId", "==", usuario.uid));
+          const snapUserId = await getDocs(qUserId);
+          items = snapUserId.docs.map((d) => ({ id: d.id, ...d.data() }));
+        }
+
+        // 3) Fallback por correo legacy
         if (!items.length) {
           const qMail = query(colRef, where("correo", "==", usuario.email));
           const snapMail = await getDocs(qMail);
           items = snapMail.docs.map((d) => ({ id: d.id, ...d.data() }));
         }
 
-        // 3) Normalización y orden
+        // 4) Fallback por userEmail (actual)
+        if (!items.length) {
+          const qUserEmail = query(colRef, where("userEmail", "==", usuario.email));
+          const snapUserEmail = await getDocs(qUserEmail);
+          items = snapUserEmail.docs.map((d) => ({ id: d.id, ...d.data() }));
+        }
+
+        // 5) Normalización y orden
         const normalizados = items.map((x) => ({
           id: x.id,
           estado: x.estado || "pendiente",
           titulo: x.titulo || x.asunto || "Consulta",
-          contenido: x.contenido || x.consulta || "",
+          contenido: x.contenido || x.consulta || x.pregunta || "",
           respuesta: x.respuesta || "",
           precio: x.precio,
           expertoNombre: x.expertoNombre,
@@ -106,7 +120,7 @@ export default function MisConsultas() {
         normalizados.sort((a, b) => (b.fechaRespuesta || 0) - (a.fechaRespuesta || 0));
         setConsultas(normalizados);
 
-        // 4) Colapsadas por defecto
+        // 6) Colapsadas por defecto
         const initial = Object.fromEntries(normalizados.map((c) => [c.id, true]));
         setCollapsed(initial);
       } catch (e) {

@@ -96,8 +96,8 @@ export default function ResponderConsulta() {
       <div className="p-6 max-w-3xl mx-auto font-sans">
         <h1 className="text-2xl font-bold mb-4">Responder Consulta</h1>
         <div className="bg-white shadow rounded p-4 space-y-4">
-          <p><strong>De:</strong> {consulta.nombre} ({consulta.correo})</p>
-          <p><strong>Consulta:</strong> {consulta.consulta}</p>
+          <p><strong>De:</strong> {consulta.nombre || consulta.userNombre} ({consulta.correo || consulta.userEmail})</p>
+          <p><strong>Consulta:</strong> {consulta.consulta || consulta.pregunta}</p>
 
           <textarea
             className="w-full border px-4 py-2 rounded"
