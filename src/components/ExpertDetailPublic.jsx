@@ -48,8 +48,8 @@ const toCents = (mxn) => Math.round(mxn * 100);
 
 export default function ExpertDetailPublic() {
   const { id: expertoId } = useParams();
- const navigate = useNavigate();
-  const { user: usuario } = useAuth();
+  const navigate = useNavigate();
+  const { user: usuario, rol } = useAuth();
 
  // ===== Refs para scroll =====
   const consultaRef = useRef(null);
@@ -77,6 +77,11 @@ export default function ExpertDetailPublic() {
   }, [expertoId]);
 
   const toggleFollow = () => {
+    if (!usuario) {
+      toast.error("Inicia sesión para seguir a un experto.");
+      return;
+    }
+
     if (!expertoId) return;
     const key = `follow_expert_${expertoId}`;
     setIsFollowing((prev) => {
@@ -880,6 +885,8 @@ const TipoBadge = ({ tipo }) => {
 <ExpertRatingSection
   expertId={expert.id}
   usuario={usuario}
+  rolUsuario={rol}
+  isOwnProfile={!!usuario?.uid && usuario.uid === expert?.id}
   handleLoginConGoogle={handleLoginConGoogle}
 />
 

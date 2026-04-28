@@ -13,7 +13,14 @@ import {
 import { Star } from "lucide-react";
 
 // Props: expertId (string), usuario (firebase user, puede ser null), handleLoginConGoogle (function)
-export default function ExpertRatingSection({ expertId, usuario, handleLoginConGoogle }) {
+  export default function ExpertRatingSection({
+    expertId,
+    usuario,
+    rolUsuario,
+    isOwnProfile = false,
+    handleLoginConGoogle
+  }) {
+
   const [ratings, setRatings] = useState([]);
   const [myRating, setMyRating] = useState(null); // { rating, comment, id }
   const [rating, setRating] = useState(0);
@@ -52,11 +59,13 @@ export default function ExpertRatingSection({ expertId, usuario, handleLoginConG
     ? (ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length).toFixed(1)
     : "-";
   const count = ratings.length;
+  const ratingBlocked = rolUsuario === "experto" || isOwnProfile;
 
   // Guardar/actualizar calificación
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!usuario) return;
+    if (ratingBlocked) return;
     if (rating < 1 || rating > 5) return alert("Selecciona de 1 a 5 estrellas.");
     setSaving(true);
 
@@ -131,6 +140,12 @@ export default function ExpertRatingSection({ expertId, usuario, handleLoginConG
             Iniciar con Google
           </button>
         </div>
+        
+        ) : ratingBlocked ? (
+        <div className="my-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          🔒 Las cuentas con rol experto no pueden calificar/comentar perfiles de expertos.
+        </div>
+
       ) : (
         <form onSubmit={handleSubmit} className="mt-4">
           <div className="flex items-center gap-1 mb-2">

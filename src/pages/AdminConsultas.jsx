@@ -5,7 +5,7 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
-  doc,
+  doc
 } from 'firebase/firestore';
 import { db } from "@/firebase";
 import UnifiedNavbar from "../components/UnifiedNavbar";
@@ -19,8 +19,7 @@ import AdminSectionHeader from "@/components/admin/AdminSectionHeader";
 
 export default function AdminConsultas() {
   const [consultas, setConsultas] = useState([]);
-  const [expertos, setExpertos] = useState([]);
-  const [asignaciones, setAsignaciones] = useState({}); // consultaId -> expertoId
+  const [expertosAprobadosCount, setExpertosAprobadosCount] = useState(0);
   const [searchParams] = useSearchParams();
 
 
@@ -35,10 +34,10 @@ export default function AdminConsultas() {
         setConsultas(docsConsultas);
 
         const snapshotExpertos = await getDocs(collection(db, 'experts'));
-        const expertosAprobados = snapshotExpertos.docs
+        const expertsOk = snapshotExpertos.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
           .filter(e => e.aprobado === true);
-        setExpertos(expertosAprobados);
+        setExpertosAprobadosCount(expertsOk.length);
       } catch (error) {
         toast.error('Error al cargar los datos');
         console.error(error);
@@ -80,18 +79,19 @@ export default function AdminConsultas() {
     }
   };
 
-  const aprobarYAsignar = async (consultaId) => {
-    const expertoId = asignaciones[consultaId];
-    const experto = expertos.find(e => e.id === expertoId);
-    if (!experto) return toast.error('Selecciona un experto válido');
+  const aprobarParaExperto = async (consultaId) => {
+    const consulta = consultas.find((c) => c.id === consultaId);
+    if (!consulta?.expertoId) {
+      return toast.error('La consulta no tiene destinatario (experto) definido.');
+    }
 
     try {
       const ref = doc(db, 'consultasModeradas', consultaId);
       const updateData = {
         estado: 'aprobadoParaExperto',
         aprobado: true,
-        expertoId: experto.id,
-        expertoNombre: experto.nombre || 'Sin nombre',
+        expertoId: consulta.expertoId,
+        expertoNombre: consulta.expertoNombre || 'Sin nombre'
       };
       await updateDoc(ref, updateData);
       setConsultas(prev =>
@@ -99,9 +99,9 @@ export default function AdminConsultas() {
           c.id === consultaId ? { ...c, ...updateData } : c
         )
       );
-      toast.success('Consulta aprobada y asignada al experto');
+      toast.success('Consulta aprobada para el experto destinatario');
     } catch (error) {
-      toast.error('Error al asignar experto');
+      toast.error('Error al aprobar consulta');
       console.error(error);
     }
   };
@@ -178,11 +178,14 @@ export default function AdminConsultas() {
 
   const renderConsultaCard = (c) => (
     <div key={c.id} className="bg-white p-4 rounded-xl shadow border mt-3">
+      <div className="grid gap-1 text-sm mb-2">
+        <p><strong>Fecha y hora:</strong> {formatearFecha(c.timestamp || c.createdAt)}</p>
+        <p><strong>Remitente:</strong> {c.nombre || c.userNombre || 'Anónimo'} ({c.correo || c.userEmail || 'sin correo'})</p>
+        <p><strong>Destinatario:</strong> {c.expertoNombre || c.expertoId || 'Sin experto'}</p>
+      </div>
+
       <p className="text-sm mb-1">
         <strong>Consulta:</strong> {c.consulta || c.pregunta || "Sin contenido"}
-      </p>
-      <p className="text-sm">
-        <strong>De:</strong> {c.nombre || c.userNombre || 'Anónimo'} ({c.correo || c.userEmail || 'sin correo'})
       </p>
       <p className="text-sm mb-2">
         <strong>Estado:</strong>{' '}
@@ -200,27 +203,12 @@ export default function AdminConsultas() {
       </p>
 
       {(c.estado === 'pendiente' || c.estado === 'porRevisar') && (
-        <div className="mt-3 space-y-2">
-          <label className="block text-sm font-medium">Asignar a experto:</label>
-          <select
-            value={asignaciones[c.id] || ''}
-            onChange={(e) =>
-              setAsignaciones(prev => ({ ...prev, [c.id]: e.target.value }))
-            }
-            className="w-full p-2 border rounded"
-          >
-            <option value="">Selecciona un experto</option>
-            {expertos.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nombre}
-              </option>
-            ))}
-          </select>
+        <div className="mt-3">
           <button
-            onClick={() => aprobarYAsignar(c.id)}
+            onClick={() => aprobarParaExperto(c.id)}
             className="bg-blue-700 text-white px-3 py-1 rounded text-sm"
           >
-            Aprobar y asignar
+            Aprobar para experto
           </button>
         </div>
       )}
@@ -256,8 +244,8 @@ export default function AdminConsultas() {
         title="Gestión de consultas"
         subtitle="Administra consultas pendientes, gratuitas y con cobro."
         sidebarProps={{
-          expertosCount: expertos.length,
-          aprobadosCount: expertos.length,
+          expertosCount: expertosAprobadosCount,
+          aprobadosCount: expertosAprobadosCount,
           pendientesExpertosCount: 0,
           consultasPendientesCount: pendientes.length,
           porValidarCount: 0,

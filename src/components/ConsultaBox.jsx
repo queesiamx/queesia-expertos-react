@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { MessageSquare } from "lucide-react"; // 👈 icono por defecto
+import { MessageSquare, Lock } from "lucide-react"; // 👈 icono por defecto
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "@/firebase";
 import { startLogin } from "@/auth/login";
 import { useAuth } from "@/auth/context/AuthContext";
@@ -18,7 +19,7 @@ export default function ConsultaBox({
   className = "",
   maxChars = 600,
 }) {
-  const { user } = useAuth();
+  const { user, rol } = useAuth();
   const [texto, setTexto] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -60,6 +61,11 @@ export default function ConsultaBox({
     }
     if (!expertoId) {
       toast.error("No se encontró el experto.");
+      return;
+    }
+
+    if (rol === "experto") {
+      toast.error("Las cuentas con rol experto no pueden enviar consultas.");
       return;
     }
 
@@ -120,6 +126,20 @@ export default function ConsultaBox({
           </svg>
           Iniciar sesión con Google
         </button>
+      </div>
+    );
+  }
+
+  if (rol === "experto") {
+    return (
+      <div className={"rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm " + className}>
+        <div className="flex items-center gap-2 mb-2">
+          <Lock className="h-5 w-5 text-amber-700" aria-hidden="true" />
+          <h3 className="text-lg font-semibold text-amber-900 mb-1">Consulta bloqueada</h3>
+        </div>
+        <p className="text-sm text-amber-800">
+          Las cuentas con rol <strong>experto</strong> no pueden enviar consultas desde perfiles públicos.
+        </p>
       </div>
     );
   }
