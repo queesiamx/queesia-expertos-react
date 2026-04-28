@@ -4,7 +4,16 @@ import { collection, getDocs, query, where, doc, updateDoc } from "firebase/fire
 import { db } from "@/firebase";
 import { useAuth } from "@/auth/context/AuthContext";
 import toast from "react-hot-toast";
-import UnifiedNavbar from "../components/UnifiedNavbar";
+import ExpertShell from "@/components/expert/ExpertShell";
+import ExpertStatCard from "@/components/expert/ExpertStatCard";
+import {
+  Inbox,
+  Clock,
+  CheckCircle2,
+  WalletCards,
+  Search,
+  MoreVertical,
+} from "lucide-react";
 import { useNavigate, Navigate } from "react-router-dom";
 
 export default function ConsultasRecibidas() {
@@ -106,136 +115,244 @@ export default function ConsultasRecibidas() {
   if (loading) return <div className="p-6">Cargando…</div>;
   if (!user) return <Navigate to="/login" replace />;
 
+  const totalConsultas = consultas.length;
+
+const totalPendientes = consultas.filter(
+  (c) => c.estado === "pendiente" || (c.estado === "resueltaGratis" && !c.respuesta)
+).length;
+
+const totalRespondidas = consultas.filter(
+  (c) => c.estado === "respondida" || !!c.respuesta
+).length;
+
+const totalRequierenPago = consultas.filter(
+  (c) => c.estado === "requierePago" || c.estado === "respondida"
+).length;
+
+const consultasRespondidasCount = consultas.filter(
+  (c) => c.estado === "respondida" || c.estado === "resueltaGratis" || !!c.respuesta
+).length;
+
+const getEstadoBadge = (estado) => {
+  if (estado === "pendiente") {
+    return "bg-amber-50 text-amber-700 border-amber-100";
+  }
+
+  if (estado === "requierePago") {
+    return "bg-orange-50 text-orange-700 border-orange-100";
+  }
+
+  if (estado === "respondida") {
+    return "bg-emerald-50 text-emerald-700 border-emerald-100";
+  }
+
+  if (estado === "resueltaGratis") {
+    return "bg-blue-50 text-blue-700 border-blue-100";
+  }
+
+  return "bg-slate-50 text-slate-600 border-slate-100";
+};
+
   return (
-    <>
-      <UnifiedNavbar />
+  <ExpertShell
+    title="Consultas Recibidas"
+    subtitle="Gestiona las consultas que te han enviado. Responde y da seguimiento desde tu panel."
+    sidebarProps={{
+      consultasRecibidasCount: totalConsultas,
+      consultasRespondidasCount,
+    }}
+  >
+    {consultaModalVisible && consultaSeleccionada && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+          <h2 className="mb-4 text-xl font-bold text-slate-900">
+            Detalles de la consulta
+          </h2>
 
-      {consultaModalVisible && consultaSeleccionada && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
-            <h2 className="text-xl font-bold mb-4">Detalles de la consulta</h2>
-            <p>
-              <strong>Consulta:</strong> {consultaSeleccionada.consulta || consultaSeleccionada.pregunta}
-            </p>
-            <p>
-              <strong>De:</strong> {consultaSeleccionada.nombre || consultaSeleccionada.userNombre} ({consultaSeleccionada.correo || consultaSeleccionada.userEmail})
-            </p>
-            <p>
-              <strong>Estado:</strong> {consultaSeleccionada.estado}
-            </p>
-            <button
-              onClick={() => setConsultaModalVisible(false)}
-              className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Cerrar
-            </button>
-          </div>
+          <p className="text-sm text-slate-700">
+            <strong>Consulta:</strong> {consultaSeleccionada.consulta}
+          </p>
+
+          <p className="mt-2 text-sm text-slate-600">
+            <strong>De:</strong> {consultaSeleccionada.nombre} (
+            {consultaSeleccionada.correo})
+          </p>
+
+          <p className="mt-2 text-sm text-slate-600">
+            <strong>Estado:</strong> {consultaSeleccionada.estado}
+          </p>
+
+          <button
+            onClick={() => setConsultaModalVisible(false)}
+            className="mt-5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Cerrar
+          </button>
         </div>
-      )}
+      </div>
+    )}
 
-      <div className="p-6 max-w-4xl mx-auto font-sans">
-        <h1 className="text-3xl font-bold mb-6">Consultas Recibidas</h1>
+    <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <ExpertStatCard
+        icon={Inbox}
+        value={totalConsultas}
+        label="Total recibidas"
+        helper="Todas las consultas"
+        tone="blue"
+      />
 
-        {/* Botones de filtro */}
-        <div className="flex gap-2 flex-wrap mb-6">
-          {estados.map(({ label, valor }) => (
-            <button
-              key={valor}
-              onClick={() => setFiltroEstado(valor)}
-              className={`px-4 py-2 rounded-full border transition-colors duration-200 ${
-                filtroEstado === valor
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-blue-100"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      <ExpertStatCard
+        icon={Clock}
+        value={totalPendientes}
+        label="Pendientes"
+        helper="Esperando respuesta"
+        tone="amber"
+      />
 
-        {cargando ? (
-          <p className="text-gray-600">Cargando consultas...</p>
-        ) : consultasFiltradas.length === 0 ? (
-          <p className="text-gray-600">No hay consultas en esta categoría.</p>
-        ) : (
-          <div className="space-y-4">
-            {consultasFiltradas.map((c) => (
-              <div key={c.id} className="bg-white p-4 rounded-xl shadow border">
-                {filtroEstado === "pendiente" && (
-                  <div className="flex flex-col gap-2 mb-2">
-                    <span className="text-sm text-gray-600">
-                      Esta es una consulta enviada por un usuario. Si ya fue pagada o es gratuita depende del
-                      acuerdo.
-                    </span>
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => {
-                          setConsultaSeleccionada(c);
-                          setConsultaModalVisible(true);
-                        }}
-                        className="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600"
-                      >
-                        Ver detalles
-                      </button>
-                    </div>
-                  </div>
-                )}
+      <ExpertStatCard
+        icon={CheckCircle2}
+        value={totalRespondidas}
+        label="Respondidas"
+        helper="Con seguimiento"
+        tone="green"
+      />
 
-                <p className="text-sm text-gray-800">
-                  <strong>Consulta:</strong> {c.consulta || c.pregunta}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <strong>De:</strong> {c.nombre || c.userNombre} ({c.correo || c.userEmail})
-                </p>
-                <p className="text-sm mt-1">
-                  <strong>Estado:</strong>{" "}
-                  <span
-                    className={`font-semibold ${
-                      c.estado === "pendiente"
-                        ? "text-yellow-600"
-                        : c.estado === "resueltaGratis"
-                        ? "text-blue-600"
-                        : c.estado === "respondida"
-                        ? "text-green-600"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {c.estado}
-                  </span>
-                </p>
+      <ExpertStatCard
+        icon={WalletCards}
+        value={totalRequierenPago}
+        label="Requieren pago"
+        helper="Pendientes de pago"
+        tone="purple"
+      />
+    </section>
 
-                <button
-                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                  onClick={() => navigate(`/responder-consulta/${c.id}`)}
+    <section className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-wrap gap-2">
+        {estados.map(({ label, valor }) => (
+          <button
+            key={valor}
+            onClick={() => setFiltroEstado(valor)}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              filtroEstado === valor
+                ? "bg-blue-600 text-white shadow-sm"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative w-full lg:max-w-sm">
+        <Search
+          size={18}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+        <input
+          type="text"
+          disabled
+          placeholder="Buscar consulta, nombre o email..."
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-500 shadow-sm outline-none"
+        />
+      </div>
+    </section>
+
+    {cargando ? (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+        Cargando consultas...
+      </div>
+    ) : consultasFiltradas.length === 0 ? (
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+        No hay consultas en esta categoría.
+      </div>
+    ) : (
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        {consultasFiltradas.map((c, index) => (
+          <article
+            key={c.id}
+            className={`grid gap-4 p-5 lg:grid-cols-[1fr_auto_auto] lg:items-center ${
+              index !== consultasFiltradas.length - 1
+                ? "border-b border-slate-100"
+                : ""
+            }`}
+          >
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-900">{c.consulta}</p>
+
+              <p className="mt-1 text-sm text-slate-600">
+                De: {c.nombre}{" "}
+                {c.correo ? (
+                  <span className="text-slate-500">({c.correo})</span>
+                ) : null}
+              </p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${getEstadoBadge(
+                    c.estado
+                  )}`}
                 >
-                  Responder
-                </button>
+                  {c.estado}
+                </span>
 
                 {filtroEstado === "pendiente" && (
-                  <>
-                    {c.estado === "resueltaGratis" && !c.respuesta && (
-                      <button
-                        className="mt-2 bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500"
-                        onClick={() => handleSolicitudCambioTipo(c.id, "respondida")}
-                      >
-                        Solicitar cambio a "Consulta de Pago"
-                      </button>
-                    )}
-                    {c.estado === "respondida" && !c.respuesta && (
-                      <button
-                        className="mt-2 bg-green-400 text-black px-3 py-1 rounded hover:bg-green-500"
-                        onClick={() => handleSolicitudCambioTipo(c.id, "resueltaGratis")}
-                      >
-                        Solicitar cambio a "Consulta Gratuita"
-                      </button>
-                    )}
-                  </>
+                  <button
+                    onClick={() => {
+                      setConsultaSeleccionada(c);
+                      setConsultaModalVisible(true);
+                    }}
+                    className="text-xs font-semibold text-blue-700 hover:underline"
+                  >
+                    Ver detalles
+                  </button>
                 )}
               </div>
-            ))}
-          </div>
-        )}
+
+              {filtroEstado === "pendiente" && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {c.estado === "resueltaGratis" && !c.respuesta && (
+                    <button
+                      className="rounded-xl bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-200"
+                      onClick={() =>
+                        handleSolicitudCambioTipo(c.id, "respondida")
+                      }
+                    >
+                      Solicitar cambio a consulta de pago
+                    </button>
+                  )}
+
+                  {c.estado === "respondida" && !c.respuesta && (
+                    <button
+                      className="rounded-xl bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                      onClick={() =>
+                        handleSolicitudCambioTipo(c.id, "resueltaGratis")
+                      }
+                    >
+                      Solicitar cambio a consulta gratuita
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              onClick={() => navigate(`/responder-consulta/${c.id}`)}
+            >
+              {c.respuesta ? "Ver respuesta" : "Responder"}
+            </button>
+
+            <button
+              type="button"
+              className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 lg:block"
+              aria-label="Más opciones"
+            >
+              <MoreVertical size={18} />
+            </button>
+          </article>
+        ))}
       </div>
-    </>
-  );
+    )}
+  </ExpertShell>
+);
 }
