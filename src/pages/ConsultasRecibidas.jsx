@@ -23,6 +23,9 @@ export default function ConsultasRecibidas() {
   const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
   const [consultaModalVisible, setConsultaModalVisible] = useState(false);
 
+  const [busqueda, setBusqueda] = useState("");
+  const [orden, setOrden] = useState("recientes");
+
   const navigate = useNavigate();
   const { user, loading, rol } = useAuth();
 
@@ -70,24 +73,75 @@ export default function ConsultasRecibidas() {
     { label: "Pagadas", valor: "respondida" }, // ajusta si usas otro estado
   ];
 
-  const consultasFiltradas = consultas.filter((c) => {
+  const getTextoConsulta = (c) =>
+  c.consulta ||
+  c.pregunta ||
+  c.mensaje ||
+  c.texto ||
+  c.descripcion ||
+  "Consulta sin texto registrado";
+
+const getNombreUsuario = (c) =>
+  c.nombre ||
+  c.usuarioNombre ||
+  c.nombreUsuario ||
+  c.remitente ||
+  "Usuario sin nombre";
+
+const getCorreoUsuario = (c) =>
+  c.correo ||
+  c.email ||
+  c.usuarioEmail ||
+  c.correoUsuario ||
+  "";
+
+const getFechaConsulta = (c) => {
+  const raw = c.fecha || c.createdAt || c.fechaEnvio || c.timestamp;
+
+  if (!raw) return "";
+
+  const date = raw?.toDate ? raw.toDate() : new Date(raw);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+  const consultasFiltradas = consultas
+  .filter((c) => {
     if (filtroEstado === "todas") return true;
+
     if (filtroEstado === "pendiente") {
-      // “pendiente” o marcadas como gratis pero aún sin respuesta
       return (
         c.estado === "pendiente" ||
-        c.estado === "porRevisar" ||
-        c.estado === "aprobadoParaExperto" ||
         (c.estado === "resueltaGratis" && !c.respuesta)
       );
     }
+
     if (filtroEstado === "resueltaGratis") {
-      return c.estado === "resueltaGratis" && !!c.respuesta;
+      return c.estado === "resueltaGratis";
     }
+
     if (filtroEstado === "respondida") {
-      return c.estado === "respondida";
+      return c.estado === "respondida" || c.estado === "requierePago";
     }
+
     return false;
+  })
+  .filter((c) => {
+    const texto = `${getTextoConsulta(c)} ${getNombreUsuario(c)} ${getCorreoUsuario(c)}`.toLowerCase();
+    return texto.includes(busqueda.toLowerCase());
+  })
+  .sort((a, b) => {
+    const fechaA = a.fecha?.toDate?.() || a.createdAt?.toDate?.() || new Date(0);
+    const fechaB = b.fecha?.toDate?.() || b.createdAt?.toDate?.() || new Date(0);
+
+    if (orden === "antiguas") return fechaA - fechaB;
+    return fechaB - fechaA;
   });
 
   const handleSolicitudCambioTipo = async (consultaId, nuevoTipo) => {
@@ -250,7 +304,8 @@ const getEstadoBadge = (estado) => {
         />
         <input
           type="text"
-          disabled
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar consulta, nombre o email..."
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-500 shadow-sm outline-none"
         />
@@ -277,12 +332,12 @@ const getEstadoBadge = (estado) => {
             }`}
           >
             <div className="min-w-0">
-              <p className="font-semibold text-slate-900">{c.consulta}</p>
+              <p className="font-semibold text-slate-900">{getTextoConsulta(c)}</p>
 
               <p className="mt-1 text-sm text-slate-600">
-                De: {c.nombre}{" "}
+                De: {getNombreUsuario(c)}{" "}
                 {c.correo ? (
-                  <span className="text-slate-500">({c.correo})</span>
+                  <span className="text-slate-500">({getCorreoUsuario(c)})</span>
                 ) : null}
               </p>
 
@@ -332,8 +387,16 @@ const getEstadoBadge = (estado) => {
                     </button>
                   )}
                 </div>
+
+                
               )}
             </div>
+
+            {getFechaConsulta(c) && (
+              <span className="text-xs text-slate-400">
+                {getFechaConsulta(c)}
+              </span>
+            )}
 
             <button
               className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
@@ -344,11 +407,15 @@ const getEstadoBadge = (estado) => {
 
             <button
               type="button"
-              className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 lg:block"
-              aria-label="Más opciones"
-            >
-              <MoreVertical size={18} />
-            </button>
+              onClick={() => {
+                setConsultaSeleccionada(c);
+                setConsultaModalVisible(true);
+              }}
+                className="hidden rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 lg:block"
+                aria-label="Ver detalles"
+              >
+                <MoreVertical size={18} />
+          </button>
           </article>
         ))}
       </div>
