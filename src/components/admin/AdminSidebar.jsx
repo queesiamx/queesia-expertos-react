@@ -138,7 +138,7 @@ export default function AdminSidebar({
           
 
           </div>
-
+          </div>
           <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
             Cargar apps 
@@ -158,7 +158,6 @@ export default function AdminSidebar({
             
           
 
-          </div>
           </div>
         </div>
         
