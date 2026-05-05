@@ -141,17 +141,26 @@ export default function AdminSidebar({
           </div>
           <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
-            Cargar apps 
+            Apps 
           </p>
 
           <div className="space-y-2">
+            <a
+              href="/admin/apps/cargar"
+              target="_blank"
+              rel="noreferrer"
+              className={externalLinkBase}
+            >
+              <span className="font-medium">Agregar nueva</span>
+              <span className="text-xs text-slate-400">↗</span>
+            </a>
             <a
               href="/admin/apps-nuevas"
               target="_blank"
               rel="noreferrer"
               className={externalLinkBase}
             >
-              <span className="font-medium">Visitas</span>
+              <span className="font-medium">Fecha de carga</span>
               <span className="text-xs text-slate-400">↗</span>
             </a>
 
