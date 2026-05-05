@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const API_BASE = "https://queesia.com";
 
@@ -15,29 +16,32 @@ export default function AdminNuevasApps() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const cargarDatos = async () => {
-    setLoading(true);
-    setError("");
+  const cargarDatos = async (limpiarMensaje = true) => {
+  setLoading(true);
+  setError("");
+
+  if (limpiarMensaje) {
     setMessage("");
+  }
 
-    try {
-      const res = await fetch(`${API_BASE}/api/obtener_nuevas_apps.php?limit=100`);
-      const data = await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/api/obtener_nuevas_apps.php?limit=100`);
+    const data = await res.json();
 
-      if (!data.success) {
-        throw new Error(data.message || "No se pudo cargar la configuración.");
-      }
-
-      setFechaInicio(data.config?.fecha_inicio || "");
-      setFechaFin(data.config?.fecha_fin || "");
-      setApps(data.tools || []);
-      setTotal(data.total || 0);
-    } catch (err) {
-      setError(err.message || "Error al cargar las apps nuevas.");
-    } finally {
-      setLoading(false);
+    if (!data.success) {
+      throw new Error(data.message || "No se pudo cargar la configuración.");
     }
-  };
+
+    setFechaInicio(data.config?.fecha_inicio || "");
+    setFechaFin(data.config?.fecha_fin || "");
+    setApps(data.tools || []);
+    setTotal(data.total || 0);
+  } catch (err) {
+    setError(err.message || "Error al cargar las apps nuevas.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     cargarDatos();
@@ -63,30 +67,35 @@ export default function AdminNuevasApps() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/guardar_rango_nuevas.php`, {
+    const res = await fetch(`${API_BASE}/api/guardar_rango_nuevas.php`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+        "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          admin_token: adminToken.trim(),
-          fecha_inicio: fechaInicio,
-          fecha_fin: fechaFin,
+        admin_token: adminToken.trim(),
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
         }),
-      });
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok || !data.success) {
+    if (!res.ok || !data.success) {
         throw new Error(data.message || "No se pudo guardar el rango.");
-      }
+    }
 
-      setMessage(data.message || "Rango actualizado correctamente.");
-      await cargarDatos();
+    await cargarDatos(false);
+
+    const successMessage = data.message || "Rango actualizado correctamente.";
+    setMessage(successMessage);
+    toast.success(successMessage);
     } catch (err) {
-      setError(err.message || "Error al guardar el rango.");
+    const errorMessage = err.message || "Error al guardar el rango.";
+    setError(errorMessage);
+    toast.error(errorMessage);
     } finally {
-      setSaving(false);
+    setSaving(false);
     }
   };
 
