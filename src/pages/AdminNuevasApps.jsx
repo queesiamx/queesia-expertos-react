@@ -219,7 +219,7 @@ export default function AdminNuevasApps() {
                 No hay apps dentro del rango seleccionado.
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid max-h-[720px] gap-4 overflow-y-auto pr-2">
                 {apps.map((app) => (
                   <article
                     key={app.id}

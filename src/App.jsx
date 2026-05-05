@@ -28,6 +28,7 @@ import AdminSolicitudes from "@/pages/AdminSolicitudes";
 import ConsultasAprobadas from "@/pages/ConsultasAprobadas";
 import AdminPorValidar from "@/pages/AdminPorValidar";
 import AdminNuevasApps from "@/pages/AdminNuevasApps";
+import AdminCargarApp from "@/pages/AdminCargarApp";
 import ExpertHistorialR from "@/pages/ExpertHistorialR";
 import MisConsultas from "@/pages/MisConsultas";
 import MisValoraciones from "@/pages/MisValoraciones.jsx";
@@ -97,6 +98,7 @@ export default function App() {
             <Route path="/admin/solicitudes" element={<AdminSolicitudes />} />
             <Route path="/admin/por-validar" element={<AdminPorValidar />} />
             <Route path="/admin/apps-nuevas" element={<AdminNuevasApps />} />
+            <Route path="/admin/apps/cargar" element={<AdminCargarApp />} />
           </Route>
         </Route>
 
