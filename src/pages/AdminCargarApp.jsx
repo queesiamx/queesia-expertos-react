@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 const API_BASE = "https://queesia.com";
@@ -45,6 +45,10 @@ export default function AdminCargarApp() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
+    const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
+    const [categoriesError, setCategoriesError] = useState("");
+
   const updateField = (field, value) => {
     setForm((prev) => ({
       ...prev,
@@ -72,6 +76,33 @@ export default function AdminCargarApp() {
   const removeNewsItem = (index) => {
     setNews((prev) => prev.filter((_, i) => i !== index));
   };
+
+  useEffect(() => {
+  const cargarCategorias = async () => {
+    setCategoriesLoading(true);
+    setCategoriesError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/obtener_categorias.php`);
+      const data = await res.json();
+
+      if (!res.ok || !data.success || !Array.isArray(data.categories)) {
+        throw new Error("No se pudieron cargar las categorías.");
+      }
+
+      setCategories(data.categories);
+    } catch (err) {
+      const message = err.message || "Error al cargar categorías.";
+      setCategoriesError(message);
+      toast.error(message);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  cargarCategorias();
+}, []);
+
 
   const buildPayload = () => {
     const sources = sourcesText
@@ -247,13 +278,21 @@ export default function AdminCargarApp() {
                 required
               />
 
-              <Field
+              <SelectField
                 label="Categoría"
                 value={form.category}
                 onChange={(value) => updateField("category", value)}
-                placeholder="Ej. Productividad"
+                options={categories}
+                placeholder={
+                    categoriesLoading ? "Cargando categorías..." : "Selecciona una categoría"
+                }
                 required
-              />
+                helper={
+                    categoriesError
+                    ? "No se pudieron cargar las categorías. Revisa la API."
+                    : "Selecciona una categoría existente para evitar duplicados."
+                }
+                />
 
               <Field
                 label="Logo filename"
@@ -589,6 +628,49 @@ function Field({
       />
 
       {helper && <span className="mt-1 block text-xs text-slate-500">{helper}</span>}
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options = [],
+  placeholder = "Selecciona una opción",
+  required = false,
+  helper = "",
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-bold text-slate-700">
+        {label}
+        {required && <span className="text-red-500"> *</span>}
+      </span>
+
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
+      >
+        <option value="">{placeholder}</option>
+
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+
+      {helper && (
+        <span
+          className={`mt-1 block text-xs ${
+            helper.includes("No se pudieron") ? "text-red-500" : "text-slate-500"
+          }`}
+        >
+          {helper}
+        </span>
+      )}
     </label>
   );
 }
