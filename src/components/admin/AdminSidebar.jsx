@@ -164,8 +164,15 @@ export default function AdminSidebar({
               <span className="text-xs text-slate-400">↗</span>
             </a>
 
-            
-          
+            <a
+              href="/admin/apps/editar"
+              target="_blank"
+              rel="noreferrer"
+              className={externalLinkBase}
+            >
+              <span className="font-medium">Editar app</span>
+              <span className="text-xs text-slate-400">↗</span>
+            </a>
 
           </div>
         </div>
