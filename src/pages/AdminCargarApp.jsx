@@ -298,8 +298,8 @@ export default function AdminCargarApp() {
                 label="Logo filename"
                 value={form.logo_filename}
                 onChange={(value) => updateField("logo_filename", value)}
-                placeholder="Ej. id_1500_nombreapp"
-                helper="Sin extensión si el archivo es .png. Ejemplo: id_1500_gamma"
+                placeholder="Opcional. Ej. id_1500_nombreapp"
+                helper="Puedes dejarlo vacío. Al guardar, se generará automáticamente con el formato id_ID_nombreapp. Luego sube el archivo .png con ese nombre a /logos/."
               />
 
               <Field
@@ -559,6 +559,11 @@ export default function AdminCargarApp() {
               <p className="mt-1 text-sm">
                 ID generado: <strong>{result.app_id}</strong>
               </p>
+              {result.expected_logo_file && (
+                <p className="mt-1 text-sm">
+                  Logo esperado: <strong>{result.expected_logo_file}</strong>
+                </p>
+              )}
               <a
                 href={result.app_url}
                 target="_blank"
