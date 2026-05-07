@@ -30,6 +30,7 @@ import AdminPorValidar from "@/pages/AdminPorValidar";
 import AdminNuevasApps from "@/pages/AdminNuevasApps";
 import AdminCargarApp from "@/pages/AdminCargarApp";
 import AdminEditarApp from "@/pages/AdminEditarApp";
+import AdminAppsListado from "@/pages/AdminAppsListado";
 import ExpertHistorialR from "@/pages/ExpertHistorialR";
 import MisConsultas from "@/pages/MisConsultas";
 import MisValoraciones from "@/pages/MisValoraciones.jsx";
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="/admin/apps-nuevas" element={<AdminNuevasApps />} />
             <Route path="/admin/apps/cargar" element={<AdminCargarApp />} />
             <Route path="/admin/apps/editar" element={<AdminEditarApp />} />
+            <Route path="/admin/apps/listado" element={<AdminAppsListado />} />
           </Route>
         </Route>
 
