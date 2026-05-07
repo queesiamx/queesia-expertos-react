@@ -3,25 +3,29 @@ import React, { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useAuth } from "@/auth/context/AuthContext";
-import UnifiedNavbar from "../components/UnifiedNavbar";
 import { Navigate } from "react-router-dom";
+import ExpertShell from "@/components/expert/ExpertShell";
 
 export default function ConsultasAprobadas() {
-  const { user, loading, rol } = useAuth();        // <- loading de AuthContext
+  const { user, loading } = useAuth();
   const [consultas, setConsultas] = useState([]);
-  const [cargando, setCargando] = useState(true);  // <- nombre distinto
+  const [cargando, setCargando] = useState(true);
 
-  // Cargar consultas aprobadas / resueltas del experto logueado
   useEffect(() => {
-    if (loading || !user) return; // espera auth
+    if (loading || !user) return;
+
     let cancel = false;
 
     (async () => {
       try {
         setCargando(true);
-        // Ajusta los estados según tu modelo. Ejemplos usados en tu proyecto:
-        // "resueltaGratis", "conCobro", "requierePago", "aprobada"
-        const estadosOK = ["resueltaGratis", "conCobro", "requierePago", "aprobada"];
+
+        const estadosOK = [
+          "resueltaGratis",
+          "conCobro",
+          "requierePago",
+          "aprobada",
+        ];
 
         const q = query(
           collection(db, "consultasModeradas"),
@@ -46,41 +50,90 @@ export default function ConsultasAprobadas() {
     };
   }, [loading, user]);
 
-  // Guards
-  if (loading) return <div className="p-6">Cargando…</div>;
+  const getTextoConsulta = (c) =>
+    c.consulta ||
+    c.pregunta ||
+    c.mensaje ||
+    c.texto ||
+    "Consulta sin texto registrado";
+
+  const getNombreUsuario = (c) =>
+    c.nombre ||
+    c.usuarioNombre ||
+    c.nombreUsuario ||
+    c.remitente ||
+    "Usuario sin nombre";
+
+  const getCorreoUsuario = (c) =>
+    c.correo || c.email || c.usuarioEmail || c.correoUsuario || "Sin correo";
+
+  if (loading) {
+    return (
+      <ExpertShell title="Mensajes" subtitle="Cargando información del experto.">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          Cargando…
+        </div>
+      </ExpertShell>
+    );
+  }
+
   if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <>
-      <UnifiedNavbar />
-
-      <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Consultas Aprobadas</h1>
-
-        {cargando ? (
-          <p>Cargando consultas…</p>
-        ) : consultas.length === 0 ? (
-          <p>No tienes consultas aprobadas.</p>
-        ) : (
-          consultas.map((consulta) => (
-            <div
+    <ExpertShell
+      title="Mensajes"
+      subtitle="Consulta las respuestas aprobadas y mensajes asociados a tus consultas."
+    >
+      {cargando ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          Cargando consultas…
+        </div>
+      ) : consultas.length === 0 ? (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          No tienes consultas aprobadas.
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          {consultas.map((consulta, index) => (
+            <article
               key={consulta.id}
-              className="bg-white rounded-lg shadow p-4 mb-4 border"
+              className={`p-5 ${
+                index !== consultas.length - 1
+                  ? "border-b border-slate-100"
+                  : ""
+              }`}
             >
-              <p className="font-semibold text-gray-700 mb-2">
-                <strong>Consulta:</strong> {consulta.consulta}
-              </p>
-              <p className="text-gray-800 mb-2">
-                <strong>Respuesta:</strong>{" "}
-                {consulta.respuesta || "Sin respuesta"}
-              </p>
-              <p className="text-sm text-gray-500">
-                Usuario: {consulta.nombre} | Email: {consulta.correo}
-              </p>
-            </div>
-          ))
-        )}
-      </div>
-    </>
+              <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    {getTextoConsulta(consulta)}
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-600">
+                    Usuario: {getNombreUsuario(consulta)}{" "}
+                    <span className="text-slate-500">
+                      ({getCorreoUsuario(consulta)})
+                    </span>
+                  </p>
+                </div>
+
+                <span className="inline-flex w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                  {consulta.estado || "Sin estado"}
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-800">
+                  Respuesta:
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {consulta.respuesta || "Sin respuesta"}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </ExpertShell>
   );
 }

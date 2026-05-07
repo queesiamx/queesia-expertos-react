@@ -4,34 +4,37 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useAuth } from "@/auth/context/AuthContext";
-import UnifiedNavbar from "../components/UnifiedNavbar";
+import ExpertShell from "@/components/expert/ExpertShell";
 
 export default function VistaDetalleContenido() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { user, loading: loadingAuth } = useAuth();
+  const { loading: loadingAuth } = useAuth();
   const [contenido, setContenido] = useState(null);
   const [loadingDoc, setLoadingDoc] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
+
     async function fetchContenido() {
       try {
         setLoadingDoc(true);
-        const ref = doc(db, "contenidosExpertos", id); // colec. donde guardas contenidos
+
+        const ref = doc(db, "contenidosExpertos", id);
         const snap = await getDoc(ref);
+
         if (!isMounted) return;
 
         if (snap.exists()) {
           const data = snap.data();
 
-          // normaliza fecha
           let fechaPublicacion = data.fechaPublicacion;
-          if (fechaPublicacion?.toDate) fechaPublicacion = fechaPublicacion.toDate();
+          if (fechaPublicacion?.toDate) {
+            fechaPublicacion = fechaPublicacion.toDate();
+          }
 
-          // normaliza temario (string -> array)
           let temario = data.temario;
           if (typeof temario === "string") {
             temario = temario
@@ -53,84 +56,147 @@ export default function VistaDetalleContenido() {
         if (isMounted) setLoadingDoc(false);
       }
     }
+
     if (id) fetchContenido();
+
     return () => {
       isMounted = false;
     };
   }, [id]);
 
-  if (loadingAuth || loadingDoc) return <p className="p-4">Cargando contenido…</p>;
-  if (error) return (
-    <div>
-      <UnifiedNavbar />
-      <div className="max-w-4xl mx-auto p-4">
-        <p className="text-red-600">{error}</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-3 inline-block bg-slate-100 hover:bg-white border rounded px-3 py-2"
-        >
-          Regresar
-        </button>
-      </div>
-    </div>
-  );
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "";
+
+    const d = fecha instanceof Date ? fecha : new Date(fecha);
+
+    if (Number.isNaN(d.getTime())) return "";
+
+    return d.toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (loadingAuth || loadingDoc) {
+    return (
+      <ExpertShell
+        title="Detalle de contenido"
+        subtitle="Cargando información del contenido seleccionado."
+      >
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          Cargando contenido…
+        </div>
+      </ExpertShell>
+    );
+  }
+
+  if (error) {
+    return (
+      <ExpertShell
+        title="Detalle de contenido"
+        subtitle="No fue posible cargar este contenido."
+      >
+        <div className="rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
+          <p className="text-sm font-medium text-red-600">{error}</p>
+
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Regresar
+          </button>
+        </div>
+      </ExpertShell>
+    );
+  }
+
   if (!contenido) return null;
 
   return (
-    <div>
-      <UnifiedNavbar />
-
-      <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-2">{contenido.titulo}</h1>
+    <ExpertShell
+      title={contenido.titulo || "Detalle de contenido"}
+      subtitle="Revisa la información completa del contenido publicado."
+    >
+      <div className="max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         {contenido.descripcion && (
-          <p className="text-sm text-gray-700 mb-2">{contenido.descripcion}</p>
-        )}
-
-        {contenido.fechaPublicacion && (
-          <p className="text-xs text-gray-500 mb-2">
-            Publicado el:{" "}
-            {contenido.fechaPublicacion instanceof Date
-              ? contenido.fechaPublicacion.toLocaleDateString()
-              : new Date(contenido.fechaPublicacion).toLocaleDateString()}
+          <p className="text-sm leading-6 text-slate-700">
+            {contenido.descripcion}
           </p>
         )}
 
-        {contenido.autor && (
-          <p className="text-sm mb-2">
-            <strong>Autor:</strong> {contenido.autor}
-          </p>
-        )}
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {contenido.fechaPublicacion && (
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Publicado el
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-700">
+                {formatearFecha(contenido.fechaPublicacion)}
+              </p>
+            </div>
+          )}
 
-        {contenido.duracion && (
-          <p className="text-sm mb-2">
-            <strong>Duración estimada:</strong> {contenido.duracion}
-          </p>
-        )}
+          {contenido.autor && (
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Autor
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-700">
+                {contenido.autor}
+              </p>
+            </div>
+          )}
+
+          {contenido.duracion && (
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Duración estimada
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-700">
+                {contenido.duracion}
+              </p>
+            </div>
+          )}
+        </div>
 
         {Array.isArray(contenido.temario) && contenido.temario.length > 0 && (
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold mb-2">Temario</h2>
-            <ul className="list-disc pl-6 space-y-1 text-sm">
+          <div className="mt-6">
+            <h2 className="text-lg font-bold text-slate-900">Temario</h2>
+
+            <ul className="mt-3 space-y-2">
               {contenido.temario.map((tema, idx) => (
-                <li key={idx}>{tema}</li>
+                <li
+                  key={idx}
+                  className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+                >
+                  {tema}
+                </li>
               ))}
             </ul>
           </div>
         )}
 
-        {contenido.archivoUrl && (
-          <div className="mt-4">
+        <div className="mt-6 flex flex-wrap gap-3">
+          {contenido.archivoUrl && (
             <a
               href={contenido.archivoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded inline-block"
+              className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               Acceder al archivo
             </a>
-          </div>
-        )}
+          )}
+
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Regresar
+          </button>
+        </div>
       </div>
-    </div>
+    </ExpertShell>
   );
 }
