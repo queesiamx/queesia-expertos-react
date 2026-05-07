@@ -1,42 +1,50 @@
 // src/pages/MisContenidos.jsx
 import React, { useEffect, useState } from "react";
-import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/firebase";
 import { useAuth } from "@/auth/context/AuthContext";
 import { Navigate, useNavigate } from "react-router-dom";
-import UnifiedNavbar from "../components/UnifiedNavbar";
+import ExpertShell from "@/components/expert/ExpertShell";
 
 export default function MisContenidos() {
-  const [items, setItems] = useState([]);          // compras enriquecidas con el contenido (si existe)
+  const [items, setItems] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
-  // 1) Guard básico: primero esperamos al contexto
-  if (loading) return <p className="p-4">Cargando contenidos…</p>;
-  if (!user) return <Navigate to="/login" replace />;
-
-  // 2) Cargar compras del usuario y (si hay) el detalle del contenido
   useEffect(() => {
+    if (loading || !user) return;
+
     let cancel = false;
 
     const cargar = async () => {
       try {
+        setCargando(true);
+
         const q = query(
           collection(db, "comprasContenido"),
           where("userId", "==", user.uid)
         );
-        const snap = await getDocs(q);
-        const compras = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // Enriquecer con datos del contenido (si viene contenidoId)
+        const snap = await getDocs(q);
+        const compras = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
         const enriquecidas = await Promise.all(
           compras.map(async (c) => {
             if (!c.contenidoId) return c;
+
             try {
               const ref = doc(db, "contenidosExpertos", c.contenidoId);
               const ds = await getDoc(ref);
+
               return ds.exists()
                 ? { ...c, contenido: { id: ds.id, ...ds.data() } }
                 : c;
@@ -53,69 +61,108 @@ export default function MisContenidos() {
     };
 
     cargar();
-    return () => { cancel = true; };
-  }, [user.uid]);
+
+    return () => {
+      cancel = true;
+    };
+  }, [loading, user]);
+
+  if (loading) {
+    return (
+      <ExpertShell
+        title="Mis contenidos"
+        subtitle="Consulta los contenidos y servicios adquiridos."
+      >
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          Cargando contenidos…
+        </div>
+      </ExpertShell>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <div>
-      <UnifiedNavbar />
+    <ExpertShell
+      title="Mis contenidos"
+      subtitle="Consulta los contenidos que has adquirido o tienes disponibles."
+    >
+      {cargando && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          Cargando…
+        </div>
+      )}
 
-      <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Mis contenidos adquiridos</h1>
+      {!cargando && items.length === 0 && (
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
+          Aún no has adquirido contenidos.
+        </div>
+      )}
 
-        {cargando && <p>Cargando…</p>}
+      {!cargando && items.length > 0 && (
+        <div className="grid gap-4">
+          {items.map((it) => {
+            const c = it.contenido || {};
 
-        {!cargando && items.length === 0 && (
-          <p className="text-gray-700">Aún no has adquirido contenidos.</p>
-        )}
+            return (
+              <article
+                key={it.id}
+                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">
+                      {c.titulo || it.titulo || "Contenido adquirido"}
+                    </h2>
 
-        {!cargando && items.length > 0 && (
-          <ul className="space-y-4">
-            {items.map((it) => {
-              const c = it.contenido || {};
-              return (
-                <li key={it.id} className="border p-4 rounded shadow bg-white">
-                  <h2 className="text-lg font-semibold">
-                    {c.titulo || it.titulo || "Contenido adquirido"}
-                  </h2>
-
-                  <p className="text-sm text-gray-600 mb-1">
-                    {c.descripcion || it.descripcion || "Sin descripción"}
-                  </p>
-
-                  {c.fechaPublicacion && (
-                    <p className="text-xs text-gray-500">
-                      Publicado el: {new Date(c.fechaPublicacion).toLocaleDateString()}
+                    <p className="mt-1 text-sm text-slate-600">
+                      {c.descripcion || it.descripcion || "Sin descripción"}
                     </p>
-                  )}
 
-                  <div className="mt-3 flex gap-4">
-                    {(c.archivoUrl || it.archivoUrl) && (
+                    {c.fechaPublicacion && (
+                      <p className="mt-2 text-xs text-slate-400">
+                        Publicado el:{" "}
+                        {new Date(c.fechaPublicacion).toLocaleDateString(
+                          "es-MX"
+                        )}
+                      </p>
+                    )}
+
+                    {it.estado && (
+                      <span className="mt-3 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                        Estado: {it.estado}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {c.archivoUrl && (
                       <a
-                        href={c.archivoUrl || it.archivoUrl}
+                        href={c.archivoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 underline"
+                        className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                       >
-                        Ver archivo
+                        Ver contenido
                       </a>
                     )}
 
-                    {(c.id || it.contenidoId) && (
+                    {c.id && (
                       <button
-                        onClick={() => navigate(`/mis-contenidos/${c.id || it.contenidoId}`)}
-                        className="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
+                        type="button"
+                        onClick={() => navigate(`/contenido/${c.id}`)}
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                       >
-                        Ver detalles
+                        Ver detalle
                       </button>
                     )}
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </ExpertShell>
   );
 }
