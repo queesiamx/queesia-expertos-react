@@ -68,9 +68,9 @@ export default function ConsultasRecibidas() {
 
   const estados = [
   { label: "Todas", valor: "todas" },
-  { label: "Pendientes", valor: "aprobadoParaExperto" },
-  { label: "Gratis", valor: "resueltaGratis" },
-  { label: "Pagadas", valor: "requierePago" },
+  { label: "Pendientes", valor: "pendientes" },
+  { label: "Gratis", valor: "gratis" },
+  { label: "Pagadas", valor: "pagadas" },
 ];
 
   const getTextoConsulta = (c) =>
@@ -115,19 +115,26 @@ const getFechaConsulta = (c) => {
   .filter((c) => {
     if (filtroEstado === "todas") return true;
 
-    if (filtroEstado === "aprobadoParaExperto") {
-      return c.estado === "aprobadoParaExperto" || c.estado === "porValidar";
+    if (filtroEstado === "pendientes") {
+      return (
+        !c.respuesta &&
+        ["aprobadoParaExperto", "resueltaGratis", "requierePago"].includes(c.estado)
+      );
     }
 
-    if (filtroEstado === "resueltaGratis") {
-      return c.estado === "resueltaGratis";
+    if (filtroEstado === "gratis") {
+      return c.estado === "resueltaGratis" || c.tipoRespuesta === "gratis";
     }
 
-    if (filtroEstado === "requierePago") {
-      return c.estado === "requierePago";
+    if (filtroEstado === "pagadas") {
+      return (
+        c.estado === "requierePago" ||
+        c.estado === "conCobro" ||
+        c.tipoRespuesta === "pago"
+      );
     }
 
-    return c.estado === filtroEstado;
+    return false;
   })
   .filter((c) => {
     const texto = `${getTextoConsulta(c)} ${getNombreUsuario(c)} ${getCorreoUsuario(c)}`.toLowerCase();
@@ -169,15 +176,22 @@ const getFechaConsulta = (c) => {
   const totalConsultas = consultas.length;
 
 const totalPendientes = consultas.filter(
-  (c) => c.estado === "aprobadoParaExperto" || c.estado === "porValidar"
+  (c) =>
+    !c.respuesta &&
+    ["aprobadoParaExperto", "resueltaGratis", "requierePago"].includes(c.estado)
 ).length;
 
 const totalRespondidas = consultas.filter(
-  (c) => c.estado === "respondida" || !!c.respuesta
+  (c) =>
+    !!c.respuesta ||
+    ["respondida", "resueltaGratis", "porValidar"].includes(c.estado)
 ).length;
 
 const totalRequierenPago = consultas.filter(
-  (c) => c.estado === "requierePago" || c.estado === "respondida"
+  (c) =>
+    c.estado === "requierePago" ||
+    c.estado === "conCobro" ||
+    c.tipoRespuesta === "pago"
 ).length;
 
 const consultasRespondidasCount = consultas.filter(
