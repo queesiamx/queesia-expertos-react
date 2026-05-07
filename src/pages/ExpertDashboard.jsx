@@ -8,6 +8,7 @@ import {
   collection, query, where, getDocs, deleteDoc, arrayUnion
 } from "firebase/firestore";
 import toast from "react-hot-toast";
+import ExpertShell from "@/components/expert/ExpertShell";
 
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertProfileCard from "../components/ExpertProfileCard";
@@ -158,30 +159,28 @@ const ExpertDashboard = () => {
   }
 
   return (
-    <>
-      <UnifiedNavbar />
+    <ExpertShell
+      title="Panel de Experto"
+      subtitle="Administra tu perfil, servicios publicados y contenido disponible para los usuarios."
+      actions={
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowModal(true)}
+            className="h-10 px-4 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-sm"
+          >
+            Cargar contenidos
+          </button>
 
-      <div className="min-h-screen bg-[#f7fafc] font-sans">
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h1 className="text-[22px] md:text-3xl font-extrabold tracking-tight text-slate-900">
-              Panel de Experto
-            </h1>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowModal(true)}
-                className="h-10 px-4 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-sm"
-              >
-                Cargar contenidos
-              </button>
-              <button
-                onClick={() => setEditMode(true)}
-                className="h-10 px-4 rounded-xl bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
-              >
-                Editar perfil
-              </button>
-            </div>
-          </div>
+          <button
+            onClick={() => setEditMode(true)}
+            className="h-10 px-4 rounded-xl bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+          >
+            Editar perfil
+          </button>
+        </div>
+      }
+    >
+          
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
             <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 shadow-sm">
@@ -323,8 +322,7 @@ const ExpertDashboard = () => {
               )}
             </>
           )}
-        </div>
-      </div>
+        
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
         <h2 className="text-2xl font-semibold mb-4">📁 Subir nuevo contenido</h2>
@@ -357,7 +355,7 @@ const ExpertDashboard = () => {
           onClose={() => setConsultaModalVisible(false)}
         />
       )}
-    </>
+    </ExpertShell>
   );
 };
 
