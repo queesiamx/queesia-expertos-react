@@ -93,8 +93,24 @@ import { Star } from "lucide-react";
             photoURL: usuario.photoURL || ""
           }
         });
+        ratingId = docRef.id;
+      }
+      // Actualiza en local el nuevo comentario sin recargar la página
+      const q = query(collection(db, "expertRatings"), where("expertId", "==", expertId));
+      const snap = await getDocs(q);
+      const allRatings = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRatings(allRatings);
+      const found = allRatings.find(r => r.userId === usuario.uid);
+      setMyRating(found ? { ...found } : null);
+      setRating(found?.rating || 0);
+      setComment(""); // ¡AQUÍ se limpia el textarea tras guardar!
+    } catch (err) {
+      alert("Error al guardar calificación");
+    }
+    setSaving(false);
+  };
 
-        const handleDeleteRating = async () => {
+  const handleDeleteRating = async () => {
         if (!usuario) return;
         if (!myRating?.id) return;
 
@@ -122,22 +138,6 @@ import { Star } from "lucide-react";
           setSaving(false);
         }
       };
-        ratingId = docRef.id;
-      }
-      // Actualiza en local el nuevo comentario sin recargar la página
-      const q = query(collection(db, "expertRatings"), where("expertId", "==", expertId));
-      const snap = await getDocs(q);
-      const allRatings = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setRatings(allRatings);
-      const found = allRatings.find(r => r.userId === usuario.uid);
-      setMyRating(found ? { ...found } : null);
-      setRating(found?.rating || 0);
-      setComment(""); // ¡AQUÍ se limpia el textarea tras guardar!
-    } catch (err) {
-      alert("Error al guardar calificación");
-    }
-    setSaving(false);
-  };
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 max-w-3xl mx-auto mt-10">
