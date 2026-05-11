@@ -241,48 +241,62 @@ export default function ExpertCard({
   return (
     <article
       onClick={handleView}
-      className="group relative flex min-h-[330px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
+      className="group relative flex min-h-[340px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
     >
       <div className="flex flex-1 flex-col p-5 pb-3">
         {/* Header */}
-        <div className="relative min-h-[86px] pr-24">
-          <div className="flex min-w-0 items-start gap-4">
-            <div className="relative shrink-0">
-              {avatar ? (
-                <img
-                  src={avatar}
-                  alt={nombre}
-                  loading="lazy"
-                  className="h-16 w-16 rounded-full object-cover ring-4 ring-slate-50"
-                />
-              ) : (
-                <div className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-sm font-bold text-slate-500 ring-4 ring-slate-50">
-                  {getInitials(nombre)}
-                </div>
-              )}
+        {/* Header */}
+<div className="min-h-[116px]">
+  {/* Badge separado para no apretar el nombre */}
+  <div className="mb-3 flex h-7 items-center justify-end">
+    {verificado ? (
+      <Badge color="amber" icon={<ShieldIcon />}>
+        VERIFICADO
+      </Badge>
+    ) : isAdmin ? (
+      <Badge color="slate">PENDIENTE</Badge>
+    ) : null}
+  </div>
 
-              <span className="absolute bottom-1 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />
-            </div>
+  {/* Identidad del experto */}
+  <div className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4">
+    <div className="relative shrink-0">
+      {avatar ? (
+        <img
+          src={avatar}
+          alt={nombre}
+          loading="lazy"
+          className="h-16 w-16 rounded-full object-cover ring-4 ring-slate-50"
+        />
+      ) : (
+        <div className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-sm font-bold text-slate-500 ring-4 ring-slate-50">
+          {getInitials(nombre)}
+        </div>
+      )}
 
-            <div className="min-w-0">
-              <button
-                type="button"
-                onClick={handleView}
-                className="block w-full text-left text-[16px] font-bold leading-tight text-slate-950 transition hover:text-blue-700"
-                title={nombre}
-              >
-                <span style={clampStyle(2)}>{nombre}</span>
-              </button>
+      <span className="absolute bottom-1 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />
+    </div>
 
-              <p
-                className="mt-1 text-[15px] font-medium leading-snug text-blue-700"
-                style={clampStyle(2)}
-                title={titulo}
-              >
-                {titulo}
-              </p>
-            </div>
-          </div>
+    <div className="min-w-0 pt-0.5">
+      <button
+        type="button"
+        onClick={handleView}
+        className="block w-full text-left text-[16px] font-bold leading-tight text-slate-950 transition hover:text-blue-700"
+        title={nombre}
+      >
+        <span style={clampStyle(2)}>{nombre}</span>
+      </button>
+
+      <p
+        className="mt-1 text-[15px] font-medium leading-snug text-blue-700"
+        style={clampStyle(2)}
+        title={titulo}
+      >
+        {titulo}
+      </p>
+    </div>
+    </div>
+
 
           <div className="absolute right-0 top-0">
             {verificado ? (
