@@ -9,7 +9,7 @@ import {
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 import ExpertShell from "@/components/expert/ExpertShell";
-
+import ExpertServicesSection from "@/components/expert/ExpertServicesSection";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertProfileCard from "../components/ExpertProfileCard";
 import ExpertProfileEditor from "../components/ExpertProfileEditor";
@@ -228,100 +228,15 @@ const ExpertDashboard = () => {
                 <ExpertProfileCard expert={expert} />
               </div>
 
-              <h2
-                id="servicios"
-                ref={serviciosRef}
-                className="text-xl font-semibold mt-2 mb-4 scroll-mt-24 text-slate-900"
-              >
-                📚 Servicios
-              </h2>
-
-              {contenidos.length === 0 ? (
-                <p className="text-gray-600">No has subido contenidos aún.</p>
-              ) : (
-                <div className="space-y-3 md:space-y-4">
-                  {contenidos.map((contenido) => (
-                    <div
-                      key={contenido.id}
-                      className="bg-white ring-1 ring-slate-200 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-md transition"
-                    >
-                      <div className="flex items-start md:items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={
-                              contenido.tipoContenido === "consulta"
-                                ? "px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-amber-100 text-amber-700"
-                                : contenido.tipoContenido === "curso"
-                                ? "px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-blue-100 text-blue-700"
-                                : "px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-violet-100 text-violet-700"
-                            }>
-                              {contenido.tipoContenido ?? "servicio"}
-                            </span>
-                            {contenido.precio ? (
-                              <span className="px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                                ${Number(contenido.precio).toFixed(2)}
-                              </span>
-                            ) : (
-                              <span className="px-2.5 h-7 inline-flex items-center rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                                gratuito
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="mt-2 text-base md:text-lg font-semibold text-slate-900 truncate">
-                            {contenido.titulo}
-                          </h3>
-                          <p className="text-sm text-slate-600 mt-1">
-                            {contenido.descripcion}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {contenido.tipoContenido === "curso" && (
-                            <button
-                              onClick={() => handleAgregarFecha(contenido)}
-                              className="h-9 px-3 rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100 text-sm"
-                              title="Agregar fecha disponible"
-                            >
-                              Agregar fecha
-                            </button>
-                          )}
-                          <a
-                            href={contenido.archivoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex h-9 px-3 items-center justify-center rounded-lg bg-white
-                                       text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 text-sm"
-                          >
-                            Ver archivo
-                          </a>
-                          <button
-                            onClick={() => handleDeleteContenido(contenido.id, contenido.public_id)}
-                            className="inline-flex h-9 px-3 items-center justify-center rounded-lg bg-white
-                                       text-rose-600 ring-1 ring-rose-200 hover:bg-rose-50 text-sm"
-                            title="Eliminar contenido"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-
-                      {contenido.tipoContenido === "consulta" && (
-                        <div className="mt-3 text-[13px] text-amber-800 bg-amber-50/60 border border-amber-200 rounded-md px-3 py-2">
-                          Sujeto a aplicación de costos
-                        </div>
-                      )}
-
-                      {contenido.fechasDisponibles?.length > 0 && (
-                        <div className="mt-3 text-sm text-slate-700">
-                          <span className="font-medium">Fechas disponibles: </span>
-                          {contenido.fechasDisponibles.join(", ")}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+              <ExpertServicesSection
+                contenidos={contenidos}
+                serviciosRef={serviciosRef}
+                onAddService={() => setShowModal(true)}
+                onDelete={handleDeleteContenido}
+                onAddDate={handleAgregarFecha}
+              />
+                </>
+                    )}                  
         
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
