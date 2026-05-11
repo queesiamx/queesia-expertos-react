@@ -8,6 +8,7 @@ import {
   getDocs,
   serverTimestamp,
   updateDoc,
+  deleteDoc,
   doc
 } from "firebase/firestore";
 import { Star } from "lucide-react";
@@ -92,6 +93,35 @@ import { Star } from "lucide-react";
             photoURL: usuario.photoURL || ""
           }
         });
+
+        const handleDeleteRating = async () => {
+        if (!usuario) return;
+        if (!myRating?.id) return;
+
+        const confirmar = window.confirm(
+          "¿Seguro que quieres eliminar tu calificación?"
+        );
+
+        if (!confirmar) return;
+
+        setSaving(true);
+
+        try {
+          await deleteDoc(doc(db, "expertRatings", myRating.id));
+
+          const restantes = ratings.filter((r) => r.id !== myRating.id);
+
+          setRatings(restantes);
+          setMyRating(null);
+          setRating(0);
+          setComment("");
+        } catch (err) {
+          console.error("Error al eliminar calificación:", err);
+          alert("Error al eliminar calificación");
+        } finally {
+          setSaving(false);
+        }
+      };
         ratingId = docRef.id;
       }
       // Actualiza en local el nuevo comentario sin recargar la página
@@ -170,13 +200,26 @@ import { Star } from "lucide-react";
             onChange={e => setComment(e.target.value)}
             disabled={saving}
           />
-          <button
-            className="bg-emerald-600 hover:bg-green-700 text-white px-5 py-1.5 rounded font-semibold"
-            type="submit"
-            disabled={saving}
-          >
-            {myRating ? "Actualizar calificación" : "Enviar calificación"}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="bg-emerald-600 hover:bg-green-700 text-white px-5 py-1.5 rounded font-semibold disabled:opacity-60"
+              type="submit"
+              disabled={saving}
+            >
+              {myRating ? "Actualizar calificación" : "Enviar calificación"}
+            </button>
+
+            {myRating && (
+              <button
+                type="button"
+                onClick={handleDeleteRating}
+                disabled={saving}
+                className="border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 px-5 py-1.5 rounded font-semibold disabled:opacity-60"
+              >
+                Eliminar mi calificación
+              </button>
+            )}
+          </div>
         </form>
       )}
 
