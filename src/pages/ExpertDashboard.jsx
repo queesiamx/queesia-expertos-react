@@ -224,8 +224,13 @@ const ExpertDashboard = () => {
             </div>
           ) : (
             <>
-              <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-5 md:p-6 shadow-sm mb-6">
-                <ExpertProfileCard expert={expert} />
+              <div className="mb-6">
+                <ExpertProfileCard
+                  expert={expert}
+                  onEdit={() => setEditMode(true)}
+                  onUpload={() => setShowModal(true)}
+                  publicHref={`/expertos/${expert.id}`}
+                />
               </div>
 
               <ExpertServicesSection
