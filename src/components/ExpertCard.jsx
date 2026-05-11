@@ -241,9 +241,9 @@ export default function ExpertCard({
   return (
     <article
       onClick={handleView}
-      className="group relative flex h-[310px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
+      className="group relative flex min-h-[330px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg"
     >
-      <div className="flex flex-1 flex-col p-5">
+      <div className="flex flex-1 flex-col p-5 pb-3">
         {/* Header */}
         <div className="relative min-h-[86px] pr-24">
           <div className="flex min-w-0 items-start gap-4">
@@ -310,7 +310,7 @@ export default function ExpertCard({
         </div>
 
         {/* Meta */}
-        <div className="mt-4 border-t border-slate-100 pt-4">
+        <div className="mt-auto border-t border-slate-100 pt-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
@@ -346,7 +346,7 @@ export default function ExpertCard({
       </div>
 
       {/* Footer */}
-      <div className="p-5 pt-0">
+      <div className="px-5 pb-5 pt-3">
         <div className="flex items-center gap-3">
           <button
             type="button"
