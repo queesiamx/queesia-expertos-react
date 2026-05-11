@@ -245,9 +245,8 @@ export default function ExpertCard({
     >
       <div className="flex flex-1 flex-col p-5 pb-3">
         {/* Header */}
-        {/* Header */}
-<div className="min-h-[116px]">
-  {/* Badge separado para no apretar el nombre */}
+<div className="min-h-[118px]">
+  {/* Badge separado */}
   <div className="mb-3 flex h-7 items-center justify-end">
     {verificado ? (
       <Badge color="amber" icon={<ShieldIcon />}>
@@ -295,19 +294,8 @@ export default function ExpertCard({
         {titulo}
       </p>
     </div>
-    </div>
-
-
-          <div className="absolute right-0 top-0">
-            {verificado ? (
-              <Badge color="amber" icon={<ShieldIcon />}>
-                VERIFICADO
-              </Badge>
-            ) : isAdmin ? (
-              <Badge color="slate">PENDIENTE</Badge>
-            ) : null}
-          </div>
-        </div>
+  </div>
+</div>
 
         {/* Rating */}
         <div className="mt-3">
