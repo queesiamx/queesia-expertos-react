@@ -102,8 +102,26 @@ function formatMoney(n) {
 }
 
 /* -------------------------------- Card -------------------------------------- */
-export default function ExpertCard({ expert }) {
+export default function ExpertCard({
+  expert,
+  variant = "public",
+  onView,
+  showFavorite = true,
+}) {
   const navigate = useNavigate();
+
+  const isAdmin = variant === "admin";
+
+  const handleView = (e) => {
+    e?.stopPropagation?.();
+
+    if (onView) {
+      onView(expert);
+      return;
+    }
+
+    navigate(`/expertos/${expert.id}`);
+  };
 
   const nombre = expert?.nombre || "Experto/a";
   const titulo = expert?.especialidad || "";
@@ -136,8 +154,9 @@ export default function ExpertCard({ expert }) {
             )}
             <div>
               <button
-                onClick={() => navigate(`/expertos/${expert.id}`)}
-                className="text-[15px] font-semibold text-slate-900 hover:text-blue-600"
+                type="button"
+                onClick={handleView}
+                className="text-[15px] font-semibold text-slate-900 hover:text-blue-600 text-left"
               >
                 {nombre}
               </button>
@@ -198,13 +217,14 @@ export default function ExpertCard({ expert }) {
       <div className="mt-auto p-4 pt-0">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/expertos/${expert.id}`)}
+            type="button"
+            onClick={handleView}
             className="flex-1 h-10 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
           >
             Ver Perfil
           </button>
 
-          <FavoriteButton />
+          {showFavorite && <FavoriteButton />}
         </div>
       </div>
 

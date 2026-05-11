@@ -4,6 +4,7 @@ import { collection, getDocs, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import ExpertDetailAdmin from "../components/ExpertDetailAdmin";
 import { exportExpertosAprobadosCSV } from "@/utils/exportExpertsCsv";
+import ExpertCard from "../components/ExpertCard";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "@/auth/context/AuthContext";
@@ -263,73 +264,13 @@ export default function AdminExpertos() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {expertosFiltrados.map((exp) => (
-              <div
+              <ExpertCard
                 key={exp.id}
-                className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer"
-                onClick={() => setSeleccionado(exp)}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-slate-200 ring-2 ring-white shadow-sm shrink-0" />
-                    <div>
-                      <h3 className="text-[15px] font-semibold text-default leading-tight">
-                        {exp.nombre}
-                      </h3>
-                      <div className="text-sm text-blue-700">
-                        {exp.especialidad || "—"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {exp.aprobado && (
-                    <span className="px-2 py-1 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
-                      VERIFICADO
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-2 flex items-center gap-1 text-[13px] text-slate-600">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-amber-400">
-                    <path
-                      fill="currentColor"
-                      d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                    />
-                  </svg>
-                  <span>—</span>
-                  <span className="text-slate-400">•</span>
-                  <span>Responde rápido</span>
-                </div>
-
-                <div className="mt-3 flex items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSeleccionado(exp);
-                    }}
-                    className="flex-1 h-10 px-4 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
-                  >
-                    Ver perfil
-                  </button>
-
-                  <button
-                    type="button"
-                    className="h-10 w-10 grid place-items-center rounded-lg border border-slate-300 text-slate-600 hover:border-blue-300"
-                    aria-label="Guardar"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="w-5 h-5"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fill="currentColor"
-                        d="M16.5,3c-1.74,0-3.41,0.81-4.5,2.09C10.91,3.81,9.24,3,7.5,3C4.42,3,2,5.42,2,8.5c0,3.78,3.4,6.86,8.55,11.54L12,21.35l1.45-1.32C18.6,15.36,22,12.28,22,8.5C22,5.42,19.58,3,16.5,3z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                expert={exp}
+                variant="admin"
+                showFavorite={false}
+                onView={() => setSeleccionado(exp)}
+              />
             ))}
           </div>
         )}
