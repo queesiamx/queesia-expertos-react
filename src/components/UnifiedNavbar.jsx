@@ -83,18 +83,13 @@ export default function UnifiedNavbar() {
 
 
         {/* Logo */}
-        <a href="https://queesia.com" className="flex items-center gap-2">
-        <img src="/logo-bg.png" alt="Queesia" className="w-8 h-8" />
-        <span className="font-raleway italic font-bold text-[30px] leading-[36px]">
-          <span className="text-black">quees</span>
-          <span className="text-blue-600">ia</span>
-          {rol === "experto" && (
-            <span className="ml-1 not-italic font-semibold text-black text-[18px] align-middle">
-              expertos
-            </span>
-          )}
-        </span>
-      </a>
+        <a href="https://queesia.com" className="flex items-center gap-2 shrink-0">
+          <img src="/logo-bg.png" alt="Queesia" className="w-8 h-8" />
+          <span className="font-raleway italic font-bold text-[30px] leading-[36px] whitespace-nowrap">
+            <span className="text-black">quees</span>
+            <span className="text-blue-600">ia</span>
+          </span>
+        </a>
 
 
 
