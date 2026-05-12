@@ -7,6 +7,7 @@ import { logout } from "@/auth/logout";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
 import toast from "react-hot-toast";
+import { FcGoogle } from "react-icons/fc";
 
 export default function UnifiedNavbar() {
   const headerRef = useRef(null);
@@ -76,9 +77,12 @@ export default function UnifiedNavbar() {
 
 
     return (
-    <header ref={headerRef} data-navbar className="sticky top-0 z-[9999] w-full
-      bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70
-      border-b border-slate-200 shadow-sm">
+    <header
+      ref={headerRef}
+      className="sticky top-0 left-0 z-50 w-full flex items-center justify-between px-4 py-3
+      bg-white/35 border-b border-white/40 shadow-md shadow-slate-900/10
+      backdrop-blur-2xl supports-[backdrop-filter]:bg-white/25"
+    >
       <div className="w-full px-2 sm:px-4 h-16 flex items-center justify-between">
 
 
@@ -214,15 +218,14 @@ export default function UnifiedNavbar() {
             </>
           ) : (
             <>
-               <a href="/login" className="inline-flex items-center px-3 py-2 rounded-lg border">
-                Iniciar sesión
+            <a
+                href="/login"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-black px-4 text-sm font-bold text-white shadow-lg shadow-black/25 transition hover:bg-black/90 hover:no-underline"
+              >
+                <FcGoogle className="text-[20px]" />
+                <span>Iniciar sesión</span>
               </a>
-              <Link
-                to="/registro"
-                className="btn btn-lg btn-expert">
-
-                Ser Experto
-              </Link>
+              
             </>
           )}
         </div>

@@ -247,7 +247,7 @@ const [localChip, setLocalChip]   = useState("Todos");
         </button>
         <button
           onClick={() => navigate("/terminos")}
-          className="h-11 px-5 rounded-2xl bg-[var(--card)] ring-1 ring-[var(--ring)]"
+          className="btn-gradient"
         >
           Saber más
         </button>

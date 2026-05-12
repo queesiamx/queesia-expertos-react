@@ -27,7 +27,7 @@ const DISCORD_URL = import.meta.env.PUBLIC_DISCORD_URL ?? "";
 // ————————————————— Hero (light, estilo queesia.com)
 function HeroExpertos({ stats }) {
   return (
-   <section id="expertos-hero" className="relative isolate overflow-hidden bg-slate-50 text-slate-900">
+   <section id="expertos-hero" className="relative isolate overflow-hidden text-slate-900">
       {/* Circulitos suaves opcionales */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div
@@ -48,7 +48,7 @@ function HeroExpertos({ stats }) {
 
         {/* Título según Font Picker (Montserrat, 36px, 700, 40px) */}
         <h1 className="font-montserrat text-[36px] leading-[40px] font-bold tracking-normal text-slate-900 not-italic">
-          Conecta con <span className="text-yellow-300">Expertos</span> en IA
+          Conecta con expertos en <span className="text-sky-500">IA</span>  
         </h1>
 
 
@@ -61,13 +61,13 @@ function HeroExpertos({ stats }) {
         <div className="mt-8 flex items-center justify-center gap-3">
           <a
             href="#filtros"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-blue-700 px-5 font-semibold leading-none text-white shadow hover:bg-blue-800"
+            className="btn-gradient"
           >
             Explorar Expertos
           </a>
           <a
             href="/registro"
-            className="btn btn-lg btn-expert">
+            className="btn-gradient">
           
             Convertirme en un Experto
           </a>
@@ -75,11 +75,11 @@ function HeroExpertos({ stats }) {
 
         {/* Métricas (tarjetas claras) */}
         <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl bg-white/60 backdrop-blur-md border border-white/60 shadow-lg px-4 py-4">
             <div className="text-2xl font-bold">{stats?.expertsVerified ?? "—"}</div>
             <div className="mt-0.5 text-sm text-slate-600">Expertos verificados</div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl bg-white/60 backdrop-blur-md border border-white/60 shadow-lg px-4 py-4">
             <div className="text-2xl font-bold">
               {stats?.avgRating == null ? "—" : Number(stats.avgRating).toFixed(1)}{" "}
               <span className="text-yellow-300">★</span>
@@ -89,7 +89,7 @@ function HeroExpertos({ stats }) {
               <span className="text-xs text-slate-400"> {stats?.ratingsCount ? `(${stats.ratingsCount} reseñas)` : "(sin reseñas)"}</span>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-2xl bg-white/60 backdrop-blur-md border border-white/60 shadow-lg px-4 py-4">
             <div className="text-2xl font-bold">{stats?.consultasResueltas ?? "—"}</div>
             <div className="mt-0.5 text-sm text-slate-600">Consultas atendidas</div>
           </div>
@@ -417,7 +417,7 @@ useEffect(() => {
   return (
     <>
       <UnifiedNavbar />
-      <main className="bg-white text-slate-900">
+      <main className="text-slate-900 bg-transparent">
         <HeroExpertos stats={heroStats} />
 
             {/* monta el híbrido */}
@@ -488,7 +488,7 @@ useEffect(() => {
         </section>
 
         {/* CTA final */}
-        <section className="bg-slate-50">
+        <section className="bg-transparent">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
             <div className="text-center">
               <h3 className="text-2xl font-semibold mb-2">¿Eres un experto en IA?</h3>
@@ -496,8 +496,8 @@ useEffect(() => {
                 Únete a nuestra comunidad de especialistas y ayuda a empresas a implementar IA
               </p>
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-  <a href="/registro" className="btn btn-lg btn-expert">Registrarse como Experto</a>
-  <a href="/terminos" className="inline-flex h-11 items-center justify-center rounded-xl bg-gray-400 px-5 font-semibold leading-none text-white shadow hover:bg-blue-800"
+  <a href="/registro" className="btn-gradient">Registrarse como Experto</a>
+  <a href="/terminos" className="btn-gradient"
           >Saber más</a>
 </div>
 
@@ -506,7 +506,7 @@ useEffect(() => {
         </section>
 
         {/* 👁️ Contador visible */}
-        <div className="bg-white border-t border-slate-100">
+        <div className="backdrop-blur ">
           <p className="text-center text-xs text-slate-500 py-2">
             Visitas: {visitas ?? "…"}
           </p>

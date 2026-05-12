@@ -17,33 +17,51 @@ module.exports = {
 theme: {
   extend: {
     fontFamily: {
-      sans: ['Montserrat', 'ui-sans-serif', 'system-ui'],
-       raleway: ["Raleway", "ui-sans-serif", "system-ui", "sans-serif"],
-      },
+      sans: ["Raleway", "system-ui", "sans-serif"],
+      raleway: ["Raleway", "system-ui", "sans-serif"],
+      montserrat: ["Montserrat", "system-ui", "sans-serif"],
+    },
       letterSpacing: {
        snugger: "-0.02em", // un pelín más cerrado que tracking-tight
      },
 
       // 🎨 Paleta alineada al mock oscuro
-      colors: {
-        // lo que ya tenías
-        default: {
-          DEFAULT: "#2D2D2D",
-          soft: "#696969",
-          strong: "#000000",
-        },
-        // ⬅️ usa el amarillo del mock como principal
-        primary: {
-          DEFAULT: "#FFD166", // amarillo mock
-          soft: "#FFE65D",    // tu soft amarilla
-          accent: "#CDDDCC",
-          medium: "#34495E",
-          strong: "#0D0D0D",
-        },
-        // azul que ya usabas como primario -> lo dejamos como secundario
-        secondary: {
-          DEFAULT: "#327FFA",
-        },
+        colors: {
+          // lo que ya tenías
+          default: {
+            DEFAULT: "#2D2D2D",
+            soft: "#696969",
+            strong: "#000000",
+          },
+
+          // NUEVO BLOQUE ↓↓↓
+          queesia: {
+            blue: "#0057b8",
+            yellow: "#ffd166",
+            dark: "#1b1f2a",
+            soft: "#f7f9fc",
+          },
+
+          // ⬅️ usa el amarillo del mock como principal
+          primary: {
+            DEFAULT: "#FFD166",
+            soft: "#FFE65D",
+            accent: "#CDDDCC",
+            medium: "#34495E",
+            strong: "#0D0D0D",
+
+            // AGREGA ESTO ↓↓↓
+            50: "#eff6ff",
+            100: "#dbeafe",
+            500: "#0b63ce",
+            600: "#0057b8",
+            700: "#004a9f",
+          },
+
+          // azul que ya usabas como primario
+          secondary: {
+            DEFAULT: "#327FFA",
+          },
 
         // Tema UI del mock oscuro (para fondos/contornos)
         ui: {

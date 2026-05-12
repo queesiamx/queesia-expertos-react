@@ -9,7 +9,7 @@ return (
 <>
 <UnifiedNavbar />
 {/* Contenedor principal con fondo y colores del mock */}
-<main className="bg-white text-slate-900">
+<main className="text-slate-900 bg-transparent">
     <ExpertsBrowser variant="light" />
 <Footer />
 </main>
