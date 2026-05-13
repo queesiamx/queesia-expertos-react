@@ -98,7 +98,7 @@ function HeroExpertos({ stats }) {
 
         {/*Únete a la comunidad */}
         
-    <section class="mt-16 bg-yellow-100/60 rounded-2xl px-6 py-8 border">
+    <section className="mx-auto mt-16 max-w-4xl rounded-3xl bg-yellow-100/55 px-6 py-10 text-center shadow-sm ring-1 ring-white/60 backdrop-blur-md">
       <div class="max-w-3xl mx-auto text-center">
         <h2 class="text-2xl md:text-3xl font-extrabold italic">Únete al canal</h2>
         <p className="text-gray-700 mt-2">
@@ -145,7 +145,8 @@ function HeroExpertos({ stats }) {
       <div id="bubbles-sentinel" className="h-px" />
 
 
-<CtaBanner fullWidth className="mb-10"
+<CtaBanner
+  className="mx-auto mb-10 max-w-6xl rounded-3xl bg-blue-100/65 px-8 py-8 shadow-sm ring-1 ring-white/60 backdrop-blur-md"
   title="¿Tienes un proyecto en mente o no sabes por dónde empezar?"
   buttonText="Contáctanos"
   href="https://queesia.com/contacto"
@@ -168,7 +169,7 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
   return (
 <section
   id="filtros"
-  className="page-shell relative z-10 scroll-mt-28 text-slate-900"
+  className="page-shell relative z-10 mx-auto max-w-7xl scroll-mt-28 px-4 py-6 text-slate-900"
 >
       <div className="filters-card px-4 sm:px-6 py-4">
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
