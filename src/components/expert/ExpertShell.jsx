@@ -10,7 +10,7 @@ export default function ExpertShell({
   children,
 }) {
   return (
-    <div className="min-h-screen bg-[#f7fafc] font-sans">
+    <div className="min-h-screen bg-transparent font-sans">
       <UnifiedNavbar />
 
       <div className="mx-auto max-w-7xl px-4 py-6">
