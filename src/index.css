@@ -219,7 +219,7 @@ iframe[name^="__privateStripeController"] { display: none !important; }
 
 /* ===== Fondo para vistas de dashboard SIN pisar el fondo global =====
    Aplica esta clase en el wrapper del dashboard (p.ej. <main class="dashboard-shell">) */
-.dashboard-shell { background-color: #f7fafc; }
+.dashboard-shell { background: transparent !important; }
 /* Animaciones extra para engranes */
 @keyframes spin-slow {
   to { transform: rotate(360deg); }
