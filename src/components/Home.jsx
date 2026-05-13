@@ -163,7 +163,20 @@ function HeroExpertos({ stats }) {
 
 
 // ————————————————— Barra de filtros/búsqueda (mock)
-function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
+function FiltrosBar({
+  query,
+  setQuery,
+  sort,
+  setSort,
+  chip,
+  setChip,
+  specialty,
+  setSpecialty,
+  service,
+  setService,
+  price,
+  setPrice,
+}) {
   const chips = ["Mejor valorados", "Disponibles ahora", "Precio económico", "Respuesta rápida"];
 
   return (
@@ -191,14 +204,38 @@ function FiltrosBar({ query, setQuery, sort, setSort, chip, setChip }) {
           </label>
 
           <div className="flex gap-2">
-            <select className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
-              <option>Todas las especialidades</option>
+            <select
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
+              className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3"
+            >
+              <option value="">Todas las especialidades</option>
+              <option value="Gestión de Proyectos">Gestión de Proyectos</option>
+              <option value="Ingeniería Petrolera">Ingeniería Petrolera</option>
+              <option value="Machine Learning">Machine Learning</option>
+              <option value="Desarrollo Web">Desarrollo Web</option>
             </select>
-            <select className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
-              <option>Todos los servicios</option>
+
+            <select
+              value={service}
+              onChange={(e) => setService(e.target.value)}
+              className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3"
+            >
+              <option value="">Todos los servicios</option>
+              <option value="consulta">Consulta</option>
+              <option value="curso">Curso</option>
+              <option value="manual">Manual</option>
             </select>
-            <select className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3">
-              <option>Cualquier precio</option>
+
+            <select
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="h-11 w-full sm:w-auto rounded-xl bg-white text-slate-900 border border-slate-300 px-3"
+            >
+              <option value="">Cualquier precio</option>
+              <option value="economico">Precio económico</option>
+              <option value="medio">Precio medio</option>
+              <option value="premium">Premium</option>
             </select>
           </div>
         </div>
@@ -249,6 +286,11 @@ export default function Expertos() {
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState(""); // chips “rápidos”
   const [sort, setSort] = useState("relevance");
+
+  const [specialty, setSpecialty] = useState("");
+  const [service, setService] = useState("");
+  const [price, setPrice] = useState("");
+
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
@@ -387,6 +429,40 @@ useEffect(() => {
       });
     }
 
+    if (specialty) {
+      const s = specialty.toLowerCase();
+      rows = rows.filter((x) =>
+        (x.especialidad || "").toLowerCase().includes(s)
+      );
+    }
+
+    if (service) {
+      rows = rows.filter((x) =>
+        Array.isArray(x.servicios) &&
+        x.servicios.some((serv) =>
+          String(serv.tipoContenido || serv.tipo || "").toLowerCase() === service
+        )
+      );
+    }
+
+    if (price) {
+      rows = rows.filter((x) => {
+        const precios = Array.isArray(x.servicios)
+          ? x.servicios
+              .map((serv) => Number(serv.precio || serv.precioMXN || serv.costo || 0))
+              .filter((n) => n > 0)
+          : [];
+
+        const minPrecio = precios.length ? Math.min(...precios) : Number(x.precioHora || 0);
+
+        if (price === "economico") return minPrecio > 0 && minPrecio <= 500;
+        if (price === "medio") return minPrecio > 500 && minPrecio <= 1500;
+        if (price === "premium") return minPrecio > 1500;
+
+        return true;
+      });
+    }
+
     if (chip) {
       if (chip === "Mejor valorados") rows.sort((a, b) => (b.calificacionPromedio || 0) - (a.calificacionPromedio || 0));
       if (chip === "Precio económico") rows.sort((a, b) => (a.precioHora || 0) - (b.precioHora || 0));
@@ -411,7 +487,7 @@ useEffect(() => {
     }
 
     return rows;
-  }, [expertos, query, chip, sort]);
+  }, [expertos, query, specialty, service, price, chip, sort]);
 
   const visibles = useMemo(() => filtrados.slice(0, page * pageSize), [filtrados, page, pageSize]);
 
@@ -441,19 +517,34 @@ useEffect(() => {
 
 
         <FiltrosBar
-          query={query}
-          setQuery={setQuery}
-          sort={sort}
-          setSort={(v) => {
-            setSort(v);
-            setPage(1);
-          }}
-          chip={chip}
-          setChip={(v) => {
-            setChip(v);
-            setPage(1);
-          }}
-        />
+  query={query}
+  setQuery={setQuery}
+  sort={sort}
+  setSort={(v) => {
+    setSort(v);
+    setPage(1);
+  }}
+  chip={chip}
+  setChip={(v) => {
+    setChip(v);
+    setPage(1);
+  }}
+  specialty={specialty}
+  setSpecialty={(v) => {
+    setSpecialty(v);
+    setPage(1);
+  }}
+  service={service}
+  setService={(v) => {
+    setService(v);
+    setPage(1);
+  }}
+  price={price}
+  setPrice={(v) => {
+    setPrice(v);
+    setPage(1);
+  }}
+/>
 
         {/* Listado */}
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
