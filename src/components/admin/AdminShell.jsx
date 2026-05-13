@@ -9,7 +9,7 @@ export default function AdminShell({
   sidebarProps = {},
 }) {
   return (
-    <div className="bg-[#f7fafc] font-sans">
+    <div className="min-h-screen bg-transparent font-sans">
       <UnifiedNavbar />
 
       <div className="max-w-7xl mx-auto px-4 pt-6 pb-0">
