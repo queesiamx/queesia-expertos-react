@@ -41,6 +41,7 @@ function getFechaPrincipal(contenido) {
 export default function ExpertServiceCard({
   contenido,
   onDelete,
+  onEdit,
   onAddDate,
 }) {
   const tipo = contenido?.tipoContenido || "servicio";
@@ -123,6 +124,7 @@ export default function ExpertServiceCard({
 
           <button
             type="button"
+            onClick={() => onEdit?.(contenido)}
             className="inline-flex h-9 items-center justify-center rounded-lg bg-white px-3 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
           >
             Editar

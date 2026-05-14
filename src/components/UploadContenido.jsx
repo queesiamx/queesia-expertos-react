@@ -146,6 +146,7 @@ console.log('UPLOAD_PRESET ->', JSON.stringify(import.meta.env.VITE_CLOUDINARY_U
       archivoUrl: archivoUrl || '',
       public_id: public_id || '',
       expertoId,
+      expertoUID: expertoId,
       fechaSubida: Timestamp.now(),
       usuariosAutorizados: [],
     };

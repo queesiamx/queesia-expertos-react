@@ -1,11 +1,11 @@
 // src/pages/ExpertDashboard.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { db } from "@/firebase";
 import { useAuth } from "@/auth/context/AuthContext";
 import {
   doc, getDoc, updateDoc,
-  collection, query, where, getDocs, deleteDoc, arrayUnion
+  collection, query, where, getDocs
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 import ExpertShell from "@/components/expert/ExpertShell";
@@ -16,7 +16,133 @@ import ExpertProfileEditor from "../components/ExpertProfileEditor";
 import ExpertAvailabilityModal from "@/components/expert/ExpertAvailabilityModal";
 import UploadContenido from "../components/UploadContenido";
 import Modal from "../components/Modal";
-import ConsultaModal from "../components/ConsultaModal";
+
+function ServicioEditForm({ contenido, onCancel, onSave }) {
+  const [form, setForm] = useState({
+    titulo: contenido?.titulo || "",
+    descripcion: contenido?.descripcion || "",
+    precio: contenido?.precio ?? "",
+    tipoContenido: contenido?.tipoContenido || "curso",
+    modalidad: contenido?.modalidad || "en línea",
+    plataforma: contenido?.plataforma || "",
+    duracionHoras: contenido?.duracionHoras ?? "",
+    cupoMinimo: contenido?.cupoMinimo ?? "",
+    cupoMaximo: contenido?.cupoMaximo ?? "",
+    requierePago: !!contenido?.requierePago,
+    urlAccesoPrivado: contenido?.urlAccesoPrivado || "",
+    instruccionesAcceso: contenido?.instruccionesAcceso || "",
+    fechasDisponibles: Array.isArray(contenido?.fechasDisponibles)
+      ? contenido.fechasDisponibles.join("\n")
+      : "",
+    estatus: contenido?.estatus || "activo",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!form.titulo.trim() || !form.descripcion.trim()) {
+      toast.error("Completa título y descripción.");
+      return;
+    }
+
+    setSaving(true);
+    await onSave({
+      ...form,
+      precio: form.precio === "" ? null : Number(form.precio),
+      duracionHoras: form.duracionHoras === "" ? null : Number(form.duracionHoras),
+      cupoMinimo: form.cupoMinimo === "" ? null : Number(form.cupoMinimo),
+      cupoMaximo: form.cupoMaximo === "" ? null : Number(form.cupoMaximo),
+      fechasDisponibles: form.fechasDisponibles
+        .split("\n")
+        .map((fecha) => fecha.trim())
+        .filter(Boolean),
+    });
+    setSaving(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-semibold text-slate-900">Editar servicio</h2>
+        <p className="mt-1 text-sm text-slate-500">Actualiza la información visible para los usuarios.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="block md:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Título</span>
+          <input name="titulo" value={form.titulo} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" required />
+        </label>
+
+        <label className="block md:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Descripción</span>
+          <textarea name="descripcion" value={form.descripcion} onChange={handleChange} className="mt-1 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" required />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Tipo</span>
+          <select name="tipoContenido" value={form.tipoContenido} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2">
+            <option value="curso">Curso</option>
+            <option value="manual">Manual</option>
+            <option value="consulta">Consulta</option>
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Precio</span>
+          <input name="precio" type="number" min="0" step="0.01" value={form.precio} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Modalidad</span>
+          <input name="modalidad" value={form.modalidad} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Plataforma</span>
+          <input name="plataforma" value={form.plataforma} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Duración (horas)</span>
+          <input name="duracionHoras" type="number" min="0" value={form.duracionHoras} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Cupo máximo</span>
+          <input name="cupoMaximo" type="number" min="0" value={form.cupoMaximo} onChange={handleChange} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" />
+        </label>
+
+        <label className="block md:col-span-2">
+          <span className="text-sm font-medium text-slate-700">Fechas disponibles</span>
+          <textarea name="fechasDisponibles" value={form.fechasDisponibles} onChange={handleChange} placeholder="Una fecha por línea" className="mt-1 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
+        </label>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="requierePago" checked={form.requierePago} onChange={handleChange} />
+        Requiere pago para acceder
+      </label>
+
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={onCancel} className="rounded-xl bg-white px-4 py-2 text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+          Cancelar
+        </button>
+        <button type="submit" disabled={saving} className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
+          {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 
 const ExpertDashboard = () => {
   const navigate = useNavigate();
@@ -32,11 +158,9 @@ const ExpertDashboard = () => {
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [contenidos, setContenidos] = useState([]);
   const [modalFechaVisible, setModalFechaVisible] = useState(false);
-  const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
+  const [contenidoEnEdicion, setContenidoEnEdicion] = useState(null);
   const [nuevaFecha, setNuevaFecha] = useState("");
-  const [consultaModalVisible, setConsultaModalVisible] = useState(false);
-  const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
-
+  
   const handleSaveAvailability = async (data) => {
     try {
       if (!expert?.id) {
@@ -61,14 +185,58 @@ const ExpertDashboard = () => {
     }
   };
 
-  const cargarContenidos = async () => {
+const cargarContenidos = useCallback(async () => {
     if (!expert?.id) return;
-    const q = query(
-      collection(db, "contenidosExpertos"),
-      where("expertoId", "==", expert.id)
-    );
-    const snapshot = await getDocs(q);
-    setContenidos(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+    const consultas = [
+      query(collection(db, "contenidosExpertos"), where("expertoId", "==", expert.id)),
+      query(collection(db, "contenidosExpertos"), where("expertoUID", "==", expert.id)),
+    ];
+
+    const snapshots = await Promise.all(consultas.map((q) => getDocs(q)));
+    const contenidosPorId = new Map();
+
+    snapshots.forEach((snapshot) => {
+      snapshot.docs.forEach((d) => {
+        contenidosPorId.set(d.id, { id: d.id, ...d.data() });
+      });
+    });
+
+    setContenidos(Array.from(contenidosPorId.values()));
+  }, [expert?.id]);
+
+  const getAuthHeaders = async () => {
+    const token = await user?.getIdToken?.();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const updateContenido = async (contenidoId, payload) => {
+    const res = await fetch("/api/delete-cloudinary", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(await getAuthHeaders()),
+      },
+      body: JSON.stringify({ id: contenidoId, ...payload }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "No se pudo actualizar el contenido.");
+    return data;
+  };
+
+  const deleteContenidoDoc = async (contenidoId) => {
+    const res = await fetch("/api/delete-cloudinary", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(await getAuthHeaders()),
+      },
+      body: JSON.stringify({ id: contenidoId }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "No se pudo eliminar el contenido.");
+    return data;
   };
 
   const handleDeleteContenido = async (contenidoId, publicId) => {
@@ -84,7 +252,7 @@ const ExpertDashboard = () => {
         let data; try { data = JSON.parse(text); } catch { data = {}; }
         if (data.error) { toast.error("Cloudinary: " + data.error); return; }
       }
-      await deleteDoc(doc(db, "contenidosExpertos", contenidoId));
+      await deleteContenidoDoc(contenidoId);
       toast.success("Contenido eliminado.");
       cargarContenidos();
     } catch (e) {
@@ -101,8 +269,12 @@ const ExpertDashboard = () => {
   const guardarFecha = async () => {
     if (!nuevaFecha || !contenidoSeleccionado) return;
     try {
-      const ref = doc(db, "contenidosExpertos", contenidoSeleccionado.id);
-      await updateDoc(ref, { fechasDisponibles: arrayUnion(nuevaFecha) });
+      const fechasActuales = Array.isArray(contenidoSeleccionado.fechasDisponibles)
+        ? contenidoSeleccionado.fechasDisponibles
+        : [];
+      await updateContenido(contenidoSeleccionado.id, {
+        fechasDisponibles: [...new Set([...fechasActuales, nuevaFecha])],
+      });
       toast.success("Fecha agregada.");
       setNuevaFecha("");
       setModalFechaVisible(false);
@@ -111,6 +283,24 @@ const ExpertDashboard = () => {
     } catch (e) {
       console.error(e);
       toast.error("Error al guardar la fecha");
+    }
+  };
+
+  const handleEditarContenido = (contenido) => {
+    setContenidoEnEdicion(contenido);
+  };
+
+  const handleGuardarContenido = async (payload) => {
+    if (!contenidoEnEdicion?.id) return;
+
+    try {
+      await updateContenido(contenidoEnEdicion.id, payload);
+      toast.success("Servicio actualizado.");
+      setContenidoEnEdicion(null);
+      cargarContenidos();
+    } catch (e) {
+      console.error(e);
+      toast.error(e.message || "No se pudo actualizar el servicio.");
     }
   };
 
@@ -155,7 +345,7 @@ const ExpertDashboard = () => {
   // Cargar contenidos cuando ya hay experto
   useEffect(() => {
     if (expert?.id) cargarContenidos();
-  }, [expert]);
+  }, [expert, cargarContenidos]);
 
   // Scroll suave a #servicios
   useEffect(() => {
@@ -267,6 +457,7 @@ const ExpertDashboard = () => {
                 serviciosRef={serviciosRef}
                 onAddService={() => setShowModal(true)}
                 onDelete={handleDeleteContenido}
+                onEdit={handleEditarContenido}
                 onAddDate={handleAgregarFecha}
               />
                 </>
@@ -280,6 +471,16 @@ const ExpertDashboard = () => {
           onCloseModal={() => setShowModal(false)}
           onUploadSuccess={cargarContenidos}
         />
+      </Modal>
+
+      <Modal isOpen={!!contenidoEnEdicion} onClose={() => setContenidoEnEdicion(null)}>
+        {contenidoEnEdicion && (
+          <ServicioEditForm
+            contenido={contenidoEnEdicion}
+            onCancel={() => setContenidoEnEdicion(null)}
+            onSave={handleGuardarContenido}
+          />
+        )}
       </Modal>
 
       <Modal isOpen={modalFechaVisible} onClose={() => setModalFechaVisible(false)}>
@@ -298,13 +499,7 @@ const ExpertDashboard = () => {
         </button>
       </Modal>
 
-      {consultaModalVisible && consultaSeleccionada && (
-        <ConsultaModal
-          consulta={consultaSeleccionada}
-          onClose={() => setConsultaModalVisible(false)}
-        />
-        
-      )}
+     
       <ExpertAvailabilityModal
         isOpen={showAvailabilityModal}
         onClose={() => setShowAvailabilityModal(false)}

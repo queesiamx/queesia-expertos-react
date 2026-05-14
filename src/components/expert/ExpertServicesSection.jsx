@@ -13,6 +13,7 @@ export default function ExpertServicesSection({
   serviciosRef,
   onAddService,
   onDelete,
+  onEdit,
   onAddDate,
 }) {
   const [filtro, setFiltro] = useState("todos");
@@ -76,6 +77,7 @@ export default function ExpertServicesSection({
               key={contenido.id}
               contenido={contenido}
               onDelete={onDelete}
+              onEdit={onEdit}
               onAddDate={onAddDate}
             />
           ))}
