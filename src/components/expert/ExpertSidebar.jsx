@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 import ExpertNavCard from "./ExpertNavCard";
 
-export default function ExpertSidebar({
-  consultasRecibidasCount = 0,
-  consultasRespondidasCount = 0,
-}) {
+ export default function ExpertSidebar({
+   consultasRecibidasCount = 0,
+   consultasRespondidasCount = 0,
+   onOpenAvailability,
+ }) {
   return (
     <aside className="w-full shrink-0 lg:w-[290px]">
       <div className="space-y-6 lg:sticky lg:top-[96px]">
@@ -65,11 +66,14 @@ export default function ExpertSidebar({
               icon={BookOpen}
             />
 
-            <ExpertNavCard
-              to="/expert-dashboard"
-              label="Disponibilidad"
-              icon={CalendarDays}
-            />
+             <button
+               type="button"
+               onClick={onOpenAvailability}
+               className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+             >
+               <CalendarDays size={18} />
+               <span>Disponibilidad</span>
+             </button>
 
             <ExpertNavCard
               to="/expert-dashboard"

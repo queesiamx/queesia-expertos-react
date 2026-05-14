@@ -13,6 +13,7 @@ import ExpertServicesSection from "@/components/expert/ExpertServicesSection";
 import UnifiedNavbar from "../components/UnifiedNavbar";
 import ExpertProfileCard from "../components/ExpertProfileCard";
 import ExpertProfileEditor from "../components/ExpertProfileEditor";
+import ExpertAvailabilityModal from "@/components/expert/ExpertAvailabilityModal";
 import UploadContenido from "../components/UploadContenido";
 import Modal from "../components/Modal";
 import ConsultaModal from "../components/ConsultaModal";
@@ -28,12 +29,37 @@ const ExpertDashboard = () => {
   const [expert, setExpert] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [contenidos, setContenidos] = useState([]);
   const [modalFechaVisible, setModalFechaVisible] = useState(false);
   const [contenidoSeleccionado, setContenidoSeleccionado] = useState(null);
   const [nuevaFecha, setNuevaFecha] = useState("");
   const [consultaModalVisible, setConsultaModalVisible] = useState(false);
   const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
+
+  const handleSaveAvailability = async (data) => {
+    try {
+      if (!expert?.id) {
+        toast.error("No se encontró el perfil del experto.");
+        return;
+      }
+
+      const ref = doc(db, "experts", expert.id);
+
+      await updateDoc(ref, data);
+
+      setExpert((prev) => ({
+        ...prev,
+        ...data,
+      }));
+
+      toast.success("Disponibilidad actualizada correctamente.");
+      setShowAvailabilityModal(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo guardar la disponibilidad.");
+    }
+  };
 
   const cargarContenidos = async () => {
     if (!expert?.id) return;
@@ -162,6 +188,9 @@ const ExpertDashboard = () => {
     <ExpertShell
       title="Panel de Experto"
       subtitle="Administra tu perfil, servicios publicados y contenido disponible para los usuarios."
+         sidebarProps={{
+           onOpenAvailability: () => setShowAvailabilityModal(true),
+         }}
       actions={
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -274,7 +303,14 @@ const ExpertDashboard = () => {
           consulta={consultaSeleccionada}
           onClose={() => setConsultaModalVisible(false)}
         />
+        
       )}
+      <ExpertAvailabilityModal
+        isOpen={showAvailabilityModal}
+        onClose={() => setShowAvailabilityModal(false)}
+        expert={expert}
+        onSave={handleSaveAvailability}
+      />
     </ExpertShell>
   );
 };
