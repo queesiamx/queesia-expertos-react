@@ -257,45 +257,45 @@ export default function ExpertCard({
     ) : null}
   </div>
 
-  {/* Identidad del experto */}
-  <div className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4">
-    <div className="relative shrink-0">
-      {avatar ? (
-        <img
-          src={avatar}
-          alt={nombre}
-          loading="lazy"
-          className="h-16 w-16 rounded-full object-cover ring-4 ring-slate-50"
-        />
-      ) : (
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-sm font-bold text-slate-500 ring-4 ring-slate-50">
-          {getInitials(nombre)}
-        </div>
-      )}
+    {/* Identidad del experto */}
+    <div className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4">
+      <div className="relative shrink-0">
+        {avatar ? (
+          <img
+            src={avatar}
+            alt={nombre}
+            loading="lazy"
+            className="h-16 w-16 rounded-full object-cover ring-4 ring-slate-50"
+          />
+        ) : (
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-slate-200 text-sm font-bold text-slate-500 ring-4 ring-slate-50">
+            {getInitials(nombre)}
+          </div>
+        )}
 
-      <span className="absolute bottom-1 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />
-    </div>
+        <span className="absolute bottom-1 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" />
+      </div>
 
-    <div className="min-w-0 pt-0.5">
-      <button
-        type="button"
-        onClick={handleView}
-        className="block w-full text-left text-[16px] font-bold leading-tight text-slate-950 transition hover:text-blue-700"
-        title={nombre}
-      >
-        <span style={clampStyle(2)}>{nombre}</span>
-      </button>
+      <div className="min-w-0 pt-0.5">
+        <button
+          type="button"
+          onClick={handleView}
+          className="block w-full text-left text-[16px] font-bold leading-tight text-slate-950 transition hover:text-blue-700"
+          title={nombre}
+        >
+          <span style={clampStyle(2)}>{nombre}</span>
+        </button>
 
-      <p
-        className="mt-1 text-[15px] font-medium leading-snug text-blue-700"
-        style={clampStyle(2)}
-        title={titulo}
-      >
-        {titulo}
-      </p>
+        <p
+          className="mt-1 text-[15px] font-medium leading-snug text-blue-700"
+          style={clampStyle(2)}
+          title={titulo}
+        >
+          {titulo}
+        </p>
+      </div>
     </div>
   </div>
-</div>
 
         {/* Rating */}
         <div className="mt-3">
@@ -338,9 +338,14 @@ export default function ExpertCard({
 
               <div className="min-w-0">
                 <p className="truncate text-xs font-semibold text-slate-800">
-                  Disponible ahora
+                  {expert?.disponibleAhora ? "Disponible ahora" : "Disponibilidad"}
                 </p>
-                <p className="truncate text-xs text-slate-500">En línea</p>
+
+                <p className="truncate text-xs text-slate-500">
+                  {expert?.disponibleAhora
+                    ? "En línea"
+                    : expert?.disponibilidad || "Consultar agenda"}
+                </p>
               </div>
             </div>
           </div>

@@ -53,6 +53,9 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
      experiencia: "",
      educacion: "",
      certificaciones: [],
+     disponibilidad: "",
+      SLA: "",
+      disponibleAhora: false,
      linkedin: "",
      telefono: "",
      redes: "",
@@ -347,6 +350,37 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
           }
           className="w-full border px-4 py-2 rounded"
         />
+
+        <input
+          name="disponibilidad"
+          value={formData.disponibilidad || ""}
+          onChange={handleChange}
+          placeholder="Ej. Lunes a viernes — 10:00 a 18:00"
+          className="border px-3 py-2 rounded w-full"
+        />
+
+        <input
+          name="SLA"
+          value={formData.SLA || ""}
+          onChange={handleChange}
+          placeholder="Ej. Responde en 24 h"
+          className="border px-3 py-2 rounded w-full"
+        />
+
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={!!formData.disponibleAhora}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                disponibleAhora: e.target.checked,
+              }))
+            }
+          />
+          Disponible ahora
+        </label>
+
         <input
           type="text"
           name="linkedin"
@@ -377,15 +411,15 @@ export default function ExpertProfileEditor({ expert, onClose, onSave }) {
           {servicios.map((serv, index) => (
             <div key={index} className="border p-3 mb-4 rounded bg-gray-50">
               <select
-  value={serv.tipo}
-  onChange={(e) => handleServicioChange(index, "tipo", e.target.value)}
-  className="border px-2 py-1 rounded w-full mb-2"
->
-  <option value="">Selecciona el tipo</option>
-  <option value="curso">Curso</option>
-  <option value="consulta">Consulta</option>
-  <option value="manual">Manual / Capacitación</option>
-</select>
+              value={serv.tipo}
+              onChange={(e) => handleServicioChange(index, "tipo", e.target.value)}
+              className="border px-2 py-1 rounded w-full mb-2"
+            >
+              <option value="">Selecciona el tipo</option>
+              <option value="curso">Curso</option>
+              <option value="consulta">Consulta</option>
+              <option value="manual">Manual / Capacitación</option>
+            </select>
 
               <input
                 type="text"

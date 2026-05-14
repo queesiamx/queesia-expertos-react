@@ -554,7 +554,7 @@ const TipoBadge = ({ tipo }) => {
     <>
       <UnifiedNavbar />
 
-      <div className="min-h-screen bg-white px-4 py-10 font-sans">
+      <div className="min-h-screen px-4 py-10 font-sans bg-[radial-gradient(circle_at_20%_20%,rgba(147,197,253,0.35),transparent_28%),radial-gradient(circle_at_80%_10%,rgba(216,180,254,0.45),transparent_30%),radial-gradient(circle_at_80%_80%,rgba(253,186,116,0.35),transparent_30%),linear-gradient(135deg,#eef4ff_0%,#f3e8ff_45%,#fff7ed_100%)]">
         <div className="max-w-5xl mx-auto">
           {/* Botón volver */}
           <div>
