@@ -38,7 +38,7 @@ import MisCompras from "@/pages/MisCompras.jsx";
 import Perfil from "@/pages/Perfil.jsx";
 import MisContenidos from "@/pages/MisContenidos";
 import AgendaIA from "@/pages/AgendaIA";
-import AdminAgendaIA from "@/pages/admin/AdminAgendaIA";
+import AdminAgendaIA from "@/pages/admin/AdminAgendaIA.jsx";
 import AgendaEventoDetalle from "@/pages/AgendaEventoDetalle";
 import VistaDetalleContenido from "@/pages/VistaDetalleContenido";
 
