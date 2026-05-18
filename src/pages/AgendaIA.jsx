@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import UnifiedNavbar from "@/components/UnifiedNavbar";
 import Footer from "@/components/Footer";
+import AgendaEventCard from "@/components/calendario/AgendaEventCard";
 
 const API_URL = "https://queesia.com/api/calendario/obtener_eventos.php";
 
@@ -215,8 +216,8 @@ export default function AgendaIA() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {eventosFiltrados.map((evento) => (
-                <EventCard key={evento.id} evento={evento} />
-              ))}
+                  <AgendaEventCard key={evento.id} evento={evento} />
+                ))}
             </div>
           )}
         </section>
