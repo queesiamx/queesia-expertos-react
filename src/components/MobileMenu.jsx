@@ -69,6 +69,7 @@ export default function MobileMenu() {
     { label: "Blog", href: "https://queesia.com/blog/", external: true },
     { label: "Biblioteca", href: "https://queesia.com/biblioteca/", external: true },
     { label: "Ofertas educativas", href: "https://queesia.com/ofertas-educativas/", external: true },
+    { label: "Agenda IA", href: "/agenda-ia", external: true },
     { label: "Sobre nosotros 🧀", href: "https://queesia.com/nosotros" },
     { label: "Contacto", href: "https://queesia.com/contacto" },
     ...(rol === ROLES.ADMIN ? [{ label: "Panel Admin", href: "/admin-expertos" }] : []),

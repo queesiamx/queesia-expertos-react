@@ -37,6 +37,7 @@ import MisValoraciones from "@/pages/MisValoraciones.jsx";
 import MisCompras from "@/pages/MisCompras.jsx";
 import Perfil from "@/pages/Perfil.jsx";
 import MisContenidos from "@/pages/MisContenidos";
+import AgendaIA from "@/pages/AgendaIA";
 import VistaDetalleContenido from "@/pages/VistaDetalleContenido";
 
 // ✅ Mejor consistente:
@@ -54,6 +55,7 @@ export default function App() {
       <Routes>
         {/* ======= Públicas ======= */}
         <Route path="/" element={<Home />} />
+        <Route path="/agenda-ia" element={<AgendaIA />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/foro" element={<Foro />} />
         <Route path="/registro" element={<Registro />} />

@@ -193,6 +193,13 @@ export default function UnifiedNavbar() {
           Ofertas educativas
         </a>
 
+        <a
+            href="/agenda-ia"
+          className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
+          Agenda IA
+        </a>
+
           <a
             href="https://queesia.com/nosotros/"
             className="text-slate-700 hover:text-slate-900 transition-colors"
