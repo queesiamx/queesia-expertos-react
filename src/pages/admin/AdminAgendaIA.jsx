@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = "https://queesia.com/api/calendario";
-
+const ADMIN_TOKEN = "queesia_agenda_ia_2026_token_seguro_93xKp7";
 const emptyForm = {
   titulo: "",
   slug: "",
@@ -133,7 +133,10 @@ export default function AdminAgendaIA() {
 
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Token": ADMIN_TOKEN,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -162,7 +165,10 @@ export default function AdminAgendaIA() {
     try {
       const res = await fetch(`${API_BASE}/eliminar_evento.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Token": ADMIN_TOKEN,
+        },
         body: JSON.stringify({ id }),
       });
 
