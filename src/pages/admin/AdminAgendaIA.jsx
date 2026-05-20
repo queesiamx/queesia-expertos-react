@@ -129,7 +129,9 @@ export default function AdminAgendaIA() {
         ? `${API_BASE}/actualizar_evento.php`
         : `${API_BASE}/guardar_evento.php`;
 
-      const payload = editandoId ? { ...form, id: editandoId } : form;
+      const payload = editandoId
+      ? { ...form, id: editandoId, admin_token: ADMIN_TOKEN }
+      : { ...form, admin_token: ADMIN_TOKEN };
 
       const res = await fetch(url, {
         method: "POST",
@@ -169,7 +171,10 @@ export default function AdminAgendaIA() {
           "Content-Type": "application/json",
           "X-Admin-Token": ADMIN_TOKEN,
         },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({
+          id,
+          admin_token: ADMIN_TOKEN,
+        }),
       });
 
       const data = await res.json();
