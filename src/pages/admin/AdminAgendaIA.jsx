@@ -37,6 +37,18 @@ const emptyForm = {
   estado_publicacion: "borrador",
 };
 
+function generarSlug(texto) {
+  return texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ñ/g, "n")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export default function AdminAgendaIA() {
   const [eventos, setEventos] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -55,12 +67,21 @@ export default function AdminAgendaIA() {
   }, []);
 
   function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
+  const { name, value, type, checked } = e.target;
+
+  setForm((prev) => {
+    const nuevoForm = {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
-    }));
-  }
+    };
+
+    if (name === "titulo" && !editandoId) {
+      nuevoForm.slug = generarSlug(value);
+    }
+
+    return nuevoForm;
+  });
+}
 
   function editarEvento(evento) {
     setEditandoId(evento.id);
