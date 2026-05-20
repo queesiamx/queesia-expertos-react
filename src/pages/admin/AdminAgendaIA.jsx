@@ -17,6 +17,7 @@ import {
 
 const API_BASE = "https://queesia.com/api/calendario";
 const ADMIN_TOKEN = "queesia_agenda_ia_2026_token_seguro_93xKp7";
+
 const emptyForm = {
   titulo: "",
   slug: "",
@@ -44,6 +45,16 @@ const emptyForm = {
   estado_publicacion: "borrador",
 };
 
+const iconOptions = [
+  { value: "BrainCircuit", label: "IA", icon: BrainCircuit },
+  { value: "CalendarDays", label: "Calendario", icon: CalendarDays },
+  { value: "Video", label: "Webinar / online", icon: Video },
+  { value: "GraduationCap", label: "Educación", icon: GraduationCap },
+  { value: "Rocket", label: "Startup / innovación", icon: Rocket },
+  { value: "Landmark", label: "Gobierno", icon: Landmark },
+  { value: "Zap", label: "Energía / tecnología", icon: Zap },
+];
+
 function generarSlug(texto) {
   return texto
     .toLowerCase()
@@ -56,22 +67,13 @@ function generarSlug(texto) {
     .replace(/-+/g, "-");
 }
 
-const iconOptions = [
-  { value: "BrainCircuit", label: "IA", icon: BrainCircuit },
-  { value: "CalendarDays", label: "Calendario", icon: CalendarDays },
-  { value: "Video", label: "Webinar / online", icon: Video },
-  { value: "GraduationCap", label: "Educación", icon: GraduationCap },
-  { value: "Rocket", label: "Startup / innovación", icon: Rocket },
-  { value: "Landmark", label: "Gobierno", icon: Landmark },
-  { value: "Zap", label: "Energía / tecnología", icon: Zap },
-];
-
 export default function AdminAgendaIA() {
   const [eventos, setEventos] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editandoId, setEditandoId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [eventoAEliminar, setEventoAEliminar] = useState(null);
 
   async function cargarEventos() {
     const res = await fetch(`${API_BASE}/obtener_eventos.php`);
@@ -84,21 +86,21 @@ export default function AdminAgendaIA() {
   }, []);
 
   function handleChange(e) {
-  const { name, value, type, checked } = e.target;
+    const { name, value, type, checked } = e.target;
 
-  setForm((prev) => {
-    const nuevoForm = {
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    };
+    setForm((prev) => {
+      const nuevoForm = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
 
-    if (name === "titulo" && !editandoId) {
-      nuevoForm.slug = generarSlug(value);
-    }
+      if (name === "titulo" && !editandoId) {
+        nuevoForm.slug = generarSlug(value);
+      }
 
-    return nuevoForm;
-  });
-}
+      return nuevoForm;
+    });
+  }
 
   function editarEvento(evento) {
     setEditandoId(evento.id);
@@ -130,14 +132,13 @@ export default function AdminAgendaIA() {
         : `${API_BASE}/guardar_evento.php`;
 
       const payload = editandoId
-      ? { ...form, id: editandoId, admin_token: ADMIN_TOKEN }
-      : { ...form, admin_token: ADMIN_TOKEN };
+        ? { ...form, id: editandoId, admin_token: ADMIN_TOKEN }
+        : { ...form, admin_token: ADMIN_TOKEN };
 
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Admin-Token": ADMIN_TOKEN,
         },
         body: JSON.stringify(payload),
       });
@@ -158,9 +159,8 @@ export default function AdminAgendaIA() {
     }
   }
 
-  async function eliminarEvento(id) {
-    const confirmar = window.confirm("¿Eliminar este evento?");
-    if (!confirmar) return;
+  async function eliminarEvento() {
+    if (!eventoAEliminar) return;
 
     setLoading(true);
 
@@ -169,10 +169,9 @@ export default function AdminAgendaIA() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Admin-Token": ADMIN_TOKEN,
         },
         body: JSON.stringify({
-          id,
+          id: eventoAEliminar.id,
           admin_token: ADMIN_TOKEN,
         }),
       });
@@ -184,6 +183,7 @@ export default function AdminAgendaIA() {
       }
 
       toast.success("Evento eliminado.");
+      setEventoAEliminar(null);
       await cargarEventos();
     } catch (error) {
       toast.error(error.message);
@@ -195,6 +195,7 @@ export default function AdminAgendaIA() {
   return (
     <main className="min-h-screen px-4 py-10 text-slate-900 sm:px-6">
       <Toaster position="top-right" />
+
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl border border-white/60 bg-white/65 p-6 shadow-xl backdrop-blur-xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -304,6 +305,7 @@ export default function AdminAgendaIA() {
             )}
 
             <IconPicker value={form.icono} onChange={handleChange} />
+
             <Input label="Tags separados por coma" name="tags" value={form.tags} onChange={handleChange} />
 
             <div>
@@ -388,7 +390,7 @@ export default function AdminAgendaIA() {
                       </button>
 
                       <button
-                        onClick={() => eliminarEvento(evento.id)}
+                        onClick={() => setEventoAEliminar(evento)}
                         className="inline-flex items-center gap-1 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600 shadow"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -410,6 +412,43 @@ export default function AdminAgendaIA() {
           </div>
         </section>
       </section>
+
+      {eventoAEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white/90 p-6 shadow-2xl">
+            <h3 className="text-xl font-extrabold text-slate-900">
+              ¿Eliminar evento?
+            </h3>
+
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              Esta acción eliminará el evento{" "}
+              <span className="font-bold text-slate-900">
+                {eventoAEliminar.titulo}
+              </span>
+              . No se podrá recuperar desde el panel.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEventoAEliminar(null)}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={eliminarEvento}
+                disabled={loading}
+                className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-bold text-white shadow-md disabled:opacity-60"
+              >
+                {loading ? "Eliminando..." : "Sí, eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -442,6 +481,7 @@ function Textarea({ label, ...props }) {
     </div>
   );
 }
+
 function IconPicker({ value, onChange }) {
   return (
     <div>
