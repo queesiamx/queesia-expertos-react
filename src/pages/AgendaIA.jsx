@@ -1,138 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  MapPin,
-  Video,
-  BrainCircuit,
-  GraduationCap,
-  Rocket,
-  Landmark,
-  Zap,
-  ExternalLink,
-  Search,
-} from "lucide-react";
+import { CalendarDays, Search } from "lucide-react";
 import UnifiedNavbar from "@/components/UnifiedNavbar";
 import Footer from "@/components/Footer";
 import AgendaEventCard from "@/components/calendario/AgendaEventCard";
 
 const API_URL = "https://queesia.com/api/calendario/obtener_eventos.php";
 
-const iconMap = {
-  BrainCircuit,
-  CalendarDays,
-  Video,
-  GraduationCap,
-  Rocket,
-  Landmark,
-  Zap,
-};
-
-function formatDate(dateString) {
-  if (!dateString) return "Fecha por confirmar";
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${dateString}T12:00:00`));
-}
-
-function EventCard({ evento }) {
-  const Icon = iconMap[evento.icono] || CalendarDays;
-
-  return (
-    <article className="group overflow-hidden rounded-3xl border border-white/60 bg-white/65 shadow-xl shadow-slate-900/10 backdrop-blur-xl transition hover:-translate-y-1 hover:bg-white/80">
-      <div className="relative h-44 overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-sky-100">
-        {evento.imagen_url ? (
-          <img
-            src={evento.imagen_url}
-            alt={evento.titulo}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <div className="rounded-3xl bg-white/55 p-5 shadow-lg backdrop-blur">
-              <Icon className="h-12 w-12 text-indigo-500" />
-            </div>
-          </div>
-        )}
-
-        {Number(evento.destacado) === 1 && (
-          <span className="absolute left-4 top-4 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-            Destacado
-          </span>
-        )}
-      </div>
-
-      <div className="p-5">
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-indigo-600">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-50">
-            <Icon className="h-4 w-4" />
-          </span>
-          <span>{evento.tipo_evento || evento.categoria || "Evento"}</span>
-        </div>
-
-        <h2 className="line-clamp-2 text-xl font-bold italic text-slate-900">
-          {evento.titulo}
-        </h2>
-
-        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">
-          {evento.descripcion_corta || "Consulta los detalles del evento."}
-        </p>
-
-        <div className="mt-4 space-y-2 text-sm text-slate-700">
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-slate-500" />
-            <span>{formatDate(evento.fecha_inicio)}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {evento.modalidad?.toLowerCase().includes("línea") ||
-            evento.modalidad?.toLowerCase().includes("online") ? (
-              <Video className="h-4 w-4 text-slate-500" />
-            ) : (
-              <MapPin className="h-4 w-4 text-slate-500" />
-            )}
-            <span>
-              {evento.modalidad || "Modalidad por confirmar"}
-              {evento.ciudad ? ` · ${evento.ciudad}` : ""}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {(evento.tags || "")
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter(Boolean)
-            .slice(0, 3)
-            .map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-indigo-100 bg-white/70 px-3 py-1 text-xs font-medium text-slate-600"
-              >
-                #{tag}
-              </span>
-            ))}
-        </div>
-
-        <a
-          href={evento.url_evento || "#"}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-95 hover:no-underline"
-        >
-          Ver evento
-          <ExternalLink className="h-4 w-4" />
-        </a>
-      </div>
-    </article>
-  );
-}
-
 export default function AgendaIA() {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [categoria, setCategoria] = useState("todas");
+  const [modalidad, setModalidad] = useState("todas");
+  const [mes, setMes] = useState("todos");
 
   useEffect(() => {
     async function cargarEventos() {
@@ -150,10 +30,22 @@ export default function AgendaIA() {
     cargarEventos();
   }, []);
 
+  const categorias = useMemo(() => {
+    return [...new Set(eventos.map((e) => e.categoria).filter(Boolean))];
+  }, [eventos]);
+
+  const modalidades = useMemo(() => {
+    return [...new Set(eventos.map((e) => e.modalidad).filter(Boolean))];
+  }, [eventos]);
+
+  const meses = useMemo(() => {
+    return [
+      ...new Set(eventos.map((e) => e.fecha_inicio?.slice(0, 7)).filter(Boolean)),
+    ].sort();
+  }, [eventos]);
+
   const eventosFiltrados = useMemo(() => {
     const q = busqueda.toLowerCase().trim();
-
-    if (!q) return eventos;
 
     return eventos.filter((evento) => {
       const texto = `
@@ -166,9 +58,22 @@ export default function AgendaIA() {
         ${evento.tags || ""}
       `.toLowerCase();
 
-      return texto.includes(q);
+      const coincideBusqueda = !q || texto.includes(q);
+      const coincideCategoria =
+        categoria === "todas" || evento.categoria === categoria;
+      const coincideModalidad =
+        modalidad === "todas" || evento.modalidad === modalidad;
+      const coincideMes =
+        mes === "todos" || evento.fecha_inicio?.startsWith(mes);
+
+      return (
+        coincideBusqueda &&
+        coincideCategoria &&
+        coincideModalidad &&
+        coincideMes
+      );
     });
-  }, [eventos, busqueda]);
+  }, [eventos, busqueda, categoria, modalidad, mes]);
 
   return (
     <>
@@ -202,6 +107,47 @@ export default function AgendaIA() {
               className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
             />
           </div>
+
+          <div className="mx-auto mt-4 grid max-w-4xl gap-3 sm:grid-cols-3">
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none"
+            >
+              <option value="todas">Todas las categorías</option>
+              {categorias.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={modalidad}
+              onChange={(e) => setModalidad(e.target.value)}
+              className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none"
+            >
+              <option value="todas">Todas las modalidades</option>
+              {modalidades.map((mod) => (
+                <option key={mod} value={mod}>
+                  {mod}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={mes}
+              onChange={(e) => setMes(e.target.value)}
+              className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none"
+            >
+              <option value="todos">Todos los meses</option>
+              {meses.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
         </section>
 
         <section className="mx-auto mt-12 max-w-6xl">
@@ -216,8 +162,8 @@ export default function AgendaIA() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {eventosFiltrados.map((evento) => (
-                  <AgendaEventCard key={evento.id} evento={evento} />
-                ))}
+                <AgendaEventCard key={evento.id} evento={evento} />
+              ))}
             </div>
           )}
         </section>

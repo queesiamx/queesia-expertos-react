@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import {
   CalendarDays,
   Edit,
@@ -6,6 +7,12 @@ import {
   Save,
   Trash2,
   X,
+  BrainCircuit,
+  Video,
+  GraduationCap,
+  Rocket,
+  Landmark,
+  Zap,
 } from "lucide-react";
 
 const API_BASE = "https://queesia.com/api/calendario";
@@ -48,6 +55,16 @@ function generarSlug(texto) {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 }
+
+const iconOptions = [
+  { value: "BrainCircuit", label: "IA", icon: BrainCircuit },
+  { value: "CalendarDays", label: "Calendario", icon: CalendarDays },
+  { value: "Video", label: "Webinar / online", icon: Video },
+  { value: "GraduationCap", label: "Educación", icon: GraduationCap },
+  { value: "Rocket", label: "Startup / innovación", icon: Rocket },
+  { value: "Landmark", label: "Gobierno", icon: Landmark },
+  { value: "Zap", label: "Energía / tecnología", icon: Zap },
+];
 
 export default function AdminAgendaIA() {
   const [eventos, setEventos] = useState([]);
@@ -126,11 +143,11 @@ export default function AdminAgendaIA() {
         throw new Error(data.message || "No se pudo guardar");
       }
 
-      setMensaje(editandoId ? "Evento actualizado." : "Evento creado.");
+      toast.success(editandoId ? "Evento actualizado." : "Evento creado.");
       limpiarForm();
       await cargarEventos();
     } catch (error) {
-      setMensaje(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -155,10 +172,10 @@ export default function AdminAgendaIA() {
         throw new Error(data.message || "No se pudo eliminar");
       }
 
-      setMensaje("Evento eliminado.");
+      toast.success("Evento eliminado.");
       await cargarEventos();
     } catch (error) {
-      setMensaje(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -166,6 +183,7 @@ export default function AdminAgendaIA() {
 
   return (
     <main className="min-h-screen px-4 py-10 text-slate-900 sm:px-6">
+      <Toaster position="top-right" />
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 rounded-3xl border border-white/60 bg-white/65 p-6 shadow-xl backdrop-blur-xl">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -237,7 +255,44 @@ export default function AdminAgendaIA() {
             <Input label="Fuente URL" name="fuente_url" value={form.fuente_url} onChange={handleChange} />
             <Input label="Imagen URL" name="imagen_url" value={form.imagen_url} onChange={handleChange} />
             <Input label="Captura URL" name="captura_url" value={form.captura_url} onChange={handleChange} />
-            <Input label="Icono Lucide" name="icono" value={form.icono} onChange={handleChange} />
+
+            {form.imagen_url && (
+              <div className="md:col-span-2">
+                <p className="mb-2 text-sm font-bold text-slate-700">
+                  Preview imagen principal
+                </p>
+                <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-md">
+                  <img
+                    src={form.imagen_url}
+                    alt="Preview imagen del evento"
+                    className="h-64 w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {form.captura_url && (
+              <div className="md:col-span-2">
+                <p className="mb-2 text-sm font-bold text-slate-700">
+                  Preview captura / evidencia
+                </p>
+                <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-md">
+                  <img
+                    src={form.captura_url}
+                    alt="Preview captura del evento"
+                    className="max-h-96 w-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <IconPicker value={form.icono} onChange={handleChange} />
             <Input label="Tags separados por coma" name="tags" value={form.tags} onChange={handleChange} />
 
             <div>
@@ -373,6 +428,44 @@ function Textarea({ label, ...props }) {
         rows={5}
         className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
       />
+    </div>
+  );
+}
+function IconPicker({ value, onChange }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-bold text-slate-700">
+        Icono del evento
+      </label>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {iconOptions.map((item) => {
+          const Icon = item.icon;
+          const active = value === item.value;
+
+          return (
+            <label
+              key={item.value}
+              className={`flex cursor-pointer items-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                active
+                  ? "border-indigo-400 bg-indigo-50 text-indigo-700 shadow-md"
+                  : "border-white/70 bg-white/70 text-slate-600 hover:bg-white"
+              }`}
+            >
+              <input
+                type="radio"
+                name="icono"
+                value={item.value}
+                checked={active}
+                onChange={onChange}
+                className="sr-only"
+              />
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }
