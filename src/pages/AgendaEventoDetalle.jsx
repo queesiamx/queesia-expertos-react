@@ -55,6 +55,10 @@ export default function AgendaEventoDetalle() {
       }
     }
 
+    const imagenesEvento = evento
+    ? [evento.imagen_url, evento.captura_url].filter(Boolean)
+    : [];
+
     cargarEvento();
   }, [id]);
 
@@ -82,25 +86,11 @@ export default function AgendaEventoDetalle() {
             </div>
           ) : (
             <article className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/65 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
-              <div className="relative h-72 overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-sky-100">
-                {evento.imagen_url ? (
-                  <img
-                    src={evento.imagen_url}
-                    alt={evento.titulo}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <CalendarDays className="h-20 w-20 text-indigo-500" />
-                  </div>
-                )}
-
-                {Number(evento.destacado) === 1 && (
-                  <span className="absolute left-6 top-6 rounded-full bg-black/75 px-4 py-2 text-sm font-semibold text-white">
-                    Destacado
-                  </span>
-                )}
-              </div>
+              <EventImageCarousel
+                  imagenes={imagenesEvento}
+                  titulo={evento.titulo}
+                  destacado={Number(evento.destacado) === 1}
+                />
 
               <div className="p-6 sm:p-10">
                 <p className="mb-3 text-sm font-bold uppercase tracking-[0.28em] text-indigo-500">
@@ -242,6 +232,58 @@ function InfoItem({ icon, label, value }) {
         {label}
       </div>
       <p className="text-sm font-medium text-slate-700">{value}</p>
+    </div>
+  );
+}
+
+function EventImageCarousel({ imagenes, titulo, destacado }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (imagenes.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % imagenes.length);
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, [imagenes.length]);
+
+  return (
+    <div className="relative h-72 overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-sky-100">
+      {imagenes.length > 0 ? (
+        <img
+          src={imagenes[index]}
+          alt={`${titulo} - imagen ${index + 1}`}
+          className="h-full w-full object-cover transition-all duration-700"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <CalendarDays className="h-20 w-20 text-indigo-500" />
+        </div>
+      )}
+
+      {destacado && (
+        <span className="absolute left-6 top-6 rounded-full bg-black/75 px-4 py-2 text-sm font-semibold text-white">
+          Destacado
+        </span>
+      )}
+
+      {imagenes.length > 1 && (
+        <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2">
+          {imagenes.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setIndex(i)}
+              className={`h-2.5 rounded-full transition-all ${
+                i === index ? "w-8 bg-white" : "w-2.5 bg-white/55"
+              }`}
+              aria-label={`Ver imagen ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
