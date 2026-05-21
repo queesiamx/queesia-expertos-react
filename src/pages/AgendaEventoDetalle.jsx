@@ -55,12 +55,12 @@ export default function AgendaEventoDetalle() {
       }
     }
 
-    const imagenesEvento = evento
-    ? [evento.imagen_url, evento.captura_url].filter(Boolean)
-    : [];
-
     cargarEvento();
   }, [id]);
+
+  const imagenesEvento = evento
+    ? [evento.imagen_url, evento.captura_url].filter(Boolean)
+    : [];
 
   return (
     <>
@@ -87,10 +87,10 @@ export default function AgendaEventoDetalle() {
           ) : (
             <article className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/65 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
               <EventImageCarousel
-                  imagenes={imagenesEvento}
-                  titulo={evento.titulo}
-                  destacado={Number(evento.destacado) === 1}
-                />
+                imagenes={imagenesEvento}
+                titulo={evento.titulo}
+                destacado={Number(evento.destacado) === 1}
+              />
 
               <div className="p-6 sm:p-10">
                 <p className="mb-3 text-sm font-bold uppercase tracking-[0.28em] text-indigo-500">
@@ -167,7 +167,9 @@ export default function AgendaEventoDetalle() {
                     <h2 className="mb-3 text-xl font-bold text-slate-900">
                       Descripción
                     </h2>
-                    <p className="whitespace-pre-line">{evento.descripcion_larga}</p>
+                    <p className="whitespace-pre-line">
+                      {evento.descripcion_larga}
+                    </p>
                   </div>
                 )}
 
@@ -224,18 +226,6 @@ export default function AgendaEventoDetalle() {
   );
 }
 
-function InfoItem({ icon, label, value }) {
-  return (
-    <div className="rounded-3xl border border-white/60 bg-white/50 p-5 shadow-md backdrop-blur">
-      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-indigo-600">
-        <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-        {label}
-      </div>
-      <p className="text-sm font-medium text-slate-700">{value}</p>
-    </div>
-  );
-}
-
 function EventImageCarousel({ imagenes, titulo, destacado }) {
   const [index, setIndex] = useState(0);
 
@@ -284,6 +274,18 @@ function EventImageCarousel({ imagenes, titulo, destacado }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function InfoItem({ icon, label, value }) {
+  return (
+    <div className="rounded-3xl border border-white/60 bg-white/50 p-5 shadow-md backdrop-blur">
+      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-indigo-600">
+        <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        {label}
+      </div>
+      <p className="text-sm font-medium text-slate-700">{value}</p>
     </div>
   );
 }
