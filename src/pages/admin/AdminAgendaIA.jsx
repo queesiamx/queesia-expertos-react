@@ -17,6 +17,10 @@ import {
 
 const API_BASE = "https://queesia.com/api/calendario";
 const ADMIN_TOKEN = "queesia_agenda_ia_2026_token_seguro_93xKp7";
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const emptyForm = {
   titulo: "",
@@ -74,6 +78,8 @@ export default function AdminAgendaIA() {
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [eventoAEliminar, setEventoAEliminar] = useState(null);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [subiendoCaptura, setSubiendoCaptura] = useState(false);
 
   async function cargarEventos() {
     const res = await fetch(`${API_BASE}/obtener_eventos.php`);
@@ -192,6 +198,46 @@ export default function AdminAgendaIA() {
     }
   }
 
+  async function subirACloudinary(file, campoDestino, folder, setSubiendo) {
+    if (!file) return;
+
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+      toast.error("Faltan variables de Cloudinary en .env");
+      return;
+    }
+
+    setSubiendo(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      formData.append("folder", folder);
+
+      const res = await fetch(CLOUDINARY_UPLOAD_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error?.message || "No se pudo subir la imagen");
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        [campoDestino]: data.secure_url,
+      }));
+
+      toast.success("Imagen subida correctamente.");
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
   return (
     <main className="min-h-screen px-4 py-10 text-slate-900 sm:px-6">
       <Toaster position="top-right" />
@@ -266,7 +312,60 @@ export default function AdminAgendaIA() {
             <Input label="URL oficial" name="url_evento" value={form.url_evento} onChange={handleChange} />
             <Input label="Fuente URL" name="fuente_url" value={form.fuente_url} onChange={handleChange} />
             <Input label="Imagen URL" name="imagen_url" value={form.imagen_url} onChange={handleChange} />
+
+            <div>
+              <label className="mb-1 block text-sm font-bold text-slate-700">
+                Subir imagen principal
+              </label>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  subirACloudinary(
+                    e.target.files?.[0],
+                    "imagen_url",
+                    "queesia/agenda-ia/banners",
+                    setSubiendoImagen
+                  )
+                }
+                className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
+              />
+
+              {subiendoImagen && (
+                <p className="mt-2 text-sm font-semibold text-indigo-600">
+                  Subiendo imagen...
+                </p>
+              )}
+            </div>
+
             <Input label="Captura URL" name="captura_url" value={form.captura_url} onChange={handleChange} />
+
+            <div>
+              <label className="mb-1 block text-sm font-bold text-slate-700">
+                Subir captura / evidencia
+              </label>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  subirACloudinary(
+                    e.target.files?.[0],
+                    "captura_url",
+                    "queesia/agenda-ia/capturas",
+                    setSubiendoCaptura
+                  )
+                }
+                className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
+              />
+
+              {subiendoCaptura && (
+                <p className="mt-2 text-sm font-semibold text-indigo-600">
+                  Subiendo captura...
+                </p>
+              )}
+            </div>
 
             {form.imagen_url && (
               <div className="md:col-span-2">
