@@ -477,7 +477,9 @@ export default function AdminAgendaIA() {
                     </td>
                     <td>{evento.fecha_inicio}</td>
                     <td>{evento.modalidad}</td>
-                    <td>{evento.estado_publicacion || "publicado"}</td>
+                    <td>
+                      <EstadoBadge estado={evento.estado_publicacion} />
+                    </td>
                     <td>{Number(evento.destacado) === 1 ? "Sí" : "No"}</td>
                     <td className="text-right">
                       <button
@@ -578,6 +580,32 @@ function Textarea({ label, ...props }) {
         className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
       />
     </div>
+  );
+}
+
+function EstadoBadge({ estado }) {
+  const estilos = {
+    publicado: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    borrador: "bg-amber-50 text-amber-700 border-amber-200",
+    oculto: "bg-slate-100 text-slate-600 border-slate-200",
+  };
+
+  const labels = {
+    publicado: "Publicado",
+    borrador: "Borrador",
+    oculto: "Oculto",
+  };
+
+  const estadoNormalizado = estado || "borrador";
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${
+        estilos[estadoNormalizado] || estilos.borrador
+      }`}
+    >
+      {labels[estadoNormalizado] || estadoNormalizado}
+    </span>
   );
 }
 
