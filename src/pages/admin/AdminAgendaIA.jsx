@@ -82,10 +82,10 @@ export default function AdminAgendaIA() {
   const [subiendoCaptura, setSubiendoCaptura] = useState(false);
 
   async function cargarEventos() {
-    const res = await fetch(`${API_BASE}/obtener_eventos.php`);
-    const data = await res.json();
-    setEventos(data.eventos || []);
-  }
+  const res = await fetch(`${API_BASE}/obtener_eventos_admin.php`);
+  const data = await res.json();
+  setEventos(data.eventos || []);
+}
 
   useEffect(() => {
     cargarEventos();
