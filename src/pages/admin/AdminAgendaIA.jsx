@@ -463,6 +463,7 @@ export default function AdminAgendaIA() {
                   <th>Fecha</th>
                   <th>Modalidad</th>
                   <th>Estado</th>
+                  <th>Visible</th>
                   <th>Destacado</th>
                   <th className="text-right">Acciones</th>
                 </tr>
@@ -480,7 +481,12 @@ export default function AdminAgendaIA() {
                     <td>
                       <EstadoBadge estado={evento.estado_publicacion} />
                     </td>
-                    <td>{Number(evento.destacado) === 1 ? "Sí" : "No"}</td>
+
+                    <td>
+                      <VisibleBadge estado={evento.estado_publicacion} />
+                    </td>
+
+                    <td>{evento.destacado ? "Sí" : "No"}</td>
                     <td className="text-right">
                       <button
                         onClick={() => editarEvento(evento)}
@@ -605,6 +611,22 @@ function EstadoBadge({ estado }) {
       }`}
     >
       {labels[estadoNormalizado] || estadoNormalizado}
+    </span>
+  );
+}
+
+function VisibleBadge({ estado }) {
+  const visible = estado === "publicado";
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${
+        visible
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-slate-200 bg-slate-100 text-slate-600"
+      }`}
+    >
+      {visible ? "Visible" : "No visible"}
     </span>
   );
 }
