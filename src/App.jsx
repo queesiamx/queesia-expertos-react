@@ -27,6 +27,7 @@ import ResponderConsulta from "@/pages/ResponderConsulta";
 import AdminSolicitudes from "@/pages/AdminSolicitudes";
 import ConsultasAprobadas from "@/pages/ConsultasAprobadas";
 import AdminPorValidar from "@/pages/AdminPorValidar";
+import ChatbotQueriesAdmin from "@/components/admin/chatbot-queries.jsx";
 import AdminNuevasApps from "@/pages/AdminNuevasApps";
 import AdminCargarApp from "@/pages/AdminCargarApp";
 import AdminEditarApp from "@/pages/AdminEditarApp";
@@ -104,6 +105,7 @@ export default function App() {
             <Route path="/admin-milestones" element={<AdminMilestones />} />
             <Route path="/admin/solicitudes" element={<AdminSolicitudes />} />
             <Route path="/admin/por-validar" element={<AdminPorValidar />} />
+            <Route path="/admin/chatbot-queries" element={<ChatbotQueriesAdmin />} />
             <Route path="/admin/apps-nuevas" element={<AdminNuevasApps />} />
             <Route path="/admin/apps/cargar" element={<AdminCargarApp />} />
             <Route path="/admin/apps/editar" element={<AdminEditarApp />} />
