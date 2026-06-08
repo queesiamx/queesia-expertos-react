@@ -157,6 +157,24 @@ export default function AdminSidebar({
 
           <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
+            Chatbot 
+          </p>
+
+          <div className="space-y-2">
+            <a
+              href="/admin-chatbot-queries"
+              target="_blank"
+              rel="noreferrer"
+              className={externalLinkBase}
+            >
+              <span className="font-medium">Historial de consultas</span>
+              <span className="text-xs text-slate-400">↗</span>
+            </a>
+          </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">
             Apps 
           </p>
 
