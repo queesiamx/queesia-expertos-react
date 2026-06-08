@@ -162,7 +162,7 @@ export default function AdminSidebar({
 
           <div className="space-y-2">
             <a
-              href="/admin-chatbot-queries"
+              href="/chatbot-queries"
               target="_blank"
               rel="noreferrer"
               className={externalLinkBase}
