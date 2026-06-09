@@ -18,6 +18,7 @@ const initialForm = {
   use_cases: "",
   main_advantages: "",
   long_description: "",
+  search_profile: "",
   release_date: "",
   developer: "",
   main_model: "",
@@ -136,6 +137,7 @@ export default function AdminCargarApp() {
       use_cases: form.use_cases.trim(),
       main_advantages: form.main_advantages.trim(),
       long_description: form.long_description.trim(),
+      search_profile: form.search_profile.trim(),
       release_date: form.release_date.trim(),
       developer: form.developer.trim(),
       main_model: form.main_model.trim(),
@@ -378,6 +380,14 @@ export default function AdminCargarApp() {
                 value={form.long_description}
                 onChange={(value) => updateField("long_description", value)}
                 rows={5}
+              />
+              <TextArea
+                label="Perfil de búsqueda interno / Search profile"
+                value={form.search_profile}
+                onChange={(value) => updateField("search_profile", value)}
+                placeholder="Campo interno para QueesiaBot. No se muestra públicamente en la ficha."
+                helper="Pega aquí la Parte 6 generada por QueesIA - Buscador. Sirve para mejorar recomendaciones, búsqueda y futura vectorización."
+                rows={6}
               />
             </div>
           </section>
