@@ -10,10 +10,11 @@ export default function ChatbotQueriesAdmin() {
   const [provider, setProvider] = useState("");
   const [queries, setQueries] = useState([]);
   const [meta, setMeta] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalRecords: 0,
-  });
+  currentPage: 1,
+  totalPages: 1,
+  totalRecords: 0,
+  stats: null,
+});
   
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
@@ -38,48 +39,23 @@ export default function ChatbotQueriesAdmin() {
   }, [queries]);
 
   const stats = useMemo(() => {
-  const total = queries.length;
-
-  const areaCounts = {};
-  const resultCounts = {};
-  const providerCounts = {};
-
-  queries.forEach((item) => {
-    const area = item.area_uso || "Sin área";
-    const result = item.resultado_esperado || "Sin resultado";
-    const provider = item.provider || "Sin provider";
-
-    areaCounts[area] = (areaCounts[area] || 0) + 1;
-    resultCounts[result] = (resultCounts[result] || 0) + 1;
-    providerCounts[provider] = (providerCounts[provider] || 0) + 1;
-  });
-
-  const getTopItem = (counts) => {
-    const entries = Object.entries(counts);
-
-    if (entries.length === 0) {
-      return {
-        label: "Sin datos",
-        count: 0,
-      };
-    }
-
-    const [label, count] = entries.sort((a, b) => b[1] - a[1])[0];
-
-    return {
-      label,
-      count,
-    };
-  };
+  const apiStats = meta.stats || {};
+  const providerCounts = apiStats.providerCounts || {};
 
   return {
-    total,
-    topArea: getTopItem(areaCounts),
-    topResult: getTopItem(resultCounts),
+    total: meta.totalRecords || 0,
+    topArea: {
+      label: apiStats.topArea || "Sin datos",
+      count: apiStats.topAreaCount || 0,
+    },
+    topResult: {
+      label: apiStats.topResult || "Sin datos",
+      count: apiStats.topResultCount || 0,
+    },
     catalogCount: providerCounts.queesia_catalog_api || 0,
     mockCount: providerCounts.mock || 0,
   };
-}, [queries]);
+}, [meta]);
 
   const fetchQueries = async (page = 1) => {
     if (!hasKey) {
@@ -117,11 +93,11 @@ export default function ChatbotQueriesAdmin() {
 
         setQueries(Array.isArray(data.queries) ? data.queries : []);
         setMeta({
-        currentPage: data.currentPage || 1,
-        totalPages: data.totalPages || 1,
-        totalRecords: data.totalRecords || 0,
+          currentPage: data.currentPage || 1,
+          totalPages: data.totalPages || 1,
+          totalRecords: data.totalRecords || 0,
+          stats: data.stats || null,
         });
-
     } catch (error) {
       console.error("Error cargando consultas del chatbot:", error);
       setErrorMessage(error.message || "Ocurrió un error al cargar los registros.");
@@ -150,6 +126,7 @@ export default function ChatbotQueriesAdmin() {
     currentPage: 1,
     totalPages: 1,
     totalRecords: 0,
+    stats: null,
   });
   setErrorMessage("");
 };
@@ -384,7 +361,7 @@ const handleExportCsv = async () => {
     <StatCard
       title="Consultas cargadas"
       value={stats.total}
-      detail="Registros visibles en esta página"
+      detail="Registros históricos con filtros actuales"
     />
 
     <StatCard
