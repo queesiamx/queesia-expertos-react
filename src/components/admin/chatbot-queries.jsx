@@ -168,73 +168,109 @@ const toggleQueryApps = (queryId) => {
   });
 };
 
-const handleExportCsv = () => {
-  if (!queries.length) {
-    setErrorMessage("No hay registros cargados para exportar.");
-    return;
-  }
+const handleExportCsv = async () => {
+  try {
+    const params = new URLSearchParams({
+      key: adminKey.trim(),
+      export: "1",
+    });
 
-  const headers = [
-    "id",
-    "consulta",
-    "area_uso",
-    "resultado_esperado",
-    "nivel_usuario",
-    "preferencia_precio",
-    "restricciones",
-    "provider",
-    "mode",
-    "apps_recomendadas",
-    "created_at",
-  ];
+    if (search.trim()) params.set("search", search.trim());
+    if (area.trim()) params.set("area", area.trim());
+    if (provider.trim()) params.set("provider", provider.trim());
 
-  const rows = queries.map((item) => {
-    const apps = Array.isArray(item.apps_recomendadas)
-      ? item.apps_recomendadas
-          .map((app) => {
-            const name = app.nombre || "App sin nombre";
-            const category = app.categoria || "Sin categoría";
-            const affinity = app.afinidad || "N/D";
-            const url = app.url || "";
+    const response = await fetch(
+      `${API_URL}?${params.toString()}`
+    );
 
-            return `${name} (${category}, ${affinity}) ${url}`.trim();
-          })
-          .join(" | ")
-      : "";
+    const data = await response.json();
 
-    return [
-      item.id,
-      item.consulta,
-      item.area_uso,
-      item.resultado_esperado,
-      item.nivel_usuario,
-      item.preferencia_precio,
-      item.restricciones,
-      item.provider,
-      item.mode,
-      apps,
-      item.created_at,
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "No se pudo exportar.");
+    }
+
+    const exportQueries = Array.isArray(data.queries)
+      ? data.queries
+      : [];
+
+    const headers = [
+      "id",
+      "consulta",
+      "area_uso",
+      "resultado_esperado",
+      "nivel_usuario",
+      "preferencia_precio",
+      "restricciones",
+      "provider",
+      "mode",
+      "apps_recomendadas",
+      "created_at",
     ];
-  });
 
-  const csvContent = [
-    headers.map(escapeCsvValue).join(","),
-    ...rows.map((row) => row.map(escapeCsvValue).join(",")),
-  ].join("\n");
+    const rows = exportQueries.map((item) => {
+      const apps = Array.isArray(item.apps_recomendadas)
+        ? item.apps_recomendadas
+            .map((app) => {
+              const name = app.nombre || "App sin nombre";
+              const category = app.categoria || "Sin categoría";
+              const affinity = app.afinidad || "N/D";
+              const url = app.url || "";
 
-  const blob = new Blob([`\uFEFF${csvContent}`], {
-    type: "text/csv;charset=utf-8;",
-  });
+              return `${name} (${category}, ${affinity}) ${url}`.trim();
+            })
+            .join(" | ")
+        : "";
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const timestamp = new Date().toISOString().slice(0, 10);
+      return [
+        item.id,
+        item.consulta,
+        item.area_uso,
+        item.resultado_esperado,
+        item.nivel_usuario,
+        item.preferencia_precio,
+        item.restricciones,
+        item.provider,
+        item.mode,
+        apps,
+        item.created_at,
+      ];
+    });
 
-  link.href = url;
-  link.download = `queesia_chatbot_queries_${timestamp}.csv`;
-  link.click();
+    const csvContent = [
+      headers.map(escapeCsvValue).join(","),
+      ...rows.map((row) =>
+        row.map(escapeCsvValue).join(",")
+      ),
+    ].join("\n");
 
-  URL.revokeObjectURL(url);
+    const blob = new Blob(
+      [`\uFEFF${csvContent}`],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      `queesia_chatbot_queries_${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error(error);
+    setErrorMessage(
+      "No se pudo exportar el CSV completo."
+    );
+  }
 };
 
   return (
