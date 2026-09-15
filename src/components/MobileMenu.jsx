@@ -63,6 +63,7 @@ export default function MobileMenu() {
   // Opciones por rol
   const opciones = [
     { label: "Catálogo", href: "https://queesia.com/#catalogo" },
+    { label: "Servicios", href: "https://queesia.com/servicios" },
     { label: "Quesos de éxito", href: "https://queesia.com/casos" },
     { label: "Expertos", href: "https://expertos.queesia.com", external: true },
     { label: "Foro", href: "https://foro.queesia.com/", external: true },

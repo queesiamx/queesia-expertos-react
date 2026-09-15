@@ -106,6 +106,13 @@ export default function UnifiedNavbar() {
             Catálogo
           </a>
 
+          <a
+            href="https://queesia.com/servicios"
+            className="text-slate-700 hover:text-slate-900 transition-colors"
+          >
+            Servicios
+          </a>
+
               <div className="relative group">
                 <a href="https://queesia.com/casos" className="text-slate-700 hover:text-slate-900 transition-colors">
                   Casos de éxito
