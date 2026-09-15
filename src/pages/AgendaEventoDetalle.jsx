@@ -13,18 +13,9 @@ import {
 } from "lucide-react";
 import UnifiedNavbar from "@/components/UnifiedNavbar";
 import Footer from "@/components/Footer";
+import { formatAgendaDate } from "@/lib/agendaDates";
 
 const API_BASE = "https://queesia.com/api/calendario/obtener_evento.php";
-
-function formatDate(dateString) {
-  if (!dateString) return "Fecha por confirmar";
-
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${dateString}T12:00:00`));
-}
 
 function formatTime(timeString) {
   if (!timeString) return null;
@@ -109,9 +100,9 @@ export default function AgendaEventoDetalle() {
                   <InfoItem
                     icon={<CalendarDays />}
                     label="Fecha"
-                    value={`${formatDate(evento.fecha_inicio)}${
+                    value={`${formatAgendaDate(evento.fecha_inicio)}${
                       evento.fecha_fin && evento.fecha_fin !== evento.fecha_inicio
-                        ? ` al ${formatDate(evento.fecha_fin)}`
+                        ? ` al ${formatAgendaDate(evento.fecha_fin)}`
                         : ""
                     }`}
                   />

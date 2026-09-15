@@ -10,6 +10,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { formatAgendaDateRange } from "@/lib/agendaDates";
 
 const iconMap = {
   BrainCircuit,
@@ -20,16 +21,6 @@ const iconMap = {
   Landmark,
   Zap,
 };
-
-function formatDate(dateString) {
-  if (!dateString) return "Fecha por confirmar";
-
-  return new Intl.DateTimeFormat("es-MX", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${dateString}T12:00:00`));
-}
 
 export default function AgendaEventCard({ evento }) {
   const Icon = iconMap[evento.icono] || CalendarDays;
@@ -77,7 +68,7 @@ export default function AgendaEventCard({ evento }) {
         <div className="mt-4 space-y-2 text-sm text-slate-700">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4 text-slate-500" />
-            <span>{formatDate(evento.fecha_inicio)}</span>
+            <span>{formatAgendaDateRange(evento)}</span>
           </div>
 
           <div className="flex items-center gap-2">
