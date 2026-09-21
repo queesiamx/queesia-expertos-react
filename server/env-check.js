@@ -1,3 +1,4 @@
+/* global process */
 // /api/_env_check.js  (ESM)
 export default async function handler(req, res) {
   const present = (k) => Boolean(process.env[k] && String(process.env[k]).trim().length > 0);

@@ -1,6 +1,7 @@
+/* global process */
 // /api/confirmarPago.js  (ESM; package.json con "type":"module")
 import Stripe from "stripe";
-import { adb } from "./_admin.js"; // requiere /api/_admin.js con credenciales de servicio
+import { adb } from "../server/admin.js"; // helper server-only con credenciales de servicio
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 // Permitir dev local + tu dominio prod (ajústalo si necesitas)

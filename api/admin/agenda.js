@@ -1,5 +1,5 @@
 /* global process */
-import { requireAdmin } from "../_adminAuth.js";
+import { requireAdmin } from "../../server/adminAuth.js";
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173,https://expertos.queesia.com")
   .split(",")
