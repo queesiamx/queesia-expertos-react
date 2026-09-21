@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import UnifiedNavbar from "@/components/UnifiedNavbar";
 import Footer from "@/components/Footer";
-import { formatAgendaDateRange } from "@/lib/agendaDates";
+import { formatAgendaDate, formatAgendaDateRange } from "@/lib/agendaDates";
 
 const API_BASE = "https://queesia.com/api/calendario/obtener_evento.php";
 
@@ -141,6 +141,14 @@ export default function AgendaEventoDetalle() {
                     value={formatAgendaDateRange(evento)}
                   />
 
+                  {evento.fecha_limite_convocatoria && (
+                    <InfoItem
+                      icon={<CalendarDays />}
+                      label="Fecha límite de convocatoria"
+                      value={formatAgendaDate(evento.fecha_limite_convocatoria)}
+                    />
+                  )}
+
                   <InfoItem
                     icon={<Clock />}
                     label="Hora"
@@ -201,14 +209,26 @@ export default function AgendaEventoDetalle() {
                 )}
 
                 <div className="mt-10 flex flex-wrap gap-3">
+                  {evento.url_registro && (
+                    <a
+                      href={evento.url_registro}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
+                    >
+                      Registrarme
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
+
                   {evento.url_evento && (
                     <a
                       href={evento.url_evento}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-5 py-3 text-sm font-bold text-slate-700 shadow-md hover:bg-white hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                     >
-                      Ir al sitio oficial
+                      Sitio oficial
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   )}

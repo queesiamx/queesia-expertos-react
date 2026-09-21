@@ -51,6 +51,11 @@ export function formatAgendaDate(dateString, fallback = "Fecha por confirmar") {
   return date ? DATE_FORMATTER.format(date) : fallback;
 }
 
+export function formatAgendaCompactDate(dateString, fallback = "Fecha por confirmar") {
+  const date = parseAgendaDate(dateString);
+  return date ? formatCompactDate(date) : fallback;
+}
+
 export function formatAgendaDateRange(evento, fallback = "Fecha por confirmar") {
   const { start, end } = getEventDateRange(evento);
 

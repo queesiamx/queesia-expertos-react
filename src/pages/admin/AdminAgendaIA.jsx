@@ -35,10 +35,12 @@ const emptyForm = {
   ciudad: "",
   fecha_inicio: "",
   fecha_fin: "",
+  fecha_limite_convocatoria: "",
   hora_inicio: "",
   hora_fin: "",
   organizador: "",
   url_evento: "",
+  url_registro: "",
   fuente_url: "",
   imagen_url: "",
   captura_url: "",
@@ -156,7 +158,7 @@ function getValidationErrors(form) {
       "La hora fin no puede ser anterior a la hora inicio en eventos de un día.";
   }
 
-  ["url_evento", "fuente_url", "imagen_url", "captura_url"].forEach((field) => {
+  ["url_evento", "url_registro", "fuente_url", "imagen_url", "captura_url"].forEach((field) => {
     if (!isValidUrl(form[field])) {
       errors[field] = "Ingresa una URL válida que empiece con http:// o https://.";
     }
@@ -176,6 +178,7 @@ function normalizeEventForForm(evento) {
 
   normalized.destacado = normalizeDestacado(evento.destacado);
   normalized.fecha_fin = evento.fecha_fin || "";
+  normalized.fecha_limite_convocatoria = evento.fecha_limite_convocatoria || "";
   normalized.hora_inicio = evento.hora_inicio || "";
   normalized.hora_fin = evento.hora_fin || "";
 
@@ -552,6 +555,14 @@ export default function AdminAgendaIA() {
               onChange={handleChange}
             />
             <Input
+              label="Fecha límite de convocatoria"
+              name="fecha_limite_convocatoria"
+              type="date"
+              value={form.fecha_limite_convocatoria}
+              onChange={handleChange}
+              help="Úsala para convocatorias, becas, calls for papers, premios o registros con fecha de cierre."
+            />
+            <Input
               label="Hora fin"
               name="hora_fin"
               type="time"
@@ -586,6 +597,16 @@ export default function AdminAgendaIA() {
               onChange={handleChange}
               error={errors.url_evento}
               placeholder="https://..."
+            />
+            <Input
+              label="URL de registro"
+              name="url_registro"
+              type="url"
+              value={form.url_registro}
+              onChange={handleChange}
+              error={errors.url_registro}
+              placeholder="https://..."
+              help="Enlace directo para inscripción, registro o aplicación."
             />
             <Input
               label="Fuente URL"
@@ -735,7 +756,7 @@ export default function AdminAgendaIA() {
 
           <div className="flex flex-col gap-3 border-t border-white/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-semibold text-slate-500">
-              No se agregan campos nuevos: se conserva el payload actual.
+              Los campos opcionales vacíos se guardan sin valor.
             </p>
             <button
               type="submit"

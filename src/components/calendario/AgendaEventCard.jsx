@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  Clock,
   MapPin,
   Video,
   BrainCircuit,
@@ -10,7 +11,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { formatAgendaDateRange } from "@/lib/agendaDates";
+import { formatAgendaCompactDate, formatAgendaDateRange } from "@/lib/agendaDates";
 
 const iconMap = {
   BrainCircuit,
@@ -76,6 +77,13 @@ export default function AgendaEventCard({ evento }) {
             <CalendarDays className="h-4 w-4 shrink-0 text-slate-500" />
             <span>{formatAgendaDateRange(evento)}</span>
           </div>
+
+          {evento.fecha_limite_convocatoria && (
+            <div className="flex items-center gap-2 text-indigo-700">
+              <Clock className="h-4 w-4 shrink-0 text-indigo-500" />
+              <span>Cierra {formatAgendaCompactDate(evento.fecha_limite_convocatoria)}</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             {isOnline ? (
