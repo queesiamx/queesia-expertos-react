@@ -14,9 +14,9 @@ import {
   Landmark,
   Zap,
 } from "lucide-react";
+import { auth } from "@/firebase";
 
-const API_BASE = "https://queesia.com/api/calendario";
-const ADMIN_TOKEN = "queesia_agenda_ia_2026_token_seguro_93xKp7";
+const AGENDA_ADMIN_API = "/api/admin/agenda";
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
@@ -28,7 +28,7 @@ const emptyForm = {
   descripcion_corta: "",
   descripcion_larga: "",
   categoria: "Inteligencia artificial",
-  tipo_evento: "Webinar",
+  tipo_evento: "Otro",
   modalidad: "En línea",
   pais: "México",
   estado: "",
@@ -49,6 +49,30 @@ const emptyForm = {
   estado_publicacion: "borrador",
 };
 
+const categoryOptions = ["Inteligencia artificial", "Tecnología", "Innovación", "Otro"];
+
+const eventTypeOptions = [
+  "Congreso",
+  "Webinar",
+  "Curso",
+  "Taller",
+  "Conferencia",
+  "Convocatoria",
+  "Hackathon",
+  "Meetup",
+  "Seminario",
+  "Diplomado",
+  "Otro",
+];
+
+const modalityOptions = ["En línea", "Presencial", "Híbrido"];
+
+const publicationStateHelp = {
+  borrador: "No visible públicamente.",
+  publicado: "Visible en la agenda pública.",
+  oculto: "No visible, pero conservado en el admin.",
+};
+
 const iconOptions = [
   { value: "BrainCircuit", label: "IA", icon: BrainCircuit },
   { value: "CalendarDays", label: "Calendario", icon: CalendarDays },
@@ -58,6 +82,8 @@ const iconOptions = [
   { value: "Landmark", label: "Gobierno", icon: Landmark },
   { value: "Zap", label: "Energía / tecnología", icon: Zap },
 ];
+
+const formFieldNames = Object.keys(emptyForm);
 
 function generarSlug(texto) {
   return texto
@@ -71,21 +97,141 @@ function generarSlug(texto) {
     .replace(/-+/g, "-");
 }
 
+function normalizeDestacado(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  return ["1", "true", "si", "sí", "destacado"].includes(normalized);
+}
+
+function cleanTags(tags) {
+  return String(tags || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function isValidUrl(value) {
+  if (!value) return true;
+
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function getValidationErrors(form) {
+  const errors = {};
+  const fechaInicio = form.fecha_inicio;
+  const fechaFin = form.fecha_fin;
+  const sameDayEvent = !fechaFin || fechaFin === fechaInicio;
+
+  if (!form.titulo.trim()) {
+    errors.titulo = "El título es obligatorio.";
+  }
+
+  if (!fechaInicio) {
+    errors.fecha_inicio = "La fecha de inicio es obligatoria.";
+  }
+
+  if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+    errors.fecha_fin = "La fecha fin no puede ser anterior a la fecha inicio.";
+  }
+
+  if (
+    fechaInicio &&
+    sameDayEvent &&
+    form.hora_inicio &&
+    form.hora_fin &&
+    form.hora_fin < form.hora_inicio
+  ) {
+    errors.hora_fin =
+      "La hora fin no puede ser anterior a la hora inicio en eventos de un día.";
+  }
+
+  ["url_evento", "fuente_url", "imagen_url", "captura_url"].forEach((field) => {
+    if (!isValidUrl(form[field])) {
+      errors[field] = "Ingresa una URL válida que empiece con http:// o https://.";
+    }
+  });
+
+  return errors;
+}
+
+function normalizeEventForForm(evento) {
+  const normalized = { ...emptyForm };
+
+  formFieldNames.forEach((field) => {
+    if (evento[field] !== undefined && evento[field] !== null) {
+      normalized[field] = evento[field];
+    }
+  });
+
+  normalized.destacado = normalizeDestacado(evento.destacado);
+  normalized.fecha_fin = evento.fecha_fin || "";
+  normalized.hora_inicio = evento.hora_inicio || "";
+  normalized.hora_fin = evento.hora_fin || "";
+
+  return normalized;
+}
+
+function getOptionsWithLegacy(options, value) {
+  if (!value || options.includes(value)) return options;
+  return [...options, value];
+}
+
+async function getAdminAuthHeaders() {
+  const token = await auth.currentUser?.getIdToken?.();
+
+  if (!token) {
+    throw new Error("No autenticado");
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+async function readAgendaResponse(res) {
+  const data = await res.json().catch(() => ({
+    success: false,
+    message: "Error interno del servidor",
+  }));
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Error interno del servidor");
+  }
+
+  return data;
+}
+
 export default function AdminAgendaIA() {
   const [eventos, setEventos] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editandoId, setEditandoId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [errors, setErrors] = useState({});
   const [eventoAEliminar, setEventoAEliminar] = useState(null);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [subiendoCaptura, setSubiendoCaptura] = useState(false);
 
   async function cargarEventos() {
-  const res = await fetch(`${API_BASE}/obtener_eventos_admin.php`);
-  const data = await res.json();
-  setEventos(data.eventos || []);
-}
+    const res = await fetch(AGENDA_ADMIN_API, {
+      headers: {
+        ...(await getAdminAuthHeaders()),
+      },
+    });
+    const data = await readAgendaResponse(res);
+    setEventos(data.eventos || []);
+  }
 
   useEffect(() => {
     cargarEventos();
@@ -93,6 +239,13 @@ export default function AdminAgendaIA() {
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
+
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
 
     setForm((prev) => {
       const nuevoForm = {
@@ -110,14 +263,8 @@ export default function AdminAgendaIA() {
 
   function editarEvento(evento) {
     setEditandoId(evento.id);
-    setForm({
-      ...emptyForm,
-      ...evento,
-      destacado: Number(evento.destacado) === 1,
-      fecha_fin: evento.fecha_fin || "",
-      hora_inicio: evento.hora_inicio || "",
-      hora_fin: evento.hora_fin || "",
-    });
+    setForm(normalizeEventForForm(evento));
+    setErrors({});
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -125,35 +272,47 @@ export default function AdminAgendaIA() {
     setForm(emptyForm);
     setEditandoId(null);
     setMensaje("");
+    setErrors({});
   }
 
   async function guardarEvento(e) {
     e.preventDefault();
-    setLoading(true);
     setMensaje("");
 
+    const validationErrors = getValidationErrors(form);
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      toast.error("Revisa los campos marcados antes de guardar.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const url = editandoId
-        ? `${API_BASE}/actualizar_evento.php`
-        : `${API_BASE}/guardar_evento.php`;
+      const normalizedForm = {
+        ...form,
+        tags: cleanTags(form.tags),
+        destacado: normalizeDestacado(form.destacado) ? 1 : 0,
+      };
 
       const payload = editandoId
-        ? { ...form, id: editandoId, admin_token: ADMIN_TOKEN }
-        : { ...form, admin_token: ADMIN_TOKEN };
+        ? { ...normalizedForm, id: editandoId }
+        : normalizedForm;
 
-      const res = await fetch(url, {
+      const res = await fetch(AGENDA_ADMIN_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(await getAdminAuthHeaders()),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          action: editandoId ? "update" : "create",
+          evento: payload,
+        }),
       });
 
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.message || "No se pudo guardar");
-      }
+      await readAgendaResponse(res);
 
       toast.success(editandoId ? "Evento actualizado." : "Evento creado.");
       limpiarForm();
@@ -171,22 +330,19 @@ export default function AdminAgendaIA() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/eliminar_evento.php`, {
+      const res = await fetch(AGENDA_ADMIN_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(await getAdminAuthHeaders()),
         },
         body: JSON.stringify({
+          action: "delete",
           id: eventoAEliminar.id,
-          admin_token: ADMIN_TOKEN,
         }),
       });
 
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.message || "No se pudo eliminar");
-      }
+      await readAgendaResponse(res);
 
       toast.success("Evento eliminado.");
       setEventoAEliminar(null);
@@ -230,6 +386,13 @@ export default function AdminAgendaIA() {
         [campoDestino]: data.secure_url,
       }));
 
+      setErrors((prev) => {
+        if (!prev[campoDestino]) return prev;
+        const next = { ...prev };
+        delete next[campoDestino];
+        return next;
+      });
+
       toast.success("Imagen subida correctamente.");
     } catch (error) {
       toast.error(error.message);
@@ -256,8 +419,9 @@ export default function AdminAgendaIA() {
             </div>
 
             <button
+              type="button"
               onClick={limpiarForm}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
             >
               <Plus className="h-4 w-4" />
               Nuevo evento
@@ -273,18 +437,24 @@ export default function AdminAgendaIA() {
 
         <form
           onSubmit={guardarEvento}
-          className="mb-10 rounded-3xl border border-white/60 bg-white/65 p-6 shadow-xl backdrop-blur-xl"
+          noValidate
+          className="mb-10 space-y-6 rounded-3xl border border-white/60 bg-white/65 p-6 shadow-xl backdrop-blur-xl"
         >
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-900">
-              {editandoId ? `Editando evento #${editandoId}` : "Crear evento"}
-            </h2>
+          <div className="flex flex-col gap-3 border-b border-white/70 pb-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                {editandoId ? "Edición" : "Creación"}
+              </p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                {editandoId ? `Editando evento #${editandoId}` : "Crear evento"}
+              </h2>
+            </div>
 
             {editandoId && (
               <button
                 type="button"
                 onClick={limpiarForm}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 <X className="h-4 w-4" />
                 Cancelar edición
@@ -292,120 +462,227 @@ export default function AdminAgendaIA() {
             )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input label="Título" name="titulo" value={form.titulo} onChange={handleChange} required />
-            <Input label="Slug" name="slug" value={form.slug} onChange={handleChange} />
-            <Input label="Categoría" name="categoria" value={form.categoria} onChange={handleChange} />
-            <Input label="Tipo de evento" name="tipo_evento" value={form.tipo_evento} onChange={handleChange} />
-            <Input label="Modalidad" name="modalidad" value={form.modalidad} onChange={handleChange} />
+          <FormSection
+            title="Información básica"
+            description="Identifica el evento y evita variantes innecesarias en categoría, tipo y modalidad."
+          >
+            <Input
+              label="Título"
+              name="titulo"
+              value={form.titulo}
+              onChange={handleChange}
+              error={errors.titulo}
+              required
+            />
+            <Input
+              label="Slug"
+              name="slug"
+              value={form.slug}
+              onChange={handleChange}
+              help="En creación se genera desde el título; en edición se conserva salvo que lo modifiques."
+            />
+            <ComboInput
+              label="Categoría"
+              name="categoria"
+              value={form.categoria}
+              onChange={handleChange}
+              options={getOptionsWithLegacy(categoryOptions, form.categoria)}
+              help="Mantén 'Inteligencia artificial' salvo que el evento requiera otra clasificación."
+            />
+            <ComboInput
+              label="Tipo de evento"
+              name="tipo_evento"
+              value={form.tipo_evento}
+              onChange={handleChange}
+              options={getOptionsWithLegacy(eventTypeOptions, form.tipo_evento)}
+              help="Usa una opción estándar o conserva un valor legacy si ya existe."
+            />
+            <ComboInput
+              label="Modalidad"
+              name="modalidad"
+              value={form.modalidad}
+              onChange={handleChange}
+              options={getOptionsWithLegacy(modalityOptions, form.modalidad)}
+              help="Para eventos en línea, la ciudad puede quedar vacía."
+            />
+          </FormSection>
+
+          <FormSection
+            title="Fecha y ubicación"
+            description="La fecha inicio es obligatoria. Si no hay fecha fin, se trata visualmente como evento de un día."
+          >
             <Input label="País" name="pais" value={form.pais} onChange={handleChange} />
-            <Input label="Estado" name="estado" value={form.estado} onChange={handleChange} />
-            <Input label="Ciudad" name="ciudad" value={form.ciudad} onChange={handleChange} />
+            <Input
+              label="Estado / región"
+              name="estado"
+              value={form.estado}
+              onChange={handleChange}
+              help="Campo geográfico; no confundir con estado de publicación."
+            />
+            <Input
+              label="Ciudad"
+              name="ciudad"
+              value={form.ciudad}
+              onChange={handleChange}
+              help="Opcional para modalidad en línea."
+            />
+            <Input
+              label="Fecha inicio"
+              name="fecha_inicio"
+              type="date"
+              value={form.fecha_inicio}
+              onChange={handleChange}
+              error={errors.fecha_inicio}
+              required
+            />
+            <Input
+              label="Fecha fin"
+              name="fecha_fin"
+              type="date"
+              value={form.fecha_fin}
+              onChange={handleChange}
+              error={errors.fecha_fin}
+              help="Déjalo vacío si termina el mismo día."
+            />
+            <Input
+              label="Hora inicio"
+              name="hora_inicio"
+              type="time"
+              value={form.hora_inicio}
+              onChange={handleChange}
+            />
+            <Input
+              label="Hora fin"
+              name="hora_fin"
+              type="time"
+              value={form.hora_fin}
+              onChange={handleChange}
+              error={errors.hora_fin}
+            />
+          </FormSection>
 
-            <Input label="Fecha inicio" name="fecha_inicio" type="date" value={form.fecha_inicio} onChange={handleChange} required />
-            <Input label="Fecha fin" name="fecha_fin" type="date" value={form.fecha_fin} onChange={handleChange} />
-            <Input label="Hora inicio" name="hora_inicio" type="time" value={form.hora_inicio} onChange={handleChange} />
-            <Input label="Hora fin" name="hora_fin" type="time" value={form.hora_fin} onChange={handleChange} />
+          <FormSection
+            title="Organizador y acceso"
+            description="Costo sigue como texto para admitir precios, preventas y variantes como 'Gratuito con registro'."
+          >
+            <Input
+              label="Organizador"
+              name="organizador"
+              value={form.organizador}
+              onChange={handleChange}
+            />
+            <Input
+              label="Costo"
+              name="costo"
+              value={form.costo}
+              onChange={handleChange}
+              placeholder="Gratuito, $2,500 MXN, Desde $1,200 MXN..."
+            />
+            <Input
+              label="URL oficial"
+              name="url_evento"
+              type="url"
+              value={form.url_evento}
+              onChange={handleChange}
+              error={errors.url_evento}
+              placeholder="https://..."
+            />
+            <Input
+              label="Fuente URL"
+              name="fuente_url"
+              type="url"
+              value={form.fuente_url}
+              onChange={handleChange}
+              error={errors.fuente_url}
+              placeholder="https://..."
+              help="Referencia pública de donde se verificó el evento."
+            />
+          </FormSection>
 
-            <Input label="Organizador" name="organizador" value={form.organizador} onChange={handleChange} />
-            <Input label="Costo" name="costo" value={form.costo} onChange={handleChange} />
-            <Input label="URL oficial" name="url_evento" value={form.url_evento} onChange={handleChange} />
-            <Input label="Fuente URL" name="fuente_url" value={form.fuente_url} onChange={handleChange} />
-            <Input label="Imagen URL" name="imagen_url" value={form.imagen_url} onChange={handleChange} />
-
-            <div>
-              <label className="mb-1 block text-sm font-bold text-slate-700">
-                Subir imagen principal
-              </label>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  subirACloudinary(
-                    e.target.files?.[0],
-                    "imagen_url",
-                    "queesia/agenda-ia/banners",
-                    setSubiendoImagen
-                  )
-                }
-                className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
-              />
-
-              {subiendoImagen && (
-                <p className="mt-2 text-sm font-semibold text-indigo-600">
-                  Subiendo imagen...
-                </p>
-              )}
-            </div>
-
-            <Input label="Captura URL" name="captura_url" value={form.captura_url} onChange={handleChange} />
-
-            <div>
-              <label className="mb-1 block text-sm font-bold text-slate-700">
-                Subir captura / evidencia
-              </label>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  subirACloudinary(
-                    e.target.files?.[0],
-                    "captura_url",
-                    "queesia/agenda-ia/capturas",
-                    setSubiendoCaptura
-                  )
-                }
-                className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
-              />
-
-              {subiendoCaptura && (
-                <p className="mt-2 text-sm font-semibold text-indigo-600">
-                  Subiendo captura...
-                </p>
-              )}
-            </div>
+          <FormSection
+            title="Multimedia"
+            description="La imagen principal se usa públicamente. La captura/evidencia sirve como respaldo visual de la fuente."
+          >
+            <Input
+              label="Imagen principal URL"
+              name="imagen_url"
+              type="url"
+              value={form.imagen_url}
+              onChange={handleChange}
+              error={errors.imagen_url}
+              placeholder="https://..."
+            />
+            <FileUpload
+              label="Subir imagen principal"
+              loading={subiendoImagen}
+              loadingText="Subiendo imagen..."
+              help="Reemplaza el campo Imagen principal URL cuando termina la carga."
+              onChange={(file) =>
+                subirACloudinary(
+                  file,
+                  "imagen_url",
+                  "queesia/agenda-ia/banners",
+                  setSubiendoImagen
+                )
+              }
+            />
+            <Input
+              label="Captura / evidencia URL"
+              name="captura_url"
+              type="url"
+              value={form.captura_url}
+              onChange={handleChange}
+              error={errors.captura_url}
+              placeholder="https://..."
+            />
+            <FileUpload
+              label="Subir captura / evidencia"
+              loading={subiendoCaptura}
+              loadingText="Subiendo captura..."
+              help="Útil para conservar una prueba visual o respaldo de la fuente."
+              onChange={(file) =>
+                subirACloudinary(
+                  file,
+                  "captura_url",
+                  "queesia/agenda-ia/capturas",
+                  setSubiendoCaptura
+                )
+              }
+            />
 
             {form.imagen_url && (
-              <div className="md:col-span-2">
-                <p className="mb-2 text-sm font-bold text-slate-700">
-                  Preview imagen principal
-                </p>
-                <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-md">
-                  <img
-                    src={form.imagen_url}
-                    alt="Preview imagen del evento"
-                    className="h-64 w-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </div>
-              </div>
+              <ImagePreview
+                title="Preview imagen principal"
+                src={form.imagen_url}
+                alt="Preview imagen del evento"
+                className="h-64 w-full object-cover"
+              />
             )}
 
             {form.captura_url && (
-              <div className="md:col-span-2">
-                <p className="mb-2 text-sm font-bold text-slate-700">
-                  Preview captura / evidencia
-                </p>
-                <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/60 shadow-md">
-                  <img
-                    src={form.captura_url}
-                    alt="Preview captura del evento"
-                    className="max-h-96 w-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </div>
-              </div>
+              <ImagePreview
+                title="Preview captura / evidencia"
+                src={form.captura_url}
+                alt="Preview captura del evento"
+                className="max-h-96 w-full object-contain"
+              />
             )}
+          </FormSection>
 
+          <FormSection
+            title="Clasificación"
+            description="Campos editoriales para ordenar, destacar y controlar visibilidad."
+          >
             <IconPicker value={form.icono} onChange={handleChange} />
 
-            <Input label="Tags separados por coma" name="tags" value={form.tags} onChange={handleChange} />
+            <Input
+              label="Tags separados por coma"
+              name="tags"
+              value={form.tags}
+              onChange={handleChange}
+              placeholder="IA, machine learning, UNAM, investigación"
+              help="Antes de guardar se limpian espacios duplicados entre tags."
+            />
 
             <div>
               <label className="mb-1 block text-sm font-bold text-slate-700">
@@ -415,38 +692,64 @@ export default function AdminAgendaIA() {
                 name="estado_publicacion"
                 value={form.estado_publicacion}
                 onChange={handleChange}
-                className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
+                className="min-h-12 w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none transition focus:border-indigo-200 focus:ring-2 focus:ring-indigo-400/40"
               >
                 <option value="borrador">Borrador</option>
                 <option value="publicado">Publicado</option>
                 <option value="oculto">Oculto</option>
               </select>
+              <FieldHelp>{publicationStateHelp[form.estado_publicacion]}</FieldHelp>
             </div>
 
-            <label className="mt-7 flex items-center gap-2 text-sm font-bold text-slate-700">
+            <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/70 bg-white/75 px-4 py-3 text-sm font-bold text-slate-700">
               <input
                 type="checkbox"
                 name="destacado"
-                checked={form.destacado}
+                checked={normalizeDestacado(form.destacado)}
                 onChange={handleChange}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
               Marcar como destacado
             </label>
-          </div>
+          </FormSection>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Textarea label="Descripción corta" name="descripcion_corta" value={form.descripcion_corta} onChange={handleChange} />
-            <Textarea label="Descripción larga" name="descripcion_larga" value={form.descripcion_larga} onChange={handleChange} />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-6 py-3 text-sm font-bold text-white shadow-lg disabled:opacity-60"
+          <FormSection
+            title="Contenido"
+            description="Resumen corto para tarjetas y descripción larga para el detalle."
           >
-            <Save className="h-4 w-4" />
-            {loading ? "Guardando..." : editandoId ? "Actualizar evento" : "Guardar evento"}
-          </button>
+            <Textarea
+              label="Descripción corta"
+              name="descripcion_corta"
+              value={form.descripcion_corta}
+              onChange={handleChange}
+              placeholder="Resumen breve para la tarjeta pública."
+            />
+            <Textarea
+              label="Descripción larga"
+              name="descripcion_larga"
+              value={form.descripcion_larga}
+              onChange={handleChange}
+              placeholder="Detalles, agenda, requisitos o contexto adicional."
+            />
+          </FormSection>
+
+          <div className="flex flex-col gap-3 border-t border-white/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-slate-500">
+              No se agregan campos nuevos: se conserva el payload actual.
+            </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-95 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
+            >
+              <Save className="h-4 w-4" />
+              {loading
+                ? "Guardando..."
+                : editandoId
+                  ? "Actualizar evento"
+                  : "Guardar evento"}
+            </button>
+          </div>
         </form>
 
         <section className="rounded-3xl border border-white/60 bg-white/65 p-6 shadow-xl backdrop-blur-xl">
@@ -486,19 +789,21 @@ export default function AdminAgendaIA() {
                       <VisibleBadge estado={evento.estado_publicacion} />
                     </td>
 
-                    <td>{evento.destacado ? "Sí" : "No"}</td>
+                    <td>{normalizeDestacado(evento.destacado) ? "Sí" : "No"}</td>
                     <td className="text-right">
                       <button
+                        type="button"
                         onClick={() => editarEvento(evento)}
-                        className="mr-2 inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 font-semibold text-slate-700 shadow"
+                        className="mr-2 inline-flex items-center gap-1 rounded-xl bg-white px-3 py-2 font-semibold text-slate-700 shadow transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                       >
                         <Edit className="h-4 w-4" />
                         Editar
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => setEventoAEliminar(evento)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600 shadow"
+                        className="inline-flex items-center gap-1 rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600 shadow transition hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                       >
                         <Trash2 className="h-4 w-4" />
                         Eliminar
@@ -509,7 +814,7 @@ export default function AdminAgendaIA() {
 
                 {eventos.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center text-slate-500">
+                    <td colSpan="8" className="py-8 text-center text-slate-500">
                       No hay eventos registrados.
                     </td>
                   </tr>
@@ -539,7 +844,7 @@ export default function AdminAgendaIA() {
               <button
                 type="button"
                 onClick={() => setEventoAEliminar(null)}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 Cancelar
               </button>
@@ -548,7 +853,7 @@ export default function AdminAgendaIA() {
                 type="button"
                 onClick={eliminarEvento}
                 disabled={loading}
-                className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                className="rounded-2xl bg-red-500 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-red-600 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 {loading ? "Eliminando..." : "Sí, eliminar"}
               </button>
@@ -560,21 +865,56 @@ export default function AdminAgendaIA() {
   );
 }
 
-function Input({ label, ...props }) {
+function FormSection({ title, description, children }) {
   return (
-    <div>
+    <section className="rounded-2xl border border-white/60 bg-white/45 p-4 shadow-sm sm:p-5">
+      <div className="mb-4">
+        <h3 className="text-lg font-extrabold italic text-slate-900">{title}</h3>
+        {description && (
+          <p className="mt-1 text-sm leading-relaxed text-slate-500">
+            {description}
+          </p>
+        )}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function Input({ label, help, error, className = "", children, ...props }) {
+  return (
+    <div className={className}>
       <label className="mb-1 block text-sm font-bold text-slate-700">
         {label}
       </label>
       <input
         {...props}
-        className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
+        aria-invalid={Boolean(error)}
+        className={`min-h-12 w-full rounded-2xl border bg-white/80 px-4 py-3 text-sm outline-none transition focus:border-indigo-200 focus:ring-2 focus:ring-indigo-400/40 ${
+          error ? "border-red-300" : "border-white/70"
+        }`}
       />
+      {children}
+      <FieldHelp error={error}>{error || help}</FieldHelp>
     </div>
   );
 }
 
-function Textarea({ label, ...props }) {
+function ComboInput({ label, help, error, options, name, ...props }) {
+  const listId = `${name}-options`;
+
+  return (
+    <Input label={label} help={help} error={error} name={name} list={listId} {...props}>
+      <datalist id={listId}>
+        {options.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+    </Input>
+  );
+}
+
+function Textarea({ label, help, error, ...props }) {
   return (
     <div>
       <label className="mb-1 block text-sm font-bold text-slate-700">
@@ -583,8 +923,63 @@ function Textarea({ label, ...props }) {
       <textarea
         {...props}
         rows={5}
-        className="w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none"
+        aria-invalid={Boolean(error)}
+        className={`w-full rounded-2xl border bg-white/80 px-4 py-3 text-sm outline-none transition focus:border-indigo-200 focus:ring-2 focus:ring-indigo-400/40 ${
+          error ? "border-red-300" : "border-white/70"
+        }`}
       />
+      <FieldHelp error={error}>{error || help}</FieldHelp>
+    </div>
+  );
+}
+
+function FieldHelp({ children, error }) {
+  if (!children) return null;
+
+  return (
+    <p
+      className={`mt-1 text-xs font-semibold leading-relaxed ${
+        error ? "text-red-600" : "text-slate-500"
+      }`}
+    >
+      {children}
+    </p>
+  );
+}
+
+function FileUpload({ label, help, loading, loadingText, onChange }) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-bold text-slate-700">
+        {label}
+      </label>
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => onChange(e.target.files?.[0])}
+        className="min-h-12 w-full rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm outline-none transition file:mr-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-bold file:text-indigo-700 focus:border-indigo-200 focus:ring-2 focus:ring-indigo-400/40"
+      />
+
+      <FieldHelp>{loading ? loadingText : help}</FieldHelp>
+    </div>
+  );
+}
+
+function ImagePreview({ title, src, alt, className }) {
+  return (
+    <div className="md:col-span-2">
+      <p className="mb-2 text-sm font-bold text-slate-700">{title}</p>
+      <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/60 shadow-md">
+        <img
+          src={src}
+          alt={alt}
+          className={className}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -660,7 +1055,7 @@ function IconPicker({ value, onChange }) {
                 onChange={onChange}
                 className="sr-only"
               />
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               {item.label}
             </label>
           );

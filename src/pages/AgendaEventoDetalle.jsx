@@ -13,13 +13,50 @@ import {
 } from "lucide-react";
 import UnifiedNavbar from "@/components/UnifiedNavbar";
 import Footer from "@/components/Footer";
-import { formatAgendaDate } from "@/lib/agendaDates";
+import { formatAgendaDateRange } from "@/lib/agendaDates";
 
 const API_BASE = "https://queesia.com/api/calendario/obtener_evento.php";
 
 function formatTime(timeString) {
   if (!timeString) return null;
   return timeString.slice(0, 5);
+}
+
+function formatTimeRange(evento) {
+  const start = formatTime(evento.hora_inicio);
+  const end = formatTime(evento.hora_fin);
+
+  if (start && end) return `${start}–${end}`;
+  if (start) return start;
+
+  return "Por confirmar";
+}
+
+function isOnlineEvent(evento) {
+  const modalidad = String(evento?.modalidad || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return modalidad.includes("online") || modalidad.includes("linea");
+}
+
+function getModalityLabel(evento, isOnline) {
+  const modalidad = evento.modalidad || "Por confirmar";
+
+  if (isOnline || !evento.ciudad) return modalidad;
+
+  return `${modalidad} · ${evento.ciudad}`;
+}
+
+function getPlaceLabel(evento, isOnline) {
+  if (isOnline) return "Online";
+
+  const placeParts = [evento.ciudad, evento.estado, evento.pais || "México"].filter(
+    Boolean
+  );
+
+  return placeParts.length > 0 ? placeParts.join(" · ") : "Por confirmar";
 }
 
 export default function AgendaEventoDetalle() {
@@ -52,6 +89,7 @@ export default function AgendaEventoDetalle() {
   const imagenesEvento = evento
     ? [evento.imagen_url, evento.captura_url].filter(Boolean)
     : [];
+  const isOnline = evento ? isOnlineEvent(evento) : false;
 
   return (
     <>
@@ -61,7 +99,7 @@ export default function AgendaEventoDetalle() {
         <section className="mx-auto max-w-5xl">
           <Link
             to="/agenda-ia"
-            className="mb-8 inline-flex items-center gap-2 rounded-2xl border border-white/60 bg-white/60 px-4 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl hover:no-underline"
+            className="mb-8 inline-flex items-center gap-2 rounded-2xl border border-white/65 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl hover:bg-white hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver a Agenda IA
@@ -76,7 +114,7 @@ export default function AgendaEventoDetalle() {
               {error}
             </div>
           ) : (
-            <article className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/65 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
+            <article className="overflow-hidden rounded-[2rem] border border-white/65 bg-white/70 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
               <EventImageCarousel
                 imagenes={imagenesEvento}
                 titulo={evento.titulo}
@@ -100,36 +138,19 @@ export default function AgendaEventoDetalle() {
                   <InfoItem
                     icon={<CalendarDays />}
                     label="Fecha"
-                    value={`${formatAgendaDate(evento.fecha_inicio)}${
-                      evento.fecha_fin && evento.fecha_fin !== evento.fecha_inicio
-                        ? ` al ${formatAgendaDate(evento.fecha_fin)}`
-                        : ""
-                    }`}
+                    value={formatAgendaDateRange(evento)}
                   />
 
                   <InfoItem
                     icon={<Clock />}
                     label="Hora"
-                    value={
-                      formatTime(evento.hora_inicio)
-                        ? `${formatTime(evento.hora_inicio)} h`
-                        : "Por confirmar"
-                    }
+                    value={formatTimeRange(evento)}
                   />
 
                   <InfoItem
-                    icon={
-                      evento.modalidad?.toLowerCase().includes("línea") ||
-                      evento.modalidad?.toLowerCase().includes("online") ? (
-                        <Video />
-                      ) : (
-                        <MapPin />
-                      )
-                    }
+                    icon={isOnline ? <Video /> : <MapPin />}
                     label="Modalidad"
-                    value={`${evento.modalidad || "Por confirmar"}${
-                      evento.ciudad ? ` · ${evento.ciudad}` : ""
-                    }`}
+                    value={getModalityLabel(evento, isOnline)}
                   />
 
                   <InfoItem
@@ -147,14 +168,12 @@ export default function AgendaEventoDetalle() {
                   <InfoItem
                     icon={<MapPin />}
                     label="Ubicación"
-                    value={`${evento.pais || "México"}${
-                      evento.estado ? ` · ${evento.estado}` : ""
-                    }`}
+                    value={getPlaceLabel(evento, isOnline)}
                   />
                 </div>
 
                 {evento.descripcion_larga && (
-                  <div className="mt-10 rounded-3xl border border-white/60 bg-white/50 p-6 leading-relaxed text-slate-700">
+                  <div className="mt-10 rounded-2xl border border-white/60 bg-white/55 p-6 leading-relaxed text-slate-700">
                     <h2 className="mb-3 text-xl font-bold text-slate-900">
                       Descripción
                     </h2>
@@ -187,7 +206,7 @@ export default function AgendaEventoDetalle() {
                       href={evento.url_evento}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg hover:no-underline"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 px-5 py-3 text-sm font-bold text-white shadow-lg hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                     >
                       Ir al sitio oficial
                       <ExternalLink className="h-4 w-4" />
@@ -199,7 +218,7 @@ export default function AgendaEventoDetalle() {
                       href={evento.fuente_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-5 py-3 text-sm font-bold text-slate-700 shadow-md hover:no-underline"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-5 py-3 text-sm font-bold text-slate-700 shadow-md hover:bg-white hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                     >
                       Ver fuente
                       <LinkIcon className="h-4 w-4" />
@@ -231,7 +250,7 @@ function EventImageCarousel({ imagenes, titulo, destacado }) {
   }, [imagenes.length]);
 
   return (
-    <div className="relative h-72 overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-sky-100">
+    <div className="relative h-64 overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-sky-100 sm:h-80">
       {imagenes.length > 0 ? (
         <img
           src={imagenes[index]}
@@ -240,7 +259,7 @@ function EventImageCarousel({ imagenes, titulo, destacado }) {
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">
-          <CalendarDays className="h-20 w-20 text-indigo-500" />
+          <CalendarDays className="h-20 w-20 text-indigo-500" aria-hidden="true" />
         </div>
       )}
 
@@ -257,7 +276,7 @@ function EventImageCarousel({ imagenes, titulo, destacado }) {
               key={i}
               type="button"
               onClick={() => setIndex(i)}
-              className={`h-2.5 rounded-full transition-all ${
+              className={`h-2.5 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900/20 ${
                 i === index ? "w-8 bg-white" : "w-2.5 bg-white/55"
               }`}
               aria-label={`Ver imagen ${i + 1}`}
@@ -271,7 +290,7 @@ function EventImageCarousel({ imagenes, titulo, destacado }) {
 
 function InfoItem({ icon, label, value }) {
   return (
-    <div className="rounded-3xl border border-white/60 bg-white/50 p-5 shadow-md backdrop-blur">
+    <div className="rounded-2xl border border-white/60 bg-white/55 p-5 shadow-md backdrop-blur">
       <div className="mb-2 flex items-center gap-2 text-sm font-bold text-indigo-600">
         <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>
         {label}

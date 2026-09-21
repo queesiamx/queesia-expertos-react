@@ -61,14 +61,14 @@ export function formatAgendaDateRange(evento, fallback = "Fecha por confirmar") 
   const sameMonth = sameYear && start.getMonth() === end.getMonth();
 
   if (sameMonth) {
-    return `${COMPACT_DAY_FORMATTER.format(start)}-${formatCompactDate(end)}`;
+    return `${COMPACT_DAY_FORMATTER.format(start)}–${formatCompactDate(end)}`;
   }
 
   if (sameYear) {
-    return `${formatCompactDayMonth(start)} - ${formatCompactDate(end)}`;
+    return `${formatCompactDayMonth(start)} – ${formatCompactDate(end)}`;
   }
 
-  return `${formatCompactDate(start)} - ${formatCompactDate(end)}`;
+  return `${formatCompactDate(start)} – ${formatCompactDate(end)}`;
 }
 
 export function getEffectiveEndDate(evento) {
@@ -263,9 +263,13 @@ function toAgendaDateKey(date) {
 }
 
 function formatCompactDate(date) {
-  return COMPACT_DATE_FORMATTER.format(date).replace(".", "");
+  return normalizeCompactMonth(COMPACT_DATE_FORMATTER.format(date));
 }
 
 function formatCompactDayMonth(date) {
-  return COMPACT_DAY_MONTH_FORMATTER.format(date).replace(".", "");
+  return normalizeCompactMonth(COMPACT_DAY_MONTH_FORMATTER.format(date));
+}
+
+function normalizeCompactMonth(label) {
+  return label.replace(".", "").replace(/\bsept\b/i, "sep");
 }

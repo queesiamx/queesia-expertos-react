@@ -4,6 +4,9 @@
 .env.production
 .env.development
 
+# Snapshot local de backend productivo con credenciales reales
+_backend_snapshot/
+
 # Archivos de Stripe
 stripe.log
 

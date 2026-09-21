@@ -16,25 +16,28 @@ export default function AgendaMonthCalendar({ eventos, selectedMonth }) {
   const calendarDays = getMonthCalendarDays(selectedMonth);
   const monthDays = getAgendaMonthDays(selectedMonth);
   const eventsByDay = buildEventsByDay(eventos);
+  const mobileDaysWithEvents = monthDays.filter(
+    (day) => (eventsByDay.get(getAgendaDateKey(day)) || []).length > 0
+  );
   const hasEvents = eventos.length > 0;
 
   return (
-    <div className="space-y-4" data-agenda-month-calendar>
+    <div className="space-y-5" data-agenda-month-calendar>
       {!hasEvents && (
-        <div className="rounded-3xl border border-white/60 bg-white/60 px-5 py-4 text-center text-sm font-semibold text-slate-600 shadow-md backdrop-blur-xl">
+        <div className="rounded-2xl border border-white/60 bg-white/70 px-5 py-4 text-center text-sm font-semibold text-slate-600 shadow-md backdrop-blur-xl">
           No hay eventos para este mes con los filtros seleccionados.
         </div>
       )}
 
       <div
-        className="hidden overflow-hidden rounded-3xl border border-white/60 bg-white/65 shadow-xl backdrop-blur-xl md:block"
+        className="hidden overflow-hidden rounded-3xl border border-white/65 bg-white/70 shadow-xl shadow-slate-900/10 backdrop-blur-xl md:block"
         data-agenda-calendar-grid
       >
-        <div className="grid grid-cols-7 border-b border-white/70 bg-white/55">
+        <div className="grid grid-cols-7 border-b border-white/75 bg-white/60">
           {WEEKDAY_LABELS.map((dayLabel) => (
             <div
               key={dayLabel}
-              className="px-3 py-3 text-center text-xs font-extrabold uppercase text-slate-500"
+              className="px-3 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-slate-500"
             >
               {dayLabel}
             </div>
@@ -55,7 +58,7 @@ export default function AgendaMonthCalendar({ eventos, selectedMonth }) {
       </div>
 
       <div className="space-y-3 md:hidden" data-agenda-calendar-list>
-        {monthDays.map((day) => (
+        {mobileDaysWithEvents.map((day) => (
           <MobileDayRow
             key={getAgendaDateKey(day)}
             day={day}
@@ -74,12 +77,15 @@ function CalendarDayCell({ day, eventos, inSelectedMonth, isToday }) {
 
   return (
     <div
-      className={`min-h-36 border-b border-r border-white/60 p-2 text-left ${
-        inSelectedMonth ? "bg-white/45" : "bg-white/20 text-slate-400"
+      className={`min-h-32 border-b border-r border-white/65 p-2.5 text-left transition-colors lg:min-h-36 ${
+        inSelectedMonth
+          ? "bg-white/45 hover:bg-white/60"
+          : "bg-white/20 text-slate-400"
       }`}
       data-agenda-calendar-day={getAgendaDateKey(day)}
+      aria-label={formatDayAriaLabel(day, eventos.length)}
     >
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <span
           className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-sm font-extrabold ${
             isToday
@@ -102,7 +108,7 @@ function CalendarDayCell({ day, eventos, inSelectedMonth, isToday }) {
       )}
 
       {remainingCount > 0 && (
-        <div className="mt-1.5 rounded-xl bg-slate-900/5 px-2 py-1 text-xs font-bold text-slate-500">
+        <div className="mt-1.5 rounded-lg bg-slate-900/5 px-2 py-1 text-xs font-bold text-slate-500">
           +{remainingCount} más
         </div>
       )}
@@ -116,22 +122,29 @@ function MobileDayRow({ day, eventos, isToday }) {
 
   return (
     <div
-      className="rounded-3xl border border-white/60 bg-white/65 p-4 text-left shadow-md backdrop-blur-xl"
+      className="rounded-2xl border border-white/65 bg-white/75 p-4 text-left shadow-md backdrop-blur-xl"
       data-agenda-calendar-day={getAgendaDateKey(day)}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase text-slate-400">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
             {formatMobileWeekday(day)}
           </p>
-          <p className="text-lg font-extrabold text-slate-900">{day.getDate()}</p>
+          <p className="text-lg font-extrabold text-slate-900">
+            {formatMobileDate(day)}
+          </p>
         </div>
 
-        {isToday && (
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
-            Hoy
+        <div className="flex flex-col items-end gap-1">
+          {isToday && (
+            <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+              Hoy
+            </span>
+          )}
+          <span className="text-xs font-semibold text-slate-500">
+            {eventos.length} {eventos.length === 1 ? "evento" : "eventos"}
           </span>
-        )}
+        </div>
       </div>
 
       {visibleEvents.length > 0 && (
@@ -157,10 +170,10 @@ function CompactEventLink({ evento }) {
   return (
     <Link
       to={`/agenda-ia/${evento.id}`}
-      className={`block rounded-xl border px-2.5 py-2 text-xs font-bold leading-snug shadow-sm transition hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+      className={`block rounded-lg border px-2.5 py-2 text-xs font-bold leading-snug shadow-sm transition hover:-translate-y-0.5 hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80 ${
         destacado
-          ? "border-amber-200 bg-amber-50 text-amber-800"
-          : "border-indigo-100 bg-white/85 text-slate-700 hover:bg-white"
+          ? "border-amber-200 bg-amber-50/95 text-amber-800 hover:bg-amber-100"
+          : "border-indigo-100 bg-white/90 text-slate-700 hover:bg-white"
       }`}
       title={evento.titulo || "Evento"}
       data-agenda-event-link
@@ -169,7 +182,7 @@ function CompactEventLink({ evento }) {
         {destacado && (
           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
         )}
-        <span className="truncate">{evento.titulo || "Evento sin título"}</span>
+        <span className="line-clamp-2">{evento.titulo || "Evento sin título"}</span>
       </span>
     </Link>
   );
@@ -215,4 +228,23 @@ function getEventInstanceKey(evento, day) {
 
 function formatMobileWeekday(day) {
   return new Intl.DateTimeFormat("es-MX", { weekday: "long" }).format(day);
+}
+
+function formatMobileDate(day) {
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "numeric",
+    month: "short",
+  })
+    .format(day)
+    .replace(".", "")
+    .replace(/\bsept\b/i, "sep");
+}
+
+function formatDayAriaLabel(day, eventCount) {
+  const dateLabel = new Intl.DateTimeFormat("es-MX", {
+    dateStyle: "full",
+  }).format(day);
+  const eventLabel = eventCount === 1 ? "1 evento" : `${eventCount} eventos`;
+
+  return `${dateLabel}, ${eventLabel}`;
 }

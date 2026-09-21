@@ -147,6 +147,8 @@ export default function AgendaIA() {
 
   const hasCurrentOrUpcomingEvents =
     eventosEnCurso.length > 0 || proximosEventos.length > 0;
+  const hasActiveFilters =
+    busqueda.trim() !== "" || categoria !== "todas" || modalidad !== "todas";
 
   return (
     <>
@@ -154,7 +156,7 @@ export default function AgendaIA() {
 
       <main className="min-h-screen bg-transparent px-4 pb-20 pt-12 text-slate-900 sm:px-6">
         <section className="mx-auto max-w-6xl text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-white/60 bg-white/55 shadow-xl backdrop-blur-xl">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-white/65 bg-white/60 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
             <CalendarDays className="h-10 w-10 text-indigo-500" />
           </div>
 
@@ -171,12 +173,13 @@ export default function AgendaIA() {
             inteligencia artificial, tecnología e innovación.
           </p>
 
-          <div className="mx-auto mt-8 flex max-w-xl items-center gap-3 rounded-3xl border border-white/70 bg-white/65 px-4 py-3 shadow-xl backdrop-blur-xl">
+          <div className="mx-auto mt-8 flex min-h-12 max-w-xl items-center gap-3 rounded-2xl border border-white/70 bg-white/70 px-4 py-3 shadow-xl shadow-slate-900/10 backdrop-blur-xl transition focus-within:border-indigo-200 focus-within:ring-2 focus-within:ring-indigo-400/40">
             <Search className="h-5 w-5 text-slate-400" />
             <input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por evento, categoría, modalidad o ciudad..."
+              aria-label="Buscar eventos"
               className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
             />
           </div>
@@ -185,7 +188,8 @@ export default function AgendaIA() {
             <select
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none"
+              aria-label="Filtrar por categoría"
+              className="min-h-12 rounded-2xl border border-white/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none transition focus:border-indigo-200 focus:ring-2 focus:ring-indigo-400/40"
             >
               <option value="todas">Todas las categorías</option>
               {categorias.map((cat) => (
@@ -198,7 +202,8 @@ export default function AgendaIA() {
             <select
               value={modalidad}
               onChange={(e) => setModalidad(e.target.value)}
-              className="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none"
+              aria-label="Filtrar por modalidad"
+              className="min-h-12 rounded-2xl border border-white/70 bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md backdrop-blur-xl outline-none transition focus:border-indigo-200 focus:ring-2 focus:ring-indigo-400/40"
             >
               <option value="todas">Todas las modalidades</option>
               {modalidades.map((mod) => (
@@ -210,17 +215,22 @@ export default function AgendaIA() {
 
           </div>
 
-          <div className="mx-auto mt-6 flex max-w-4xl flex-col gap-4 rounded-3xl border border-white/70 bg-white/65 p-4 text-left shadow-xl backdrop-blur-xl sm:p-5">
+          <div className="mx-auto mt-6 flex max-w-4xl flex-col gap-4 rounded-3xl border border-white/70 bg-white/70 p-4 text-left shadow-xl shadow-slate-900/10 backdrop-blur-xl sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-xl font-extrabold italic text-slate-900 sm:text-2xl">
-                {selectedMonthLabel}
-              </h2>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                  Mostrando
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold italic text-slate-900 sm:text-2xl">
+                  {selectedMonthLabel}
+                </h2>
+              </div>
 
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={irAlMesAnterior}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-4 py-2 text-sm font-bold text-slate-700 shadow-md transition hover:bg-white"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-4 py-2 text-sm font-bold text-slate-700 shadow-md transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                   aria-label="Ver mes anterior"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -230,7 +240,7 @@ export default function AgendaIA() {
                 <button
                   type="button"
                   onClick={irAlMesActual}
-                  className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700 shadow-md transition hover:bg-indigo-100"
+                  className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700 shadow-md transition hover:bg-indigo-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                 >
                   Hoy
                 </button>
@@ -238,7 +248,7 @@ export default function AgendaIA() {
                 <button
                   type="button"
                   onClick={irAlMesSiguiente}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/80 px-4 py-2 text-sm font-bold text-slate-700 shadow-md transition hover:bg-white"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/70 bg-white/85 px-4 py-2 text-sm font-bold text-slate-700 shadow-md transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                   aria-label="Ver mes siguiente"
                 >
                   Siguiente
@@ -248,14 +258,15 @@ export default function AgendaIA() {
             </div>
 
             <div
-              className="inline-flex w-full rounded-2xl border border-white/70 bg-white/70 p-1 shadow-inner sm:w-fit"
+              className="inline-flex w-full rounded-2xl border border-white/70 bg-white/75 p-1 shadow-inner sm:w-fit"
+              role="group"
               aria-label="Seleccionar vista de agenda"
             >
               <button
                 type="button"
                 onClick={() => setViewMode("month")}
                 aria-pressed={viewMode === "month"}
-                className={`min-h-10 flex-1 rounded-xl px-4 py-2 text-sm font-bold transition sm:flex-none ${
+                className={`min-h-10 flex-1 rounded-xl px-4 py-2 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:flex-none ${
                   viewMode === "month"
                     ? "bg-slate-900 text-white shadow-md"
                     : "text-slate-600 hover:bg-white"
@@ -268,7 +279,7 @@ export default function AgendaIA() {
                 type="button"
                 onClick={() => setViewMode("list")}
                 aria-pressed={viewMode === "list"}
-                className={`min-h-10 flex-1 rounded-xl px-4 py-2 text-sm font-bold transition sm:flex-none ${
+                className={`min-h-10 flex-1 rounded-xl px-4 py-2 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 sm:flex-none ${
                   viewMode === "list"
                     ? "bg-slate-900 text-white shadow-md"
                     : "text-slate-600 hover:bg-white"
@@ -282,7 +293,7 @@ export default function AgendaIA() {
 
         <section className="mx-auto mt-12 max-w-6xl">
           {loading ? (
-            <div className="rounded-3xl border border-white/60 bg-white/60 p-8 text-center shadow-xl backdrop-blur-xl">
+            <div className="rounded-2xl border border-white/60 bg-white/70 p-8 text-center text-sm font-semibold text-slate-600 shadow-xl backdrop-blur-xl">
               Cargando eventos...
             </div>
           ) : viewMode === "month" ? (
@@ -296,7 +307,7 @@ export default function AgendaIA() {
                 <section aria-labelledby="agenda-en-curso">
                   <h2
                     id="agenda-en-curso"
-                    className="mb-5 text-2xl font-extrabold italic text-slate-900"
+                    className="mb-5 border-b border-white/60 pb-3 text-xl font-extrabold italic text-slate-900 sm:text-2xl"
                   >
                     En curso
                   </h2>
@@ -308,7 +319,7 @@ export default function AgendaIA() {
                 <section aria-labelledby="agenda-proximos-eventos">
                   <h2
                     id="agenda-proximos-eventos"
-                    className="mb-5 text-2xl font-extrabold italic text-slate-900"
+                    className="mb-5 border-b border-white/60 pb-3 text-xl font-extrabold italic text-slate-900 sm:text-2xl"
                   >
                     Próximos eventos
                   </h2>
@@ -326,8 +337,12 @@ export default function AgendaIA() {
               )}
 
               {!hasCurrentOrUpcomingEvents && (
-                <div className="rounded-3xl border border-white/60 bg-white/60 p-8 text-center shadow-xl backdrop-blur-xl">
-                  No hay próximos eventos con los filtros seleccionados.
+                <div className="rounded-2xl border border-white/60 bg-white/70 p-8 text-center text-sm font-semibold text-slate-600 shadow-xl shadow-slate-900/10 backdrop-blur-xl">
+                  {hasActiveFilters ? (
+                    "No hay eventos que coincidan con los filtros seleccionados."
+                  ) : (
+                    "No hay próximos eventos disponibles por ahora."
+                  )}
                 </div>
               )}
 
@@ -338,7 +353,7 @@ export default function AgendaIA() {
                     onClick={() => setShowPastEvents((visible) => !visible)}
                     aria-expanded={showPastEvents}
                     aria-controls="agenda-eventos-pasados-panel"
-                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/70 bg-white/75 px-5 py-3 text-sm font-bold text-slate-700 shadow-md transition hover:bg-white"
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-white/70 bg-white/75 px-5 py-3 text-sm font-bold text-slate-700 shadow-md transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80"
                   >
                     {showPastEvents
                       ? "Ocultar eventos pasados"
@@ -349,7 +364,7 @@ export default function AgendaIA() {
                     <div id="agenda-eventos-pasados-panel" className="mt-6">
                       <h2
                         id="agenda-eventos-pasados"
-                        className="mb-5 text-2xl font-extrabold italic text-slate-900"
+                        className="mb-5 border-b border-white/60 pb-3 text-xl font-extrabold italic text-slate-900 sm:text-2xl"
                       >
                         Eventos pasados
                       </h2>
@@ -384,7 +399,7 @@ function AgendaMonthGroup({ grupo, idPrefix }) {
     <section aria-labelledby={headingId}>
       <h3
         id={headingId}
-        className="mb-4 text-xl font-extrabold italic text-slate-900"
+        className="mb-4 text-lg font-extrabold italic text-slate-800 sm:text-xl"
       >
         {grupo.monthLabel}
       </h3>
@@ -395,7 +410,7 @@ function AgendaMonthGroup({ grupo, idPrefix }) {
 
 function AgendaEventGrid({ eventos }) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-3">
       {eventos.map((evento) => (
         <AgendaEventCard key={evento.id} evento={evento} />
       ))}
