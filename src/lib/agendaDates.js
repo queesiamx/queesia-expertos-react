@@ -102,6 +102,15 @@ export function getEventTemporalStatus(evento, referenceDate = new Date()) {
   return "ongoing";
 }
 
+export function getCallStatus(evento, referenceDate = new Date()) {
+  const deadline = parseAgendaDate(evento?.fecha_limite_convocatoria);
+  const today = parseAgendaDate(toAgendaDateKey(referenceDate));
+
+  if (!deadline || !today) return "none";
+
+  return deadline < today ? "closed" : "open";
+}
+
 export function sortEventsChronologically(eventos) {
   return [...eventos].sort((a, b) => {
     const dateA = parseAgendaDate(a?.fecha_inicio)?.getTime() ?? Infinity;

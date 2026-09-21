@@ -11,7 +11,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { formatAgendaCompactDate, formatAgendaDateRange } from "@/lib/agendaDates";
+import {
+  formatAgendaCompactDate,
+  formatAgendaDateRange,
+  getCallStatus,
+} from "@/lib/agendaDates";
 
 const iconMap = {
   BrainCircuit,
@@ -29,6 +33,7 @@ export default function AgendaEventCard({ evento }) {
   const tags = getEventTags(evento.tags);
   const isOnline = isOnlineEvent(evento);
   const locationLabel = getLocationLabel(evento, isOnline);
+  const callStatus = getCallStatus(evento);
 
   return (
     <article className="group flex h-full w-full flex-col overflow-hidden rounded-3xl border border-white/65 bg-white/70 shadow-xl shadow-slate-900/10 backdrop-blur-xl transition hover:-translate-y-1 hover:bg-white/85">
@@ -78,10 +83,14 @@ export default function AgendaEventCard({ evento }) {
             <span>{formatAgendaDateRange(evento)}</span>
           </div>
 
-          {evento.fecha_limite_convocatoria && (
+          {callStatus !== "none" && (
             <div className="flex items-center gap-2 text-indigo-700">
               <Clock className="h-4 w-4 shrink-0 text-indigo-500" />
-              <span>Cierra {formatAgendaCompactDate(evento.fecha_limite_convocatoria)}</span>
+              <span>
+                {callStatus === "closed"
+                  ? "Convocatoria cerrada"
+                  : `Cierra ${formatAgendaCompactDate(evento.fecha_limite_convocatoria)}`}
+              </span>
             </div>
           )}
 

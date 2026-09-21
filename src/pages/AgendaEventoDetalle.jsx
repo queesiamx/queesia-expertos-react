@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import UnifiedNavbar from "@/components/UnifiedNavbar";
 import Footer from "@/components/Footer";
-import { formatAgendaDate, formatAgendaDateRange } from "@/lib/agendaDates";
+import {
+  formatAgendaDate,
+  formatAgendaDateRange,
+  getCallStatus,
+} from "@/lib/agendaDates";
 
 const API_BASE = "https://queesia.com/api/calendario/obtener_evento.php";
 
@@ -90,6 +94,7 @@ export default function AgendaEventoDetalle() {
     ? [evento.imagen_url, evento.captura_url].filter(Boolean)
     : [];
   const isOnline = evento ? isOnlineEvent(evento) : false;
+  const callStatus = evento ? getCallStatus(evento) : "none";
 
   return (
     <>
@@ -145,7 +150,12 @@ export default function AgendaEventoDetalle() {
                     <InfoItem
                       icon={<CalendarDays />}
                       label="Fecha límite de convocatoria"
-                      value={formatAgendaDate(evento.fecha_limite_convocatoria)}
+                      value={
+                        <CallDeadlineValue
+                          date={evento.fecha_limite_convocatoria}
+                          closed={callStatus === "closed"}
+                        />
+                      }
                     />
                   )}
 
@@ -209,7 +219,7 @@ export default function AgendaEventoDetalle() {
                 )}
 
                 <div className="mt-10 flex flex-wrap gap-3">
-                  {evento.url_registro && (
+                  {evento.url_registro && callStatus !== "closed" && (
                     <a
                       href={evento.url_registro}
                       target="_blank"
@@ -317,5 +327,18 @@ function InfoItem({ icon, label, value }) {
       </div>
       <p className="text-sm font-medium text-slate-700">{value}</p>
     </div>
+  );
+}
+
+function CallDeadlineValue({ date, closed }) {
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <span>{formatAgendaDate(date)}</span>
+      {closed && (
+        <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+          Convocatoria cerrada
+        </span>
+      )}
+    </span>
   );
 }
